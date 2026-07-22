@@ -17,6 +17,7 @@ import {
   Tag,
   BadgePercent,
   FileStack,
+  BarChart3,
   type LucideIcon,
 } from "lucide-react"
 
@@ -40,6 +41,7 @@ export type SectionKey =
   | "promociones"
   | "servicios"
   | "paginas"
+  | "reportes"
 
 export type NavItem = {
   key: SectionKey
@@ -80,6 +82,7 @@ export const proNav: NavGroup[] = [
       { key: "reservaciones", label: "Reservaciones", icon: BookMarked, badge: 24 },
       { key: "clientes", label: "Clientes", icon: Users },
       { key: "pagos", label: "Pagos", icon: CreditCard, badge: 12 },
+      { key: "reportes", label: "Reportes", icon: BarChart3 },
       { key: "solicitudes", label: "Solicitudes", icon: FileText },
       { key: "mensajes", label: "Mensajes", icon: MessageSquare },
     ],

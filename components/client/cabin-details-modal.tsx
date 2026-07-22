@@ -21,10 +21,12 @@ export function CabinDetailsModal({
   cabin,
   version,
   onClose,
+  onAction,
 }: {
   cabin: Cabin | null
   version: Version
   onClose: () => void
+  onAction: (cabin: Cabin) => void
 }) {
   useEffect(() => {
     if (!cabin) return
@@ -138,14 +140,14 @@ export function CabinDetailsModal({
                 Entrada
                 <span className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">
                   <CalendarDays className="size-4 text-primary" aria-hidden />
-                  14 ago 2025
+                  14 ago 2026
                 </span>
               </label>
               <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
                 Salida
                 <span className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">
                   <CalendarDays className="size-4 text-primary" aria-hidden />
-                  16 ago 2025
+                  16 ago 2026
                 </span>
               </label>
             </div>
@@ -161,8 +163,6 @@ export function CabinDetailsModal({
                 href={`https://wa.me/528441234567?text=${encodeURIComponent(
                   `Hola, me interesa la cabaña ${cabin.name}`,
                 )}`}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
               >
                 <MessageCircle className="size-4" aria-hidden />
@@ -170,7 +170,7 @@ export function CabinDetailsModal({
               </a>
               <button
                 type="button"
-                onClick={onClose}
+                onClick={() => onAction(cabin)}
                 className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
               >
                 {isPro ? "Reservar ahora" : "Solicitar información"}

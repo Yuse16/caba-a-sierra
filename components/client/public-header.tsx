@@ -5,17 +5,35 @@ import { Mountain, Heart, CalendarCheck, Menu, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useDemo } from "@/components/demo/demo-context"
 
-export function PublicHeader({ favoritesCount }: { favoritesCount: number }) {
+export function PublicHeader({
+  favoritesCount,
+  onShowFavorites,
+}: {
+  favoritesCount: number
+  onShowFavorites: () => void
+}) {
   const { version, toggleVersion } = useDemo()
   const isPro = version === "pro"
   const [open, setOpen] = useState(false)
 
   const links = isPro
-    ? ["Inicio", "Cabañas", "Experiencias", "Promociones", "Cómo funciona", "Contacto"]
-    : ["Inicio", "Cabañas", "Cómo funciona", "Contacto"]
+    ? [
+        { label: "Inicio", href: "#inicio" },
+        { label: "Cabañas", href: "#cabanas" },
+        { label: "Experiencias", href: "#como-funciona" },
+        { label: "Promociones", href: "#promociones" },
+        { label: "Cómo funciona", href: "#como-funciona" },
+        { label: "Contacto", href: "#contacto" },
+      ]
+    : [
+        { label: "Inicio", href: "#inicio" },
+        { label: "Cabañas", href: "#cabanas" },
+        { label: "Cómo funciona", href: "#como-funciona" },
+        { label: "Contacto", href: "#contacto" },
+      ]
 
   return (
-    <header className="sticky top-[41px] z-40 border-b border-border bg-background/95 backdrop-blur sm:top-[41px]">
+    <header className="relative z-40 border-b border-border bg-background/95 backdrop-blur xl:sticky xl:top-[41px]">
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
         <a href="#inicio" className="flex items-center gap-2">
           <span className="inline-flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -29,23 +47,27 @@ export function PublicHeader({ favoritesCount }: { favoritesCount: number }) {
         </a>
 
         <nav className="mx-auto hidden items-center gap-6 lg:flex">
-          {links.map((l, i) => (
+          {links.map((link, index) => (
             <a
-              key={l}
-              href="#cabanas"
+              key={link.label}
+              href={link.href}
               className={cn(
                 "text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
-                i === 0 && "text-foreground underline decoration-primary decoration-2 underline-offset-8",
+                index === 0 && "text-foreground underline decoration-primary decoration-2 underline-offset-8",
               )}
             >
-              {l}
+              {link.label}
             </a>
           ))}
         </nav>
 
         <div className="ml-auto flex items-center gap-2 lg:ml-0">
           {isPro && (
-            <button className="hidden items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-foreground hover:bg-muted sm:inline-flex">
+            <button
+              type="button"
+              onClick={onShowFavorites}
+              className="hidden items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-foreground hover:bg-muted sm:inline-flex"
+            >
               <Heart className="size-4" aria-hidden />
               Favoritos
               <span className="inline-flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
@@ -55,10 +77,10 @@ export function PublicHeader({ favoritesCount }: { favoritesCount: number }) {
           )}
 
           <div className="group relative hidden sm:block">
-            <button className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+            <a href="#cabanas" className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
               Ver cabañas
               <CalendarCheck className="size-4" aria-hidden />
-            </button>
+            </a>
           </div>
 
           <button
@@ -76,20 +98,27 @@ export function PublicHeader({ favoritesCount }: { favoritesCount: number }) {
       {open && (
         <nav className="border-t border-border bg-background px-4 py-3 lg:hidden">
           <ul className="flex flex-col gap-1">
-            {links.map((l) => (
-              <li key={l}>
+            {links.map((link) => (
+              <li key={link.label}>
                 <a
-                  href="#cabanas"
+                  href={link.href}
                   onClick={() => setOpen(false)}
                   className="block rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
                 >
-                  {l}
+                  {link.label}
                 </a>
               </li>
             ))}
             {isPro && (
               <li>
-                <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onShowFavorites()
+                    setOpen(false)
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                >
                   <Heart className="size-4" aria-hidden /> Favoritos ({favoritesCount})
                 </button>
               </li>

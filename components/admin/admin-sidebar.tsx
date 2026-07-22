@@ -4,6 +4,7 @@ import { Mountain, LogOut, ChevronDown, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Version } from "@/components/demo/demo-context"
 import { startNav, proNav, type SectionKey } from "./nav-config"
+import { useDemo } from "@/components/demo/demo-context"
 
 export function AdminSidebar({
   version,
@@ -15,6 +16,7 @@ export function AdminSidebar({
   onSelect: (key: SectionKey) => void
 }) {
   const isPro = version === "pro"
+  const { setVersion } = useDemo()
   const groups = isPro ? proNav : startNav
 
   return (
@@ -88,7 +90,7 @@ export function AdminSidebar({
             <p className="mt-1 text-xs text-muted-foreground">
               Panel básico para administrar tus cabañas y solicitudes.
             </p>
-            <button className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted">
+            <button type="button" onClick={() => setVersion("pro")} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted">
               <Sparkles className="size-3.5 text-gold-foreground" aria-hidden />
               Conocer más funciones
             </button>
@@ -98,7 +100,7 @@ export function AdminSidebar({
 
       {/* User */}
       <div className="border-t border-sidebar-border p-3">
-        <button className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-sidebar-accent">
+        <button type="button" onClick={() => onSelect("perfil")} className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-sidebar-accent">
           <span className="inline-flex size-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
             JS
           </span>
@@ -109,7 +111,7 @@ export function AdminSidebar({
           <ChevronDown className="size-4 text-muted-foreground" aria-hidden />
         </button>
         {isPro && (
-          <button className="mt-1 flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-foreground">
+          <button type="button" disabled title="La autenticación real no está conectada en esta demo" className="mt-1 flex w-full cursor-not-allowed items-center gap-2.5 rounded-lg px-2 py-2 text-sm text-muted-foreground opacity-60">
             <LogOut className="size-4" aria-hidden />
             Cerrar sesión
           </button>

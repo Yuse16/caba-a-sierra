@@ -24,14 +24,17 @@ import {
   upcomingArrivals,
   initials,
 } from "@/lib/demo-data"
+import type { SectionKey } from "./nav-config"
 
 function PanelCard({
   title,
   action,
+  onAction,
   children,
 }: {
   title: string
   action?: string
+  onAction?: () => void
   children: React.ReactNode
 }) {
   return (
@@ -39,7 +42,7 @@ function PanelCard({
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-foreground">{title}</h2>
         {action ? (
-          <button className="text-xs font-medium text-primary hover:underline">{action}</button>
+          <button type="button" onClick={onAction} className="text-xs font-medium text-primary hover:underline">{action}</button>
         ) : null}
       </div>
       {children}
@@ -57,9 +60,9 @@ function Avatar({ name }: { name: string }) {
 
 /* ---------- START panels ---------- */
 
-export function RecentRequestsPanel() {
+export function RecentRequestsPanel({ onOpen }: { onOpen: () => void }) {
   return (
-    <PanelCard title="Solicitudes recientes" action="Ver todas">
+    <PanelCard title="Solicitudes recientes" action="Ver todas" onAction={onOpen}>
       <ul className="flex flex-col gap-4">
         {requests.map((r) => (
           <li key={r.id} className="flex items-center gap-3">
@@ -79,21 +82,21 @@ export function RecentRequestsPanel() {
   )
 }
 
-const quickActionsStart = [
-  { icon: Home, label: "Agregar nueva cabaña" },
-  { icon: FileText, label: "Ver todas las solicitudes", badge: 8 },
-  { icon: MessageSquare, label: "Enviar mensaje a cliente" },
-  { icon: Globe, label: "Editar página principal" },
-  { icon: Settings, label: "Configuración general" },
+const quickActionsStart: { icon: typeof Home; label: string; key: SectionKey | "add"; badge?: number }[] = [
+  { icon: Home, label: "Agregar nueva cabaña", key: "add" },
+  { icon: FileText, label: "Ver todas las solicitudes", key: "solicitudes", badge: 8 },
+  { icon: MessageSquare, label: "Enviar mensaje a cliente", key: "mensajes" },
+  { icon: Globe, label: "Editar página principal", key: "paginas" },
+  { icon: Settings, label: "Configuración general", key: "configuracion" },
 ]
 
-export function QuickActionsPanel() {
+export function QuickActionsPanel({ onAction }: { onAction: (key: SectionKey | "add") => void }) {
   return (
     <PanelCard title="Acciones rápidas">
       <ul className="flex flex-col gap-2">
         {quickActionsStart.map((a) => (
           <li key={a.label}>
-            <button className="flex w-full items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-accent">
+            <button type="button" onClick={() => onAction(a.key)} className="flex w-full items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-accent">
               <a.icon className="size-4 text-muted-foreground" aria-hidden />
               <span className="flex-1">{a.label}</span>
               {a.badge ? (
@@ -115,16 +118,18 @@ export function OccupancyDonutPanel({
   segments: { label: string; count: number; percent: string; color: string }[]
 }) {
   const total = segments.reduce((s, x) => s + x.count, 0)
-  let offset = 0
   const radius = 42
   const circ = 2 * Math.PI * radius
   return (
     <PanelCard title="Estado de ocupación (hoy)">
       <div className="flex items-center gap-6">
         <svg viewBox="0 0 100 100" className="size-28 -rotate-90">
-          {segments.map((s) => {
+          {segments.map((s, index) => {
             const len = (s.count / total) * circ
-            const seg = (
+            const offset = segments
+              .slice(0, index)
+              .reduce((sum, segment) => sum + (segment.count / total) * circ, 0)
+            return (
               <circle
                 key={s.label}
                 cx="50"
@@ -137,8 +142,6 @@ export function OccupancyDonutPanel({
                 strokeDashoffset={-offset}
               />
             )
-            offset += len
-            return seg
           })}
         </svg>
         <ul className="flex flex-1 flex-col gap-2.5">
@@ -165,9 +168,9 @@ const activityIcons: Record<string, typeof Bell> = {
   maintenance: Wrench,
 }
 
-export function RecentActivityPanel() {
+export function RecentActivityPanel({ onOpen }: { onOpen: () => void }) {
   return (
-    <PanelCard title="Actividad reciente" action="Ver todas">
+    <PanelCard title="Actividad reciente" action="Ver todas" onAction={onOpen}>
       <ul className="flex flex-col gap-4">
         {recentActivity.map((a) => {
           const Icon = activityIcons[a.type] ?? Bell
@@ -189,9 +192,9 @@ export function RecentActivityPanel() {
   )
 }
 
-export function PendingTasksPanel() {
+export function PendingTasksPanel({ onOpen }: { onOpen: () => void }) {
   return (
-    <PanelCard title="Tareas pendientes" action="Ver todas">
+    <PanelCard title="Tareas pendientes" action="Ver todas" onAction={onOpen}>
       <ul className="flex flex-col gap-3">
         {pendingTasks.map((t) => (
           <li key={t.id} className="flex items-center gap-3">
@@ -220,9 +223,9 @@ export function PendingTasksPanel() {
   )
 }
 
-export function UpcomingArrivalsPanel() {
+export function UpcomingArrivalsPanel({ onOpen }: { onOpen: () => void }) {
   return (
-    <PanelCard title="Próximas llegadas" action="Ver todas">
+    <PanelCard title="Próximas llegadas" action="Ver todas" onAction={onOpen}>
       <ul className="flex flex-col gap-4">
         {upcomingArrivals.map((a) => (
           <li key={a.id} className="flex items-center gap-3">
@@ -243,20 +246,22 @@ export function UpcomingArrivalsPanel() {
   )
 }
 
-const quickActionsPro = [
-  { icon: Home, label: "Agregar cabaña" },
-  { icon: Megaphone, label: "Nueva promoción" },
-  { icon: MessageSquare, label: "Enviar mensaje" },
-  { icon: BarChart3, label: "Generar reporte" },
+const quickActionsPro: { icon: typeof Home; label: string; key: SectionKey | "add" }[] = [
+  { icon: Home, label: "Agregar cabaña", key: "add" },
+  { icon: Megaphone, label: "Nueva promoción", key: "promociones" },
+  { icon: MessageSquare, label: "Enviar mensaje", key: "mensajes" },
+  { icon: BarChart3, label: "Generar reporte", key: "reportes" },
 ]
 
-export function QuickActionsGridPanel() {
+export function QuickActionsGridPanel({ onAction }: { onAction: (key: SectionKey | "add") => void }) {
   return (
     <PanelCard title="Acciones rápidas">
       <div className="grid grid-cols-4 gap-2">
         {quickActionsPro.map((a) => (
           <button
             key={a.label}
+            type="button"
+            onClick={() => onAction(a.key)}
             className="flex flex-col items-center gap-2 rounded-lg border border-border bg-background p-3 text-center transition-colors hover:bg-accent"
           >
             <span className="flex size-9 items-center justify-center rounded-full bg-accent text-accent-foreground">

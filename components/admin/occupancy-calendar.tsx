@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import Image from "next/image"
 import { ChevronLeft, ChevronRight, Users } from "lucide-react"
 import { calendarCabins, calendarDays, calendarBookings } from "@/lib/demo-data"
@@ -14,21 +15,24 @@ const statusStyle: Record<string, string> = {
 
 export function OccupancyCalendar() {
   const cols = calendarDays.length
+  const [period, setPeriod] = useState(0)
+  const periodLabels = ["Mayo - Junio 2026", "Junio - Julio 2026", "Julio - Agosto 2026", "Agosto - Septiembre 2026", "Septiembre - Octubre 2026"]
+  const periodLabel = periodLabels[period + 2]
 
   return (
-    <section className="rounded-xl border border-border bg-card p-5">
+    <section className="min-w-0 overflow-hidden rounded-xl border border-border bg-card p-5">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-foreground">Calendario de ocupación</h2>
         <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-muted-foreground">Julio - Agosto 2025</span>
+          <span className="text-sm font-medium text-muted-foreground">{periodLabel}</span>
           <div className="flex items-center gap-1">
-            <button className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-accent">
+            <button type="button" onClick={() => setPeriod(0)} className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground hover:bg-accent">
               Hoy
             </button>
-            <button className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-accent">
+            <button type="button" aria-label="Periodo anterior" onClick={() => setPeriod((value) => Math.max(-2, value - 1))} className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-accent disabled:opacity-40" disabled={period === -2}>
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <button className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-accent">
+            <button type="button" aria-label="Periodo siguiente" onClick={() => setPeriod((value) => Math.min(2, value + 1))} className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-accent disabled:opacity-40" disabled={period === 2}>
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>

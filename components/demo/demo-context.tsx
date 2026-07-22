@@ -34,12 +34,12 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
 
   const navigate = useCallback(
     (nextVista: Vista, nextVersion: Version) => {
-      const params = new URLSearchParams()
+      const params = new URLSearchParams(searchParams.toString())
       params.set("vista", nextVista)
       params.set("version", nextVersion)
       router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     },
-    [pathname, router],
+    [pathname, router, searchParams],
   )
 
   const value = useMemo<DemoState>(

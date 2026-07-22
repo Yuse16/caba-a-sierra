@@ -34,7 +34,7 @@ function SegButton({
 }
 
 export function DemoTopBar() {
-  const { vista, version, setVista, setVersion, toggleVersion } = useDemo()
+  const { vista, version, setVista, setVersion } = useDemo()
   const isPro = version === "pro"
 
   const vistas: { key: Vista; label: string }[] = [
@@ -106,12 +106,14 @@ export function DemoTopBar() {
 
           <button
             type="button"
-            onClick={toggleVersion}
+            onClick={() => setVersion("pro")}
+            disabled={isPro}
             className={cn(
               "hidden items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors lg:inline-flex",
               isPro
                 ? "border-gold/60 bg-gold/15 text-gold"
                 : "border-gold bg-gold text-gold-foreground hover:bg-gold/90",
+              isPro && "cursor-default",
             )}
           >
             {isPro ? (

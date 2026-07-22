@@ -14,9 +14,18 @@ import {
 import type { Version } from "@/components/demo/demo-context"
 import {
   cabins as initialCabins,
+  cleaningTasks as initialCleaningTasks,
   currency,
+  maintenanceTasks as initialMaintenanceTasks,
+  payments as initialPayments,
+  promotions as initialPromotions,
+  requests as initialRequests,
+  reservations as initialReservations,
+  seasons as initialSeasons,
   type Cabin,
   type CabinStatus,
+  type RequestStatus,
+  type ReservationStatus,
 } from "@/lib/demo-data"
 import { AdminSidebar } from "./admin-sidebar"
 import { AdminHeader } from "./admin-header"
@@ -35,6 +44,19 @@ import {
   QuickActionsGridPanel,
 } from "./side-panels"
 import type { SectionKey } from "./nav-config"
+import { proNav, startNav } from "./nav-config"
+import {
+  CabinEditorDialog,
+  OperationsSection,
+  PaymentsSection,
+  PricingSection,
+  PromotionsSection,
+  ReportsSection,
+  RequestsSection,
+  ReservationsSection,
+  type OperationTask,
+  type Season,
+} from "./admin-sections"
 
 const statusCycle: CabinStatus[] = ["disponible", "ocupada", "no-disponible"]
 const revenueSeries = [22, 28, 25, 34, 30, 42, 38, 52, 48, 63, 58, 74, 70, 88, 96]
@@ -66,6 +88,7 @@ const sectionMeta: Record<string, { title: string; desc: string }> = {
   configuracion: { title: "Configuración general", desc: "Ajustes de la cuenta, notificaciones e integraciones." },
   perfil: { title: "Perfil", desc: "Información de tu cuenta de administrador." },
   ayuda: { title: "Ayuda", desc: "Guías y soporte para sacar el máximo provecho de tu panel." },
+  reportes: { title: "Reportes", desc: "Indicadores e informes simulados del desempeño del negocio." },
 }
 
 export function AdminPanel({ version }: { version: Version }) {
@@ -73,6 +96,18 @@ export function AdminPanel({ version }: { version: Version }) {
   const [active, setActive] = useState<SectionKey>("dashboard")
   const [cabins, setCabins] = useState<Cabin[]>(initialCabins.slice(0, 6))
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [editor, setEditor] = useState<{ open: boolean; cabin: Cabin | null }>({ open: false, cabin: null })
+  const [requests, setRequests] = useState(() => initialRequests.map((item) => ({ ...item })))
+  const [reservations, setReservations] = useState(() => initialReservations.map((item) => ({ ...item })))
+  const [payments, setPayments] = useState(() => initialPayments.map((item) => ({ ...item })))
+  const [cleaning, setCleaning] = useState<OperationTask[]>(() => initialCleaningTasks.map((item) => ({ id: item.id, cabin: item.cabin, detail: `Responsable: ${item.assignee}`, when: item.when, status: item.status, meta: item.assignee })))
+  const [maintenance, setMaintenance] = useState<OperationTask[]>(() => initialMaintenanceTasks.map((item) => ({ id: item.id, cabin: item.cabin, detail: item.issue, when: item.when, status: item.status, meta: `Prioridad ${item.priority}` })))
+  const [promotions, setPromotions] = useState(() => initialPromotions.map((item) => ({ ...item })))
+  const [seasons, setSeasons] = useState<Season[]>(() => initialSeasons.map((item) => ({ ...item })))
+  const [notice, setNotice] = useState<string | null>(null)
+
+  const availableSections = (isPro ? proNav : startNav).flatMap((group) => group.items.map((item) => item.key))
+  const visibleActive = availableSections.includes(active) ? active : "dashboard"
 
   const counts = useMemo(() => {
     const disponible = cabins.filter((c) => c.status === "disponible").length
@@ -103,16 +138,47 @@ export function AdminPanel({ version }: { version: Version }) {
     setDrawerOpen(false)
   }
 
+  const showNotice = (message: string) => {
+    setNotice(message)
+    window.setTimeout(() => setNotice(null), 3000)
+  }
+
+  const openAddCabin = () => setEditor({ open: true, cabin: null })
+  const openEditCabin = (cabin: Cabin) => setEditor({ open: true, cabin })
+
+  const saveCabin = (values: Pick<Cabin, "name" | "location" | "price" | "maxGuests" | "status">) => {
+    if (editor.cabin) {
+      setCabins((current) => current.map((cabin) => cabin.id === editor.cabin?.id ? { ...cabin, ...values } : cabin))
+      showNotice("La información de la cabaña fue actualizada.")
+    } else {
+      const id = `cab-demo-${Date.now()}`
+      setCabins((current) => [...current, { ...initialCabins[0], ...values, id, slug: id, minGuests: 1 }])
+      showNotice("La cabaña fue agregada a la demo.")
+    }
+    setEditor({ open: false, cabin: null })
+  }
+
+  const advanceTask = (setter: React.Dispatch<React.SetStateAction<OperationTask[]>>, id: string) =>
+    setter((items) => items.map((item) => item.id === id ? { ...item, status: item.status === "Pendiente" || item.status === "Programada" ? "En proceso" : "Completada" } : item))
+
+  const adjustSeason = (id: string, direction: number) => setSeasons((items) => items.map((item) => {
+    if (item.id !== id) return item
+    const current = item.modifier === "Base" ? 0 : Number.parseInt(item.modifier, 10)
+    const next = current + direction
+    return { ...item, modifier: next === 0 ? "Base" : `${next > 0 ? "+" : ""}${next}%` }
+  }))
+
   return (
     <div className="flex min-h-[calc(100vh-40px)] bg-background">
+      {notice && <div className="fixed bottom-4 left-1/2 z-[80] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl bg-forest-dark px-4 py-3 text-center text-sm font-medium text-primary-foreground shadow-xl" role="status">{notice}</div>}
       {/* Sidebar (desktop) */}
       <aside className="sticky top-10 hidden h-[calc(100vh-40px)] w-64 shrink-0 border-r border-sidebar-border lg:block">
-        <AdminSidebar version={version} active={active} onSelect={handleSelect} />
+        <AdminSidebar version={version} active={visibleActive} onSelect={handleSelect} />
       </aside>
 
       {/* Drawer (mobile) */}
       {drawerOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
+        <div className="fixed inset-0 z-[60] lg:hidden">
           <button
             className="absolute inset-0 bg-foreground/40"
             aria-label="Cerrar menú"
@@ -126,7 +192,7 @@ export function AdminPanel({ version }: { version: Version }) {
             >
               <X className="size-5" aria-hidden />
             </button>
-            <AdminSidebar version={version} active={active} onSelect={handleSelect} />
+            <AdminSidebar version={version} active={visibleActive} onSelect={handleSelect} />
           </div>
         </div>
       )}
@@ -134,50 +200,77 @@ export function AdminPanel({ version }: { version: Version }) {
       {/* Main */}
       <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
         <AdminHeader
-          title={active === "dashboard" ? "Dashboard" : (sectionMeta[active]?.title ?? "Dashboard")}
-          subtitle={active === "dashboard" ? "Resumen general de tu negocio" : "Panel administrativo"}
-          dateLabel={isPro ? "22 jul – 22 ago 2025" : "22 de julio, 2025"}
+          title={visibleActive === "dashboard" ? "Dashboard" : (sectionMeta[visibleActive]?.title ?? "Dashboard")}
+          subtitle={visibleActive === "dashboard" ? "Resumen general de tu negocio" : "Panel administrativo"}
+          dateLabel={isPro ? "22 jul – 22 ago 2026" : "22 de julio, 2026"}
           showUser={!isPro}
           onMenu={() => setDrawerOpen(true)}
+          onDate={() => handleSelect("calendario")}
+          onProfile={() => handleSelect("perfil")}
         />
 
         <div className="mt-6">
-          {active === "dashboard" ? (
+          {visibleActive === "dashboard" ? (
             isPro ? (
               <ProDashboard
                 cabins={cabins}
-                onEdit={() => {}}
-                onCycleStatus={cycleStatus}
-                occupancySegments={occupancySegments}
+                onNavigate={handleSelect}
+                onAdd={openAddCabin}
               />
             ) : (
               <StartDashboard
                 cabins={cabins}
-                onEdit={() => {}}
+                onEdit={openEditCabin}
                 onCycleStatus={cycleStatus}
                 occupancySegments={occupancySegments}
+                onNavigate={handleSelect}
+                onAdd={openAddCabin}
               />
             )
-          ) : active === "cabanas" ? (
+          ) : visibleActive === "cabanas" ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-foreground">Administra tus cabañas</h2>
-                <button className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+                <button type="button" onClick={openAddCabin} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
                   <Plus className="size-4" aria-hidden /> Agregar cabaña
                 </button>
               </div>
-              <CabinsTable cabins={cabins} onEdit={() => {}} onCycleStatus={cycleStatus} />
+              <CabinsTable cabins={cabins} onEdit={openEditCabin} onCycleStatus={cycleStatus} />
             </div>
-          ) : active === "calendario" ? (
+          ) : visibleActive === "calendario" ? (
             <OccupancyCalendar />
+          ) : visibleActive === "solicitudes" ? (
+            <RequestsSection items={requests} onStatusChange={(id, status: RequestStatus) => setRequests((items) => items.map((item) => item.id === id ? { ...item, status } : item))} />
+          ) : visibleActive === "reservaciones" ? (
+            <ReservationsSection items={reservations} onStatusChange={(id, status: ReservationStatus) => setReservations((items) => items.map((item) => item.id === id ? { ...item, status } : item))} />
+          ) : visibleActive === "pagos" ? (
+            <PaymentsSection items={payments} onMarkPaid={(id) => { setPayments((items) => items.map((item) => item.id === id ? { ...item, status: "pagado" } : item)); showNotice("Pago simulado registrado correctamente.") }} />
+          ) : visibleActive === "limpieza" ? (
+            <OperationsSection title="Tareas de limpieza" description="Asigna y actualiza el avance de cada turno." items={cleaning} onAdvance={(id) => advanceTask(setCleaning, id)} />
+          ) : visibleActive === "mantenimiento" ? (
+            <OperationsSection title="Mantenimiento" description="Seguimiento simulado de incidencias por cabaña." items={maintenance} onAdvance={(id) => advanceTask(setMaintenance, id)} />
+          ) : visibleActive === "promociones" ? (
+            <PromotionsSection
+              items={promotions}
+              onToggle={(id) => setPromotions((items) => items.map((item) => item.id === id ? { ...item, active: !item.active } : item))}
+              onAdd={() => {
+                setPromotions((items) => [...items, { id: `promo-demo-${Date.now()}`, title: "Promoción de temporada", discount: "10%", detail: "Campaña creada en la demo", active: true }])
+                showNotice("Promoción simulada creada.")
+              }}
+            />
+          ) : visibleActive === "precios" ? (
+            <PricingSection items={seasons} onAdjust={adjustSeason} />
+          ) : visibleActive === "reportes" ? (
+            <ReportsSection />
           ) : (
             <SectionStub
-              title={sectionMeta[active]?.title ?? "Sección"}
-              desc={sectionMeta[active]?.desc ?? "Contenido de demostración."}
+              title={sectionMeta[visibleActive]?.title ?? "Sección"}
+              desc={sectionMeta[visibleActive]?.desc ?? "Contenido de demostración."}
             />
           )}
         </div>
       </main>
+      {editor.open && <CabinEditorDialog key={editor.cabin?.id ?? "new"} cabin={editor.cabin} onClose={() => setEditor({ open: false, cabin: null })} onSave={saveCabin} />}
     </div>
   )
 }
@@ -189,21 +282,25 @@ function StartDashboard({
   onEdit,
   onCycleStatus,
   occupancySegments,
+  onNavigate,
+  onAdd,
 }: {
   cabins: Cabin[]
   onEdit: (c: Cabin) => void
   onCycleStatus: (id: string) => void
   occupancySegments: { label: string; count: number; percent: string; color: string }[]
+  onNavigate: (key: SectionKey) => void
+  onAdd: () => void
 }) {
   const active = cabins.filter((c) => c.status !== "no-disponible").length
   return (
-    <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
-      <div className="space-y-6">
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="min-w-0 space-y-6">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard icon={Home} label="Cabañas activas" value={String(active)} sub="En operación" action="Ver todas" />
-          <MetricCard icon={FileText} iconClassName="bg-gold/20 text-gold-foreground" label="Solicitudes nuevas" value="8" sub="Sin responder" action="Ver solicitudes" />
-          <MetricCard icon={Users} iconClassName="bg-[oklch(0.9_0.04_240)] text-[oklch(0.45_0.12_255)]" label="Solicitudes este mes" value="32" sub="+12 vs. mes anterior" action="Ver historial" />
-          <MetricCard icon={DollarSign} iconClassName="bg-primary/10 text-primary" label="Ingresos potenciales" value={`$${currency(98450)}`} suffix="MXN" sub="En solicitudes activas" action="Ver detalle" />
+          <MetricCard icon={Home} label="Cabañas activas" value={String(active)} sub="En operación" action="Ver todas" onAction={() => onNavigate("cabanas")} />
+          <MetricCard icon={FileText} iconClassName="bg-gold/20 text-gold-foreground" label="Solicitudes nuevas" value="8" sub="Sin responder" action="Ver solicitudes" onAction={() => onNavigate("solicitudes")} />
+          <MetricCard icon={Users} iconClassName="bg-[oklch(0.9_0.04_240)] text-[oklch(0.45_0.12_255)]" label="Solicitudes este mes" value="32" sub="+12 vs. mes anterior" action="Ver historial" onAction={() => onNavigate("solicitudes")} />
+          <MetricCard icon={DollarSign} iconClassName="bg-primary/10 text-primary" label="Ingresos potenciales" value={`$${currency(98450)}`} suffix="MXN" sub="En solicitudes activas" action="Ver detalle" onAction={() => onNavigate("solicitudes")} />
         </div>
 
         <section className="rounded-xl border border-border bg-card p-5">
@@ -212,7 +309,7 @@ function StartDashboard({
               <h2 className="text-lg font-semibold text-foreground">Cabañas</h2>
               <p className="text-sm text-muted-foreground">Administra tus cabañas</p>
             </div>
-            <button className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+            <button type="button" onClick={onAdd} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
               <Plus className="size-4" aria-hidden /> Agregar cabaña
             </button>
           </div>
@@ -221,9 +318,9 @@ function StartDashboard({
         </section>
       </div>
 
-      <div className="space-y-6">
-        <RecentRequestsPanel />
-        <QuickActionsPanel />
+      <div className="min-w-0 space-y-6">
+        <RecentRequestsPanel onOpen={() => onNavigate("solicitudes")} />
+        <QuickActionsPanel onAction={(key) => key === "add" ? onAdd() : onNavigate(key)} />
         <OccupancyDonutPanel segments={occupancySegments} />
       </div>
     </div>
@@ -234,25 +331,23 @@ function StartDashboard({
 
 function ProDashboard({
   cabins,
-  onEdit,
-  onCycleStatus,
-  occupancySegments,
+  onNavigate,
+  onAdd,
 }: {
   cabins: Cabin[]
-  onEdit: (c: Cabin) => void
-  onCycleStatus: (id: string) => void
-  occupancySegments: { label: string; count: number; percent: string; color: string }[]
+  onNavigate: (key: SectionKey) => void
+  onAdd: () => void
 }) {
   const activeCount = cabins.filter((c) => c.status !== "no-disponible").length
   return (
-    <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
-      <div className="space-y-6">
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="min-w-0 space-y-6">
         {/* Metric cards */}
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard icon={DollarSign} label="Ingresos confirmados" value={`$${currency(128450)}`} suffix="MXN" trend="+18.6% vs. mes anterior" action="Ver reporte financiero" />
-          <MetricCard icon={BookMarked} iconClassName="bg-gold/20 text-gold-foreground" label="Reservaciones" value="42" sub="24 confirmadas · 10 pendientes · 8 canceladas" action="Ver reservaciones" />
-          <MetricCard icon={Users} iconClassName="bg-[oklch(0.9_0.04_240)] text-[oklch(0.45_0.12_255)]" label="Ocupación promedio" value="68%" trend="+9% vs. mes anterior" action="Ver calendario" />
-          <MetricCard icon={Home} iconClassName="bg-primary/10 text-primary" label="Cabañas activas" value={`${activeCount} / ${cabins.length}`} sub="Gestión de inventario" action="Gestionar cabañas" />
+          <MetricCard icon={DollarSign} label="Ingresos confirmados" value={`$${currency(128450)}`} suffix="MXN" trend="+18.6% vs. mes anterior" action="Ver reporte financiero" onAction={() => onNavigate("reportes")} />
+          <MetricCard icon={BookMarked} iconClassName="bg-gold/20 text-gold-foreground" label="Reservaciones" value="42" sub="24 confirmadas · 10 pendientes · 8 canceladas" action="Ver reservaciones" onAction={() => onNavigate("reservaciones")} />
+          <MetricCard icon={Users} iconClassName="bg-[oklch(0.9_0.04_240)] text-[oklch(0.45_0.12_255)]" label="Ocupación promedio" value="68%" trend="+9% vs. mes anterior" action="Ver calendario" onAction={() => onNavigate("calendario")} />
+          <MetricCard icon={Home} iconClassName="bg-primary/10 text-primary" label="Cabañas activas" value={`${activeCount} / ${cabins.length}`} sub="Gestión de inventario" action="Gestionar cabañas" onAction={() => onNavigate("cabanas")} />
         </div>
 
         {/* Charts row */}
@@ -320,11 +415,11 @@ function ProDashboard({
       </div>
 
       {/* Right column */}
-      <div className="space-y-6">
-        <RecentActivityPanel />
-        <PendingTasksPanel />
-        <UpcomingArrivalsPanel />
-        <QuickActionsGridPanel />
+      <div className="min-w-0 space-y-6">
+        <RecentActivityPanel onOpen={() => onNavigate("reservaciones")} />
+        <PendingTasksPanel onOpen={() => onNavigate("limpieza")} />
+        <UpcomingArrivalsPanel onOpen={() => onNavigate("reservaciones")} />
+        <QuickActionsGridPanel onAction={(key) => key === "add" ? onAdd() : onNavigate(key)} />
       </div>
     </div>
   )

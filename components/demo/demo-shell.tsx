@@ -12,9 +12,9 @@ export function DemoShell() {
     <div className="min-h-screen bg-background">
       <DemoTopBar />
       {vista === "clientes" ? (
-        <ClientPage key={`client-${version}`} version={version} />
+        <ClientPage version={version} />
       ) : (
-        <AdminPanel key={`admin-${version}`} version={version} />
+        <AdminPanel version={version} />
       )}
     </div>
   )

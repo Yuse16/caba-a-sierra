@@ -13,9 +13,12 @@ export function Footer({ version }: { version: Version }) {
               <p className="mt-1 text-sm text-primary-foreground/70">
                 Escríbenos por WhatsApp y te ayudamos{version === "pro" ? " al instante." : "."}
               </p>
-              <button className="mt-3 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-gold-foreground hover:bg-gold/90">
+              <a
+                href="https://wa.me/528441234567?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20las%20caba%C3%B1as"
+                className="mt-3 inline-flex rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-gold-foreground hover:bg-gold/90"
+              >
                 {version === "pro" ? "Enviar mensaje" : "Abrir WhatsApp"}
-              </button>
+              </a>
             </div>
           </div>
 
@@ -57,7 +60,7 @@ export function Footer({ version }: { version: Version }) {
         </div>
 
         <div className="mt-10 border-t border-primary-foreground/15 pt-6 text-center text-xs text-primary-foreground/60">
-          © 2025 Cabañas Sierra Norte. Todos los derechos reservados.
+          © 2026 Cabañas Sierra Norte. Todos los derechos reservados.
         </div>
       </div>
     </footer>

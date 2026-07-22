@@ -23,7 +23,7 @@ import {
 import type { Version } from "@/components/demo/demo-context"
 import { cabins, promotions, type Cabin } from "@/lib/demo-data"
 import { PublicHeader } from "./public-header"
-import { SearchBar } from "./search-bar"
+import { SearchBar, initialClientSearch, type ClientSearchState } from "./search-bar"
 import { FilterChips, type ChipKey } from "./filter-chips"
 import { CabinCard } from "./cabin-card"
 import { CabinDetailsModal } from "./cabin-details-modal"
@@ -56,16 +56,24 @@ const proBenefits = [
 
 export function ClientPage({ version }: { version: Version }) {
   const isPro = version === "pro"
-  const [guests, setGuests] = useState(2)
+  const [search, setSearch] = useState<ClientSearchState>(initialClientSearch)
   const [category, setCategory] = useState<ChipKey>("todos")
   const [favorites, setFavorites] = useState<Set<string>>(new Set(isPro ? ["cab-03", "cab-06", "cab-01"] : []))
   const [selected, setSelected] = useState<Cabin | null>(null)
-  const [searchTick, setSearchTick] = useState(0)
+  const [favoritesOnly, setFavoritesOnly] = useState(false)
+  const [showAll, setShowAll] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
+
+  const showNotice = (message: string) => {
+    setNotice(message)
+    window.setTimeout(() => setNotice(null), 3000)
+  }
 
   const toggleFavorite = (id: string) =>
     setFavorites((prev) => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
       return next
     })
 
@@ -74,16 +82,39 @@ export function ClientPage({ version }: { version: Version }) {
     if (!isPro && category !== "todos") {
       list = list.filter((c) => c.categories.includes(category as Cabin["categories"][number]))
     }
-    list = list.filter((c) => c.maxGuests >= guests)
-    // Start muestra 6, Pro muestra hasta 6 recomendadas
-    return list.slice(0, 6)
-    // searchTick forces recompute intent on "buscar"
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category, guests, isPro, searchTick])
+    const query = search.query.trim().toLocaleLowerCase("es")
+    if (query) {
+      list = list.filter((c) =>
+        [c.name, c.location, ...c.amenities].some((text) =>
+          text.toLocaleLowerCase("es").includes(query),
+        ),
+      )
+    }
+    list = list.filter((c) => c.maxGuests >= search.guests)
+    if (search.cabinType !== "todas") list = list.filter((c) => c.type === search.cabinType)
+    if (isPro) {
+      list = list.filter((c) => c.price <= search.maxPrice && c.bedrooms >= search.bedrooms)
+      if (search.amenity !== "todas") list = list.filter((c) => c.amenities.includes(search.amenity))
+      if (favoritesOnly) list = list.filter((c) => favorites.has(c.id))
+    }
+    return showAll ? list : list.slice(0, 6)
+  }, [category, favorites, favoritesOnly, isPro, search, showAll])
 
   return (
     <div id="inicio" className="min-h-screen bg-background">
-      <PublicHeader favoritesCount={favorites.size} />
+      <PublicHeader
+        favoritesCount={favorites.size}
+        onShowFavorites={() => {
+          setFavoritesOnly((current) => !current)
+          document.querySelector("#cabanas")?.scrollIntoView({ behavior: "smooth" })
+        }}
+      />
+
+      {notice && (
+        <div className="fixed bottom-4 left-1/2 z-[70] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl bg-forest-dark px-4 py-3 text-center text-sm font-medium text-primary-foreground shadow-xl" role="status">
+          {notice}
+        </div>
+      )}
 
       {/* Hero */}
       <section className="relative">
@@ -140,8 +171,6 @@ export function ClientPage({ version }: { version: Version }) {
                   </a>
                   <a
                     href="https://wa.me/528441234567"
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded-xl border border-primary-foreground/40 bg-background/10 px-5 py-3 text-sm font-medium text-primary-foreground backdrop-blur hover:bg-background/20"
                   >
                     <MessageCircle className="size-4" aria-hidden />
@@ -157,9 +186,13 @@ export function ClientPage({ version }: { version: Version }) {
         <div className="mx-auto -mt-10 max-w-6xl px-4 sm:-mt-12 sm:px-6">
           <SearchBar
             version={version}
-            guests={guests}
-            onGuestsChange={setGuests}
-            onSearch={() => setSearchTick((t) => t + 1)}
+            value={search}
+            onChange={setSearch}
+            onSearch={() => {
+              setFavoritesOnly(false)
+              showNotice(`Se encontraron opciones para ${search.guests} huésped${search.guests === 1 ? "" : "es"}.`)
+              document.querySelector("#cabanas")?.scrollIntoView({ behavior: "smooth" })
+            }}
           />
         </div>
       </section>
@@ -193,11 +226,18 @@ export function ClientPage({ version }: { version: Version }) {
               </p>
               <h2 className="mt-1 text-2xl font-semibold text-foreground">Cabañas ideales para tu estancia</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Basadas en tu búsqueda: Arteaga · 14 – 16 jun · {guests} huéspedes
+                Basadas en tu búsqueda: {search.query || "Todas las ubicaciones"} · {search.checkIn} – {search.checkOut} · {search.guests} huéspedes
               </p>
             </div>
-            <button className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">
-              Ver todas las cabañas <ChevronRight className="size-4" aria-hidden />
+            <button
+              type="button"
+              onClick={() => {
+                setFavoritesOnly(false)
+                setShowAll((current) => !current)
+              }}
+              className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
+            >
+              {showAll ? "Ver recomendadas" : "Ver todas las cabañas"} <ChevronRight className="size-4" aria-hidden />
             </button>
           </div>
         ) : (
@@ -250,7 +290,11 @@ export function ClientPage({ version }: { version: Version }) {
               <p className="mt-4 text-xs text-primary-foreground/70">
                 Aprovecha antes de que terminen.
               </p>
-              <button className="mt-3 rounded-lg bg-gold px-3 py-2 text-xs font-semibold text-gold-foreground hover:bg-gold/90">
+              <button
+                type="button"
+                onClick={() => showNotice("Mostrando las promociones activas de la demo.")}
+                className="mt-3 rounded-lg bg-gold px-3 py-2 text-xs font-semibold text-gold-foreground hover:bg-gold/90"
+              >
                 Ver promociones
               </button>
             </div>
@@ -271,7 +315,11 @@ export function ClientPage({ version }: { version: Version }) {
                   <p className="text-sm font-semibold">{p.title}</p>
                   <p className="mt-1 text-2xl font-bold text-gold">{p.discount} de descuento</p>
                   <p className="mt-1 text-xs text-primary-foreground/80">{p.detail}</p>
-                  <button className="mt-3 rounded-lg bg-background/90 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-background">
+                  <button
+                    type="button"
+                    onClick={() => showNotice(`${p.title}: ${p.discount} de descuento. ${p.detail}.`)}
+                    className="mt-3 rounded-lg bg-background/90 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-background"
+                  >
                     Ver detalles
                   </button>
                 </div>
@@ -328,7 +376,15 @@ export function ClientPage({ version }: { version: Version }) {
         <Footer version={version} />
       </div>
 
-      <CabinDetailsModal cabin={selected} version={version} onClose={() => setSelected(null)} />
+      <CabinDetailsModal
+        cabin={selected}
+        version={version}
+        onClose={() => setSelected(null)}
+        onAction={(cabin) => {
+          setSelected(null)
+          showNotice(isPro ? `Reservación simulada iniciada para ${cabin.name}.` : `Solicitud simulada creada para ${cabin.name}.`)
+        }}
+      />
     </div>
   )
 }

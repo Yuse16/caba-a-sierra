@@ -20,7 +20,6 @@ export function DonutChart({
   const total = segments.reduce((acc, s) => acc + s.value, 0) || 1
   const radius = (size - thickness) / 2
   const circumference = 2 * Math.PI * radius
-  let offset = 0
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
@@ -33,10 +32,13 @@ export function DonutChart({
           stroke="var(--muted)"
           strokeWidth={thickness}
         />
-        {segments.map((s) => {
+        {segments.map((s, index) => {
           const length = (s.value / total) * circumference
           const dash = `${length} ${circumference - length}`
-          const el = (
+          const offset = segments
+            .slice(0, index)
+            .reduce((sum, segment) => sum + (segment.value / total) * circumference, 0)
+          return (
             <circle
               key={s.label}
               cx={size / 2}
@@ -50,8 +52,6 @@ export function DonutChart({
               strokeLinecap="butt"
             />
           )
-          offset += length
-          return el
         })}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">

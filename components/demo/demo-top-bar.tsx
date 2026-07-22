@@ -48,8 +48,8 @@ export function DemoTopBar() {
   ]
 
   return (
-    <div className="sticky top-0 z-50 bg-forest-dark text-primary-foreground">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 sm:px-5">
+    <div className="sticky top-0 z-50 bg-forest-dark text-primary-foreground xl:h-14">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 sm:px-5 xl:h-full">
         {/* Left: brand + version badge */}
         <div className="flex items-center gap-2.5">
           <Monitor className="size-4 shrink-0 text-primary-foreground/70" aria-hidden />

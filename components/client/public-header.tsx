@@ -33,7 +33,7 @@ export function PublicHeader({
       ]
 
   return (
-    <header className="relative z-40 border-b border-border bg-background/95 backdrop-blur xl:sticky xl:top-[41px]">
+    <header className="relative z-40 border-b border-border bg-background/95 backdrop-blur xl:sticky xl:top-14">
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
         <a href="#inicio" className="flex items-center gap-2">
           <span className="inline-flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">

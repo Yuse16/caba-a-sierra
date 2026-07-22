@@ -117,8 +117,8 @@ export function ClientPage({ version }: { version: Version }) {
       )}
 
       {/* Hero */}
-      <section className="relative">
-        <div className="relative min-h-[440px] w-full overflow-hidden sm:min-h-[520px]">
+      <section className="relative z-0">
+        <div className="relative isolate min-h-[440px] w-full overflow-hidden sm:min-h-[520px]">
           <Image
             src="/cabins/hero.png"
             alt="Cabaña de madera iluminada en el bosque al atardecer"
@@ -128,7 +128,7 @@ export function ClientPage({ version }: { version: Version }) {
             className="object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-forest-dark/85 via-forest-dark/55 to-forest-dark/20" />
-          <div className="relative mx-auto flex max-w-7xl flex-col justify-center px-4 py-16 sm:px-6 sm:py-20">
+          <div className="relative z-10 mx-auto flex max-w-7xl flex-col justify-center px-4 py-16 sm:px-6 sm:py-20">
             <div className="max-w-2xl text-primary-foreground">
               {isPro ? (
                 <h1 className="font-serif text-4xl leading-tight sm:text-5xl">
@@ -183,7 +183,7 @@ export function ClientPage({ version }: { version: Version }) {
         </div>
 
         {/* Search bar overlapping */}
-        <div className="mx-auto -mt-10 max-w-6xl px-4 sm:-mt-12 sm:px-6">
+        <div className="relative z-30 mx-auto mt-0 max-w-6xl px-4 sm:-mt-12 sm:px-6">
           <SearchBar
             version={version}
             value={search}

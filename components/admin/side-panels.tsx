@@ -121,7 +121,7 @@ export function OccupancyDonutPanel({
   const radius = 42
   const circ = 2 * Math.PI * radius
   return (
-    <PanelCard title="Estado de ocupación (hoy)">
+    <PanelCard title="Estado de consultas (hoy)">
       <div className="flex items-center gap-6">
         <svg viewBox="0 0 100 100" className="size-28 -rotate-90">
           {segments.map((s, index) => {

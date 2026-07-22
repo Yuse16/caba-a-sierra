@@ -18,6 +18,9 @@ import {
   BadgePercent,
   FileStack,
   BarChart3,
+  ContactRound,
+  BadgeCheck,
+  HandCoins,
   type LucideIcon,
 } from "lucide-react"
 
@@ -42,6 +45,9 @@ export type SectionKey =
   | "servicios"
   | "paginas"
   | "reportes"
+  | "propietarios"
+  | "confirmaciones"
+  | "comisiones"
 
 export type NavItem = {
   key: SectionKey
@@ -60,7 +66,9 @@ export const startNav: NavGroup[] = [
     items: [
       { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
       { key: "cabanas", label: "Cabañas", icon: Home },
+      { key: "propietarios", label: "Propietarios", icon: ContactRound },
       { key: "solicitudes", label: "Solicitudes", icon: FileText, badge: 8 },
+      { key: "confirmaciones", label: "Confirmaciones", icon: BadgeCheck, badge: 3 },
       { key: "clientes", label: "Clientes", icon: Users },
       { key: "mensajes", label: "Mensajes", icon: MessageSquare },
       { key: "configuracion", label: "Configuración", icon: Settings },
@@ -78,12 +86,15 @@ export const proNav: NavGroup[] = [
     title: "Gestión",
     items: [
       { key: "cabanas", label: "Cabañas", icon: Home },
+      { key: "propietarios", label: "Propietarios", icon: ContactRound },
       { key: "calendario", label: "Calendario", icon: CalendarDays },
+      { key: "solicitudes", label: "Solicitudes", icon: FileText, badge: 5 },
+      { key: "confirmaciones", label: "Confirmaciones", icon: BadgeCheck, badge: 3 },
       { key: "reservaciones", label: "Reservaciones", icon: BookMarked, badge: 24 },
       { key: "clientes", label: "Clientes", icon: Users },
       { key: "pagos", label: "Pagos", icon: CreditCard, badge: 12 },
+      { key: "comisiones", label: "Comisiones", icon: HandCoins },
       { key: "reportes", label: "Reportes", icon: BarChart3 },
-      { key: "solicitudes", label: "Solicitudes", icon: FileText },
       { key: "mensajes", label: "Mensajes", icon: MessageSquare },
     ],
   },

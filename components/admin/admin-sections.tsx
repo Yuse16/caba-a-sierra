@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
-import { BarChart3, Check, CreditCard, FileText, Plus, Save, X } from "lucide-react"
+import { useMemo, useState } from "react"
+import { BarChart3, Check, CreditCard, FileText, MessageCircle, Phone, Plus, Save, Send, X } from "lucide-react"
 import type {
   Cabin,
   CabinStatus,
   ClientRequest,
+  Owner,
   Payment,
   Promotion,
   RequestStatus,
@@ -16,8 +17,10 @@ import {
   currency,
   requestStatusLabel,
   reservationStatusLabel,
+  statusLabel,
 } from "@/lib/demo-data"
 import {
+  cabinStatusTone,
   requestStatusTone,
   StatusBadge,
 } from "@/components/shared/status-badge"
@@ -51,18 +54,38 @@ function SectionHeading({
 
 export function RequestsSection({
   items,
+  cabins,
+  mode = "start",
+  title = "Solicitudes",
   onStatusChange,
 }: {
   items: ClientRequest[]
+  cabins: Cabin[]
+  mode?: "start" | "pro"
+  title?: string
   onStatusChange: (id: string, status: RequestStatus) => void
 }) {
   const [selectedId, setSelectedId] = useState(items[0]?.id ?? "")
+  const [alternativeOpen, setAlternativeOpen] = useState(false)
+  const [alternativeId, setAlternativeId] = useState("")
+  const [sentAlternative, setSentAlternative] = useState<string | null>(null)
   const selected = items.find((item) => item.id === selectedId) ?? items[0]
+  const alternatives = selected
+    ? cabins.filter((cabin) => cabin.id !== selected.cabinId && cabin.maxGuests >= selected.guests && cabin.status !== "no-disponible")
+    : []
+  const timeline: { status: RequestStatus; label: string }[] = [
+    { status: "nueva", label: "Solicitud recibida" },
+    { status: "pendiente-propietario", label: "Pendiente de consultar propietario" },
+    { status: "propietario-contactado", label: "Propietario contactado" },
+    { status: "disponible-confirmada", label: "Disponibilidad confirmada" },
+    { status: "reservacion-confirmada", label: "Reservación confirmada" },
+  ]
+  const statusOptions = Object.entries(requestStatusLabel) as [RequestStatus, string][]
 
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
       <section className={panelClass}>
-        <SectionHeading title="Solicitudes" description="Abre una solicitud y actualiza su seguimiento." />
+        <SectionHeading title={title} description="Consulta al propietario, registra la respuesta y acompaña al cliente." />
         <div className="space-y-2">
           {items.map((request) => (
             <button
@@ -78,7 +101,8 @@ export function RequestsSection({
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block font-medium text-foreground">{request.client}</span>
-                <span className="block truncate text-xs text-muted-foreground">{request.cabin} · {request.date}</span>
+                <span className="block truncate text-xs text-muted-foreground">{request.cabin} · {request.checkIn} – {request.checkOut}</span>
+                <span className="block truncate text-xs text-muted-foreground">Propietario: {request.ownerName}</span>
               </span>
               <StatusBadge tone={requestStatusTone[request.status]}>{requestStatusLabel[request.status]}</StatusBadge>
             </button>
@@ -91,10 +115,21 @@ export function RequestsSection({
           <SectionHeading title={selected.client} description={selected.id} />
           <dl className="space-y-3 text-sm">
             <div><dt className="text-xs text-muted-foreground">Cabaña</dt><dd className="font-medium">{selected.cabin}</dd></div>
-            <div><dt className="text-xs text-muted-foreground">Contacto</dt><dd>{selected.email}<br />{selected.phone}</dd></div>
-            <div><dt className="text-xs text-muted-foreground">Huéspedes</dt><dd>{selected.guests}</dd></div>
+            <div><dt className="text-xs text-muted-foreground">Fechas y huéspedes</dt><dd>{selected.checkIn} – {selected.checkOut}<br />{selected.guests} huéspedes</dd></div>
+            <div><dt className="text-xs text-muted-foreground">Cliente</dt><dd>{selected.email}<br />{selected.phone}</dd></div>
+            <div><dt className="text-xs text-muted-foreground">Propietario</dt><dd className="font-medium">{selected.ownerName}</dd><dd>{selected.ownerPhone}</dd></div>
             <div><dt className="text-xs text-muted-foreground">Mensaje</dt><dd className="rounded-lg bg-secondary/60 p-3 leading-relaxed">{selected.message}</dd></div>
           </dl>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <a href={`tel:${selected.ownerPhone.replace(/\s/g, "")}`} onClick={() => onStatusChange(selected.id, "propietario-contactado")} className={secondaryButtonClass}><Phone className="size-4" />Llamar propietario</a>
+            <a href={`https://wa.me/${cabins.find((cabin) => cabin.ownerId === selected.ownerId)?.ownerWhatsApp ?? "528441234567"}`} onClick={() => onStatusChange(selected.id, "propietario-contactado")} className={secondaryButtonClass}><MessageCircle className="size-4" />WhatsApp</a>
+            <button type="button" onClick={() => onStatusChange(selected.id, "disponible-confirmada")} className={buttonClass}><Check className="size-4" />Confirmar disponible</button>
+            <button type="button" onClick={() => onStatusChange(selected.id, "no-disponible")} className={secondaryButtonClass}>No disponible</button>
+            <button type="button" onClick={() => { setAlternativeId(""); setAlternativeOpen(true) }} className={`${secondaryButtonClass} col-span-2`}>Ofrecer otra cabaña</button>
+            <a href={`tel:${selected.phone.replace(/[^\d+]/g, "")}`} className={secondaryButtonClass}><Phone className="size-4" />Contactar cliente</a>
+            <button type="button" onClick={() => onStatusChange(selected.id, "reservacion-confirmada")} className={secondaryButtonClass}>Confirmar reservación</button>
+          </div>
+          {sentAlternative && <p className="mt-3 rounded-lg bg-success/10 p-3 text-xs text-success" role="status">Alternativa simulada enviada: {sentAlternative}.</p>}
           <label className="mt-4 block text-xs font-medium text-muted-foreground">
             Estado de seguimiento
             <select
@@ -102,15 +137,27 @@ export function RequestsSection({
               onChange={(event) => onStatusChange(selected.id, event.target.value as RequestStatus)}
               className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
             >
-              <option value="nueva">Nueva</option>
-              <option value="en-revision">En revisión</option>
-              <option value="respondida">Respondida</option>
+              {statusOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
           </label>
+          {mode === "pro" && <div className="mt-5 border-t border-border pt-4"><h3 className="text-sm font-semibold">Línea de seguimiento</h3><ol className="mt-3 space-y-3">{timeline.map((item, index) => <li key={item.status} className="flex gap-3 text-xs"><span className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full ${selected.status === item.status ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>{index + 1}</span><span>{item.label}</span></li>)}</ol></div>}
         </aside>
       )}
+      {alternativeOpen && selected && <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Ofrecer otra cabaña" onClick={() => setAlternativeOpen(false)}><section className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-t-2xl bg-card p-5 shadow-xl sm:rounded-2xl" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between"><div><h2 className="text-lg font-semibold">Ofrecer otra cabaña</h2><p className="text-sm text-muted-foreground">Opciones con capacidad para {selected.guests} huéspedes.</p></div><button type="button" onClick={() => setAlternativeOpen(false)} aria-label="Cerrar" className="rounded-lg p-2 hover:bg-muted"><X className="size-5" /></button></div><div className="mt-4 space-y-2">{alternatives.map((cabin) => <label key={cabin.id} className={`flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 ${alternativeId === cabin.id ? "border-primary bg-primary/5" : "border-border"}`}><span><span className="block font-medium">{cabin.name}</span><span className="text-xs text-muted-foreground">{cabin.maxGuests} huéspedes · ${currency(cabin.price)} MXN · {statusLabel[cabin.status]}</span></span><input type="radio" name="alternative" value={cabin.id} checked={alternativeId === cabin.id} onChange={(event) => setAlternativeId(event.target.value)} /></label>)}</div><button type="button" disabled={!alternativeId} onClick={() => { const cabin = cabins.find((item) => item.id === alternativeId); if (!cabin) return; setSentAlternative(cabin.name); onStatusChange(selected.id, "alternativa-ofrecida"); setAlternativeOpen(false) }} className={`${buttonClass} mt-5 w-full disabled:cursor-not-allowed disabled:opacity-40`}><Send className="size-4" />Enviar alternativa simulada</button></section></div>}
     </div>
   )
+}
+
+export function OwnersSection({ owners, cabins, requests, reservations }: { owners: Owner[]; cabins: Cabin[]; requests: ClientRequest[]; reservations: Reservation[] }) {
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const selected = owners.find((owner) => owner.id === selectedId)
+  return <section className={panelClass}><SectionHeading title="Propietarios" description="Directorio central de dueños, cabañas asociadas y condiciones acordadas." /><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{owners.map((owner) => { const linked = cabins.filter((cabin) => cabin.ownerId === owner.id); const ownerRequests = requests.filter((request) => request.ownerId === owner.id); const ownerReservations = reservations.filter((reservation) => linked.some((cabin) => cabin.name === reservation.cabin)); return <article key={owner.id} className="rounded-xl border border-border p-4"><div className="flex items-start justify-between gap-2"><div><h3 className="font-semibold">{owner.name}</h3><p className="text-xs text-muted-foreground">Prefiere {owner.preferredContactMethod}</p></div><StatusBadge tone="gold">{owner.agreedCommission}% comisión</StatusBadge></div><dl className="mt-4 grid grid-cols-3 gap-2 text-center text-xs"><div className="rounded-lg bg-secondary p-2"><dt className="text-muted-foreground">Cabañas</dt><dd className="text-lg font-semibold">{linked.length}</dd></div><div className="rounded-lg bg-secondary p-2"><dt className="text-muted-foreground">Solicitudes</dt><dd className="text-lg font-semibold">{ownerRequests.length}</dd></div><div className="rounded-lg bg-secondary p-2"><dt className="text-muted-foreground">Reservas</dt><dd className="text-lg font-semibold">{ownerReservations.length}</dd></div></dl><p className="mt-3 text-sm">{owner.phone}</p><p className="text-xs text-muted-foreground">Último contacto: {owner.lastContact}</p><div className="mt-4 grid grid-cols-3 gap-2"><a href={`tel:${owner.phone.replace(/\s/g, "")}`} className={secondaryButtonClass}><Phone className="size-4" /></a><a href={`https://wa.me/${owner.whatsapp}`} className={secondaryButtonClass}><MessageCircle className="size-4" /></a><button type="button" onClick={() => setSelectedId(owner.id)} className={secondaryButtonClass}>Ver ficha</button></div></article> })}</div>{selected && <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label={`Ficha de ${selected.name}`} onClick={() => setSelectedId(null)}><article className="w-full max-w-lg rounded-t-2xl bg-card p-5 sm:rounded-2xl" onClick={(event) => event.stopPropagation()}><div className="flex justify-between"><div><h2 className="text-xl font-semibold">{selected.name}</h2><p className="text-sm text-muted-foreground">{selected.phone} · {selected.preferredContactMethod}</p></div><button type="button" onClick={() => setSelectedId(null)} aria-label="Cerrar"><X className="size-5" /></button></div><p className="mt-4 rounded-lg bg-secondary p-3 text-sm">{selected.notes}</p><h3 className="mt-5 text-sm font-semibold">Cabañas asociadas</h3><ul className="mt-2 space-y-2">{cabins.filter((cabin) => cabin.ownerId === selected.id).map((cabin) => <li key={cabin.id} className="flex justify-between rounded-lg border border-border p-3 text-sm"><span>{cabin.name}</span><StatusBadge tone={cabinStatusTone[cabin.status]}>{statusLabel[cabin.status]}</StatusBadge></li>)}</ul></article></div>}</section>
+}
+
+export function CommissionsSection({ reservations, cabins }: { reservations: Reservation[]; cabins: Cabin[] }) {
+  const rows = useMemo(() => reservations.map((reservation) => { const cabin = cabins.find((item) => item.name === reservation.cabin) ?? cabins[0]; const platformFee = reservation.total * 0.05; const intermediaryFee = reservation.total * (cabin.agreedCommission / 100); return { reservation, cabin, platformFee, intermediaryFee, ownerPayout: reservation.total - platformFee - intermediaryFee } }), [reservations, cabins])
+  const total = rows.reduce((sum, row) => sum + row.intermediaryFee, 0)
+  return <section className={panelClass}><SectionHeading title="Comisiones" description={`Comisión intermediaria estimada: $${currency(total)} MXN`} /><div className="overflow-x-auto"><table className="min-w-[900px] w-full text-sm"><thead className="border-b border-border text-left text-xs uppercase text-muted-foreground"><tr><th className="p-3">Reservación</th><th className="p-3">Propietario</th><th className="p-3">Total</th><th className="p-3">Plataforma 5%</th><th className="p-3">Intermediación</th><th className="p-3">Pago propietario</th></tr></thead><tbody className="divide-y divide-border">{rows.map(({ reservation, cabin, platformFee, intermediaryFee, ownerPayout }) => <tr key={reservation.id}><td className="p-3 font-medium">{reservation.id}<span className="block text-xs font-normal text-muted-foreground">{reservation.cabin}</span></td><td className="p-3">{cabin.ownerName}<span className="block text-xs text-muted-foreground">Acuerdo {cabin.agreedCommission}%</span></td><td className="p-3">${currency(reservation.total)}</td><td className="p-3">${currency(platformFee)}</td><td className="p-3 font-semibold text-primary">${currency(intermediaryFee)}</td><td className="p-3">${currency(ownerPayout)}</td></tr>)}</tbody></table></div><p className="mt-4 text-xs text-muted-foreground">Cálculos simulados. No se generan pagos, facturas ni transferencias reales.</p></section>
 }
 
 export function ReservationsSection({
@@ -274,7 +321,7 @@ export function CabinEditorDialog({
   const [location, setLocation] = useState(cabin?.location ?? "Arteaga, Coahuila")
   const [price, setPrice] = useState(cabin?.price ?? 2500)
   const [maxGuests, setMaxGuests] = useState(cabin?.maxGuests ?? 4)
-  const [status, setStatus] = useState<CabinStatus>(cabin?.status ?? "disponible")
+  const [status, setStatus] = useState<CabinStatus>(cabin?.status ?? "por-confirmar")
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label={isEditing ? "Editar cabaña" : "Agregar cabaña"} onClick={onClose}>
@@ -284,12 +331,13 @@ export function CabinEditorDialog({
         onSubmit={(event) => { event.preventDefault(); onSave({ name, location, price, maxGuests, status }) }}
       >
         <div className="flex items-center justify-between"><div><h2 className="text-xl font-semibold">{isEditing ? "Editar cabaña" : "Agregar cabaña"}</h2><p className="text-sm text-muted-foreground">Los cambios se conservan durante esta sesión de demo.</p></div><button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-muted" aria-label="Cerrar"><X className="size-5" /></button></div>
+        {isEditing && <div className="mt-5 rounded-xl border border-border bg-secondary/40 p-4"><p className="text-xs font-medium uppercase text-muted-foreground">Propietario asociado</p><div className="mt-2 flex flex-wrap items-center justify-between gap-3"><div><p className="font-semibold">{cabin.ownerName}</p><p className="text-sm text-muted-foreground">{cabin.ownerPhone} · {cabin.preferredContactMethod}</p><p className="text-xs text-muted-foreground">Comisión acordada: {cabin.agreedCommission}% · Última consulta: {cabin.lastAvailabilityCheck}</p></div><div className="flex gap-2"><a href={`tel:${cabin.ownerPhone.replace(/\s/g, "")}`} className={secondaryButtonClass}><Phone className="size-4" />Llamar</a><a href={`https://wa.me/${cabin.ownerWhatsApp}`} className={secondaryButtonClass}><MessageCircle className="size-4" />WhatsApp</a></div></div><p className="mt-3 rounded-lg bg-background p-2 text-xs text-muted-foreground">{cabin.ownerNotes}</p></div>}
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <label className="text-sm font-medium sm:col-span-2">Nombre<input required value={name} onChange={(event) => setName(event.target.value)} className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3" /></label>
           <label className="text-sm font-medium sm:col-span-2">Ubicación<input required value={location} onChange={(event) => setLocation(event.target.value)} className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3" /></label>
           <label className="text-sm font-medium">Precio por noche<input required min={1} type="number" value={price} onChange={(event) => setPrice(Number(event.target.value))} className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3" /></label>
           <label className="text-sm font-medium">Capacidad máxima<input required min={1} max={30} type="number" value={maxGuests} onChange={(event) => setMaxGuests(Number(event.target.value))} className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3" /></label>
-          <label className="text-sm font-medium sm:col-span-2">Estado<select value={status} onChange={(event) => setStatus(event.target.value as CabinStatus)} className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3"><option value="disponible">Disponible</option><option value="ocupada">Ocupada</option><option value="no-disponible">No disponible</option></select></label>
+          <label className="text-sm font-medium sm:col-span-2">Estado de disponibilidad<select value={status} onChange={(event) => setStatus(event.target.value as CabinStatus)} className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3"><option value="por-confirmar">Disponibilidad por confirmar</option><option value="alta-demanda">Alta demanda</option><option value="propietario-contactado">Propietario contactado</option><option value="confirmada">Disponible confirmado</option><option value="no-disponible">No disponible temporalmente</option></select></label>
         </div>
         <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={onClose} className={secondaryButtonClass}>Cancelar</button><button type="submit" className={buttonClass}><Save className="size-4" />Guardar cambios</button></div>
       </form>

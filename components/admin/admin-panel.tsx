@@ -9,6 +9,7 @@ import {
   BookMarked,
   TrendingUp,
   Plus,
+  MessageCircle,
   X,
 } from "lucide-react"
 import type { Version } from "@/components/demo/demo-context"
@@ -22,8 +23,10 @@ import {
   requests as initialRequests,
   reservations as initialReservations,
   seasons as initialSeasons,
+  owners,
   type Cabin,
   type CabinStatus,
+  type ClientRequest,
   type RequestStatus,
   type ReservationStatus,
 } from "@/lib/demo-data"
@@ -47,7 +50,9 @@ import type { SectionKey } from "./nav-config"
 import { proNav, startNav } from "./nav-config"
 import {
   CabinEditorDialog,
+  CommissionsSection,
   OperationsSection,
+  OwnersSection,
   PaymentsSection,
   PricingSection,
   PromotionsSection,
@@ -58,7 +63,7 @@ import {
   type Season,
 } from "./admin-sections"
 
-const statusCycle: CabinStatus[] = ["disponible", "ocupada", "no-disponible"]
+const statusCycle: CabinStatus[] = ["por-confirmar", "propietario-contactado", "confirmada", "no-disponible"]
 const revenueSeries = [22, 28, 25, 34, 30, 42, 38, 52, 48, 63, 58, 74, 70, 88, 96]
 
 function SectionStub({ title, desc }: { title: string; desc: string }) {
@@ -76,6 +81,9 @@ const sectionMeta: Record<string, { title: string; desc: string }> = {
   clientes: { title: "Clientes", desc: "Directorio de clientes con historial de estancias y contacto." },
   pagos: { title: "Pagos", desc: "Cobros, pagos pendientes y reembolsos de todas las reservaciones." },
   solicitudes: { title: "Solicitudes", desc: "Solicitudes de información y cotizaciones recibidas desde la página pública." },
+  propietarios: { title: "Propietarios", desc: "Directorio de dueños y condiciones de intermediación." },
+  confirmaciones: { title: "Confirmaciones", desc: "Consultas pendientes de respuesta por parte de propietarios." },
+  comisiones: { title: "Comisiones", desc: "Cálculos simulados por reservación, propietario y plataforma." },
   mensajes: { title: "Mensajes", desc: "Conversaciones con clientes en un solo lugar." },
   limpieza: { title: "Limpieza", desc: "Tareas de limpieza asignadas al personal por cabaña y turno." },
   mantenimiento: { title: "Mantenimiento", desc: "Órdenes de mantenimiento y su prioridad por cabaña." },
@@ -110,8 +118,8 @@ export function AdminPanel({ version }: { version: Version }) {
   const visibleActive = availableSections.includes(active) ? active : "dashboard"
 
   const counts = useMemo(() => {
-    const disponible = cabins.filter((c) => c.status === "disponible").length
-    const ocupada = cabins.filter((c) => c.status === "ocupada").length
+    const disponible = cabins.filter((c) => c.status === "confirmada").length
+    const ocupada = cabins.filter((c) => ["por-confirmar", "alta-demanda", "propietario-contactado"].includes(c.status)).length
     const noDisp = cabins.filter((c) => c.status === "no-disponible").length
     const total = cabins.length
     const pct = (n: number) => `${n} (${Math.round((n / total) * 100)}%)`
@@ -128,8 +136,8 @@ export function AdminPanel({ version }: { version: Version }) {
     )
 
   const occupancySegments = [
-    { label: "Disponibles", count: counts.disponible, percent: counts.pct(counts.disponible), color: "var(--chart-1)" },
-    { label: "Ocupadas", count: counts.ocupada, percent: counts.pct(counts.ocupada), color: "var(--chart-3)" },
+    { label: "Confirmadas", count: counts.disponible, percent: counts.pct(counts.disponible), color: "var(--chart-1)" },
+    { label: "Por confirmar", count: counts.ocupada, percent: counts.pct(counts.ocupada), color: "var(--chart-3)" },
     { label: "No disponibles", count: counts.noDisp, percent: counts.pct(counts.noDisp), color: "var(--muted-foreground)" },
   ]
 
@@ -214,6 +222,8 @@ export function AdminPanel({ version }: { version: Version }) {
             isPro ? (
               <ProDashboard
                 cabins={cabins}
+                requests={requests}
+                onRequestStatus={(id, status) => setRequests((items) => items.map((item) => item.id === id ? { ...item, status } : item))}
                 onNavigate={handleSelect}
                 onAdd={openAddCabin}
               />
@@ -239,12 +249,18 @@ export function AdminPanel({ version }: { version: Version }) {
             </div>
           ) : visibleActive === "calendario" ? (
             <OccupancyCalendar />
+          ) : visibleActive === "propietarios" ? (
+            <OwnersSection owners={owners} cabins={cabins} requests={requests} reservations={reservations} />
           ) : visibleActive === "solicitudes" ? (
-            <RequestsSection items={requests} onStatusChange={(id, status: RequestStatus) => setRequests((items) => items.map((item) => item.id === id ? { ...item, status } : item))} />
+            <RequestsSection items={requests} cabins={cabins} mode={isPro ? "pro" : "start"} onStatusChange={(id, status: RequestStatus) => setRequests((items) => items.map((item) => item.id === id ? { ...item, status } : item))} />
+          ) : visibleActive === "confirmaciones" ? (
+            <RequestsSection title="Confirmaciones con propietarios" items={requests.filter((item) => ["nueva", "pendiente-propietario", "propietario-contactado"].includes(item.status))} cabins={cabins} mode={isPro ? "pro" : "start"} onStatusChange={(id, status: RequestStatus) => setRequests((items) => items.map((item) => item.id === id ? { ...item, status } : item))} />
           ) : visibleActive === "reservaciones" ? (
             <ReservationsSection items={reservations} onStatusChange={(id, status: ReservationStatus) => setReservations((items) => items.map((item) => item.id === id ? { ...item, status } : item))} />
           ) : visibleActive === "pagos" ? (
             <PaymentsSection items={payments} onMarkPaid={(id) => { setPayments((items) => items.map((item) => item.id === id ? { ...item, status: "pagado" } : item)); showNotice("Pago simulado registrado correctamente.") }} />
+          ) : visibleActive === "comisiones" ? (
+            <CommissionsSection reservations={reservations} cabins={cabins} />
           ) : visibleActive === "limpieza" ? (
             <OperationsSection title="Tareas de limpieza" description="Asigna y actualiza el avance de cada turno." items={cleaning} onAdvance={(id) => advanceTask(setCleaning, id)} />
           ) : visibleActive === "mantenimiento" ? (
@@ -297,17 +313,17 @@ function StartDashboard({
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="min-w-0 space-y-6">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard icon={Home} label="Cabañas activas" value={String(active)} sub="En operación" action="Ver todas" onAction={() => onNavigate("cabanas")} />
+          <MetricCard icon={Home} label="Cabañas asociadas" value={String(active)} sub="Disponibles para consulta" action="Ver catálogo" onAction={() => onNavigate("cabanas")} />
           <MetricCard icon={FileText} iconClassName="bg-gold/20 text-gold-foreground" label="Solicitudes nuevas" value="8" sub="Sin responder" action="Ver solicitudes" onAction={() => onNavigate("solicitudes")} />
-          <MetricCard icon={Users} iconClassName="bg-[oklch(0.9_0.04_240)] text-[oklch(0.45_0.12_255)]" label="Solicitudes este mes" value="32" sub="+12 vs. mes anterior" action="Ver historial" onAction={() => onNavigate("solicitudes")} />
-          <MetricCard icon={DollarSign} iconClassName="bg-primary/10 text-primary" label="Ingresos potenciales" value={`$${currency(98450)}`} suffix="MXN" sub="En solicitudes activas" action="Ver detalle" onAction={() => onNavigate("solicitudes")} />
+          <MetricCard icon={Users} iconClassName="bg-[oklch(0.9_0.04_240)] text-[oklch(0.45_0.12_255)]" label="Pendientes de propietario" value="3" sub="Requieren contacto" action="Ver confirmaciones" onAction={() => onNavigate("confirmaciones")} />
+          <MetricCard icon={DollarSign} iconClassName="bg-primary/10 text-primary" label="Disponibilidad confirmada" value="2" sub="Solicitudes actualizadas" action="Ver seguimiento" onAction={() => onNavigate("solicitudes")} />
         </div>
 
         <section className="rounded-xl border border-border bg-card p-5">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">Cabañas</h2>
-              <p className="text-sm text-muted-foreground">Administra tus cabañas</p>
+              <h2 className="text-lg font-semibold text-foreground">Catálogo de cabañas asociadas</h2>
+              <p className="text-sm text-muted-foreground">Propietarios, contacto, comisión y estado de consulta.</p>
             </div>
             <button type="button" onClick={onAdd} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
               <Plus className="size-4" aria-hidden /> Agregar cabaña
@@ -331,10 +347,14 @@ function StartDashboard({
 
 function ProDashboard({
   cabins,
+  requests,
+  onRequestStatus,
   onNavigate,
   onAdd,
 }: {
   cabins: Cabin[]
+  requests: ClientRequest[]
+  onRequestStatus: (id: string, status: RequestStatus) => void
   onNavigate: (key: SectionKey) => void
   onAdd: () => void
 }) {
@@ -344,11 +364,20 @@ function ProDashboard({
       <div className="min-w-0 space-y-6">
         {/* Metric cards */}
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard icon={DollarSign} label="Ingresos confirmados" value={`$${currency(128450)}`} suffix="MXN" trend="+18.6% vs. mes anterior" action="Ver reporte financiero" onAction={() => onNavigate("reportes")} />
-          <MetricCard icon={BookMarked} iconClassName="bg-gold/20 text-gold-foreground" label="Reservaciones" value="42" sub="24 confirmadas · 10 pendientes · 8 canceladas" action="Ver reservaciones" onAction={() => onNavigate("reservaciones")} />
-          <MetricCard icon={Users} iconClassName="bg-[oklch(0.9_0.04_240)] text-[oklch(0.45_0.12_255)]" label="Ocupación promedio" value="68%" trend="+9% vs. mes anterior" action="Ver calendario" onAction={() => onNavigate("calendario")} />
-          <MetricCard icon={Home} iconClassName="bg-primary/10 text-primary" label="Cabañas activas" value={`${activeCount} / ${cabins.length}`} sub="Gestión de inventario" action="Gestionar cabañas" onAction={() => onNavigate("cabanas")} />
+          <MetricCard icon={FileText} label="Solicitudes nuevas" value={String(requests.filter((item) => item.status === "nueva").length)} sub="Recibidas por la plataforma" action="Ver solicitudes" onAction={() => onNavigate("solicitudes")} />
+          <MetricCard icon={Users} iconClassName="bg-gold/20 text-gold-foreground" label="Propietarios pendientes" value={String(requests.filter((item) => ["nueva", "pendiente-propietario", "propietario-contactado"].includes(item.status)).length)} sub="Requieren seguimiento" action="Abrir confirmaciones" onAction={() => onNavigate("confirmaciones")} />
+          <MetricCard icon={Home} iconClassName="bg-primary/10 text-primary" label="Disponibilidades confirmadas" value={String(cabins.filter((item) => item.status === "confirmada").length)} sub={`${activeCount} cabañas consultables`} action="Gestionar catálogo" onAction={() => onNavigate("cabanas")} />
+          <MetricCard icon={BookMarked} iconClassName="bg-[oklch(0.9_0.04_240)] text-[oklch(0.45_0.12_255)]" label="Reservaciones confirmadas" value="24" sub="Con respuesta del propietario" action="Ver reservaciones" onAction={() => onNavigate("reservaciones")} />
+          <MetricCard icon={MessageCircle} label="Sin seguimiento" value="4" sub="Clientes por contactar" action="Ver solicitudes" onAction={() => onNavigate("solicitudes")} />
+          <MetricCard icon={DollarSign} iconClassName="bg-gold/20 text-gold-foreground" label="Comisión estimada" value={`$${currency(18450)}`} suffix="MXN" sub="Cálculo de la demo" action="Ver comisiones" onAction={() => onNavigate("comisiones")} />
+          <MetricCard icon={BookMarked} label="Próximas llegadas" value="6" sub="Siete días siguientes" action="Ver calendario" onAction={() => onNavigate("calendario")} />
+          <MetricCard icon={Users} label="Propietarios activos" value="4" sub="Con cabañas asociadas" action="Ver directorio" onAction={() => onNavigate("propietarios")} />
         </div>
+
+        <section className="rounded-xl border border-border bg-card p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-semibold">Confirmaciones pendientes con propietarios</h2><p className="text-sm text-muted-foreground">Actualiza el contacto sin salir del dashboard.</p></div><button type="button" onClick={() => onNavigate("confirmaciones")} className="text-sm font-medium text-primary hover:underline">Ver todas</button></div>
+          <div className="mt-4 grid gap-3 lg:grid-cols-3">{requests.filter((item) => ["nueva", "pendiente-propietario", "propietario-contactado"].includes(item.status)).slice(0, 3).map((request) => <article key={request.id} className="rounded-xl border border-border p-3"><p className="font-medium">{request.cabin}</p><p className="text-xs text-muted-foreground">{request.checkIn} – {request.checkOut} · {request.guests} huéspedes</p><p className="mt-2 text-sm">{request.ownerName}</p><div className="mt-3 flex gap-2"><a href={`tel:${request.ownerPhone.replace(/\s/g, "")}`} onClick={() => onRequestStatus(request.id, "propietario-contactado")} className="flex-1 rounded-lg border border-border px-3 py-2 text-center text-xs font-medium hover:bg-muted">Contactar</a><button type="button" onClick={() => onRequestStatus(request.id, "disponible-confirmada")} className="flex-1 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground">Confirmar</button></div></article>)}</div>
+        </section>
 
         {/* Charts row */}
         <div className="grid gap-4 lg:grid-cols-3">
@@ -362,13 +391,13 @@ function ProDashboard({
                 centerLabel="Ocupación"
                 segments={[
                   { label: "Reservadas", value: 62, color: "var(--chart-1)" },
-                  { label: "Disponibles", value: 30, color: "var(--chart-2)" },
+                  { label: "Por confirmar", value: 30, color: "var(--chart-2)" },
                   { label: "No disponibles", value: 8, color: "var(--chart-3)" },
                 ]}
               />
               <ul className="flex flex-col gap-2 text-xs">
                 <li className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[var(--chart-1)]" />Reservadas 68%</li>
-                <li className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[var(--chart-2)]" />Disponibles 32%</li>
+                <li className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[var(--chart-2)]" />Por confirmar 32%</li>
                 <li className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[var(--chart-3)]" />No disp. 10%</li>
               </ul>
             </div>

@@ -130,7 +130,7 @@ export function SearchBar({
           className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
           <Search className="size-4" aria-hidden />
-          {isPro ? "Buscar disponibilidad" : "Buscar cabañas"}
+          {isPro ? "Consultar opciones" : "Buscar cabañas"}
         </button>
       </div>
 

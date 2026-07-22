@@ -38,11 +38,11 @@ export function Footer({ version }: { version: Version }) {
           <div className="flex gap-3">
             <ShieldCheck className="size-6 shrink-0 text-primary-foreground/80" aria-hidden />
             <div>
-              <h3 className="text-base font-semibold">Reserva segura</h3>
+              <h3 className="text-base font-semibold">Confirmación acompañada</h3>
               <p className="mt-1 text-sm text-primary-foreground/70">
                 {version === "pro"
-                  ? "Tu información está protegida y tus pagos son 100% seguros."
-                  : "Tu información está protegida. Sin pagos en línea en esta versión demo."}
+                  ? "Verificamos la disponibilidad con cada propietario antes de confirmar."
+                  : "Tu solicitud se consulta con el propietario. Sin pagos en línea en esta demo."}
               </p>
             </div>
           </div>

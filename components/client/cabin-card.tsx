@@ -44,16 +44,9 @@ export function CabinCard({
               Oferta
             </span>
           )}
-          {!isPro && (
-            <StatusBadge tone={cabinStatusTone[cabin.status]} className="shadow-sm">
-              {statusLabel[cabin.status]}
-            </StatusBadge>
-          )}
-          {isPro && !cabin.badge && (
-            <StatusBadge tone={cabinStatusTone[cabin.status]} className="shadow-sm">
-              {statusLabel[cabin.status]}
-            </StatusBadge>
-          )}
+          <StatusBadge tone={cabinStatusTone[cabin.status]} className="shadow-sm">
+            {isPro ? statusLabel[cabin.status] : "Disponibilidad por confirmar"}
+          </StatusBadge>
         </div>
 
         <button
@@ -132,13 +125,22 @@ export function CabinCard({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => onViewDetails(cabin)}
-          className="mt-1 w-full rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          Ver detalles
-        </button>
+        <div className="mt-1 grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => onViewDetails(cabin)}
+            className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Consultar disponibilidad
+          </button>
+          <button
+            type="button"
+            onClick={() => onViewDetails(cabin)}
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+          >
+            Ver detalles
+          </button>
+        </div>
       </div>
     </article>
   )

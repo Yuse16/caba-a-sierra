@@ -37,15 +37,26 @@ export function StatusBadge({
 }
 
 export const cabinStatusTone: Record<string, Tone> = {
-  disponible: "success",
-  ocupada: "danger",
+  "por-confirmar": "warning",
+  "alta-demanda": "gold",
+  "propietario-contactado": "info",
+  confirmada: "success",
   "no-disponible": "muted",
 }
 
 export const requestStatusTone: Record<string, Tone> = {
   nueva: "gold",
-  "en-revision": "info",
-  respondida: "success",
+  "pendiente-propietario": "warning",
+  "propietario-contactado": "info",
+  "disponible-confirmada": "success",
+  "no-disponible": "danger",
+  "alternativa-ofrecida": "gold",
+  "cliente-no-respondio": "muted",
+  "esperando-anticipo": "warning",
+  "reservacion-confirmada": "success",
+  "en-estancia": "info",
+  finalizada: "muted",
+  cancelada: "danger",
 }
 
 export const reservationStatusTone: Record<string, Tone> = {

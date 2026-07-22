@@ -1,11 +1,40 @@
 // Datos simulados locales para la demo.
 // Estructura pensada para migrarse fácilmente a Supabase (ids, campos planos).
 
-export type CabinStatus = "disponible" | "ocupada" | "no-disponible"
+export type CabinStatus =
+  | "por-confirmar"
+  | "alta-demanda"
+  | "propietario-contactado"
+  | "confirmada"
+  | "no-disponible"
+
+export type PreferredContactMethod = "WhatsApp" | "Llamada" | "Mensaje"
+
+export type CabinOwnerFields = {
+  ownerId: string
+  ownerName: string
+  ownerPhone: string
+  ownerWhatsApp: string
+  ownerNotes: string
+  agreedCommission: number
+  lastAvailabilityCheck: string
+  preferredContactMethod: PreferredContactMethod
+}
+
+export type Owner = {
+  id: string
+  name: string
+  phone: string
+  whatsapp: string
+  notes: string
+  agreedCommission: number
+  lastContact: string
+  preferredContactMethod: PreferredContactMethod
+}
 
 export type CabinCategory = "parejas" | "familiar" | "grupos" | "chimenea" | "pet-friendly" | "bosque"
 
-export type Cabin = {
+export type Cabin = CabinOwnerFields & {
   id: string
   name: string
   slug: string
@@ -28,6 +57,63 @@ export type Cabin = {
   type: "romantica" | "familiar" | "grupal" | "premium"
 }
 
+const robertoOwner: CabinOwnerFields = {
+  ownerId: "owner-01",
+  ownerName: "Roberto Martínez",
+  ownerPhone: "844 123 4567",
+  ownerWhatsApp: "528441234567",
+  ownerNotes: "Prefiere recibir mensajes por WhatsApp y confirmar antes de las 18:00.",
+  agreedCommission: 10,
+  lastAvailabilityCheck: "Hoy, 12:30",
+  preferredContactMethod: "WhatsApp",
+}
+
+const lauraOwner: CabinOwnerFields = {
+  ownerId: "owner-02",
+  ownerName: "Laura Hernández",
+  ownerPhone: "844 234 5678",
+  ownerWhatsApp: "528442345678",
+  ownerNotes: "Atiende llamadas por la mañana. Solicita mínimo dos noches en fin de semana.",
+  agreedCommission: 12,
+  lastAvailabilityCheck: "Ayer, 17:45",
+  preferredContactMethod: "Llamada",
+}
+
+const miguelOwner: CabinOwnerFields = {
+  ownerId: "owner-03",
+  ownerName: "Miguel Salazar",
+  ownerPhone: "844 345 6789",
+  ownerWhatsApp: "528443456789",
+  ownerNotes: "Responde rápido por WhatsApp. Requiere anticipo después de confirmar fechas.",
+  agreedCommission: 10,
+  lastAvailabilityCheck: "Hoy, 09:10",
+  preferredContactMethod: "WhatsApp",
+}
+
+const patriciaOwner: CabinOwnerFields = {
+  ownerId: "owner-04",
+  ownerName: "Patricia Gómez",
+  ownerPhone: "844 456 7890",
+  ownerWhatsApp: "528444567890",
+  ownerNotes: "Prefiere un resumen por mensaje con fechas, huéspedes y necesidades especiales.",
+  agreedCommission: 15,
+  lastAvailabilityCheck: "Hace 3 días",
+  preferredContactMethod: "Mensaje",
+}
+
+const ownerFields = [robertoOwner, lauraOwner, miguelOwner, patriciaOwner]
+
+export const owners: Owner[] = ownerFields.map((owner) => ({
+  id: owner.ownerId,
+  name: owner.ownerName,
+  phone: owner.ownerPhone,
+  whatsapp: owner.ownerWhatsApp,
+  notes: owner.ownerNotes,
+  agreedCommission: owner.agreedCommission,
+  lastContact: owner.lastAvailabilityCheck,
+  preferredContactMethod: owner.preferredContactMethod,
+}))
+
 export const cabins: Cabin[] = [
   {
     id: "cab-01",
@@ -35,7 +121,7 @@ export const cabins: Cabin[] = [
     slug: "bosque-real",
     location: "Arteaga, Coahuila",
     image: "/cabins/bosque-real.png",
-    status: "disponible",
+    status: "por-confirmar",
     price: 2800,
     minGuests: 2,
     maxGuests: 6,
@@ -48,6 +134,7 @@ export const cabins: Cabin[] = [
     description:
       "Una cabaña acogedora entre pinos con chimenea de leña, terraza de madera y vistas al bosque. Ideal para escapadas familiares tranquilas.",
     type: "familiar",
+    ...robertoOwner,
   },
   {
     id: "cab-02",
@@ -55,7 +142,7 @@ export const cabins: Cabin[] = [
     slug: "refugio-pino",
     location: "Arteaga, Coahuila",
     image: "/cabins/refugio-pino.png",
-    status: "disponible",
+    status: "confirmada",
     price: 2200,
     minGuests: 2,
     maxGuests: 4,
@@ -68,6 +155,7 @@ export const cabins: Cabin[] = [
     description:
       "Refugio íntimo tipo A-frame perfecto para parejas. Noches cálidas junto a la chimenea y amaneceres entre la niebla del bosque.",
     type: "romantica",
+    ...lauraOwner,
   },
   {
     id: "cab-03",
@@ -75,7 +163,7 @@ export const cabins: Cabin[] = [
     slug: "mirador",
     location: "Arteaga, Coahuila",
     image: "/cabins/mirador.png",
-    status: "ocupada",
+    status: "alta-demanda",
     price: 3900,
     minGuests: 2,
     maxGuests: 8,
@@ -89,6 +177,7 @@ export const cabins: Cabin[] = [
     description:
       "Amplia cabaña con grandes ventanales y una terraza panorámica sobre la sierra. La favorita para grupos que buscan las mejores vistas.",
     type: "grupal",
+    ...miguelOwner,
   },
   {
     id: "cab-04",
@@ -96,7 +185,7 @@ export const cabins: Cabin[] = [
     slug: "valle-escondido",
     location: "Arteaga, Coahuila",
     image: "/cabins/valle-escondido.png",
-    status: "disponible",
+    status: "por-confirmar",
     price: 4900,
     minGuests: 2,
     maxGuests: 10,
@@ -109,6 +198,7 @@ export const cabins: Cabin[] = [
     description:
       "Lodge de madera en un valle privado rodeado de pinos. Espacio para reuniones grandes con asador, jacuzzi y sala de estar amplia.",
     type: "grupal",
+    ...patriciaOwner,
   },
   {
     id: "cab-05",
@@ -132,6 +222,7 @@ export const cabins: Cabin[] = [
     description:
       "Cabaña rústica entre encinos y pinos donde tu mascota también es bienvenida. Perfecta para familias que viajan con su perro.",
     type: "familiar",
+    ...lauraOwner,
   },
   {
     id: "cab-06",
@@ -139,7 +230,7 @@ export const cabins: Cabin[] = [
     slug: "sierra-alta",
     location: "Arteaga, Coahuila",
     image: "/cabins/sierra-alta.png",
-    status: "disponible",
+    status: "propietario-contactado",
     price: 6500,
     minGuests: 2,
     maxGuests: 12,
@@ -152,6 +243,7 @@ export const cabins: Cabin[] = [
     description:
       "La cabaña más exclusiva: dos pisos en lo alto de la sierra, jacuzzi con vista y capacidad para grandes grupos. Lujo entre las montañas.",
     type: "premium",
+    ...patriciaOwner,
   },
   {
     id: "cab-07",
@@ -159,7 +251,7 @@ export const cabins: Cabin[] = [
     slug: "niebla",
     location: "Sierra de Arteaga, Coahuila",
     image: "/cabins/niebla.png",
-    status: "disponible",
+    status: "confirmada",
     price: 2600,
     minGuests: 2,
     maxGuests: 4,
@@ -172,6 +264,7 @@ export const cabins: Cabin[] = [
     description:
       "Envuelta en la niebla matinal del bosque, esta cabaña ofrece la escapada romántica más tranquila de la sierra.",
     type: "romantica",
+    ...robertoOwner,
   },
   {
     id: "cab-08",
@@ -179,7 +272,7 @@ export const cabins: Cabin[] = [
     slug: "mirador-montana",
     location: "Sierra de Arteaga, Coahuila",
     image: "/cabins/mirador-montana.png",
-    status: "disponible",
+    status: "alta-demanda",
     price: 4200,
     oldPrice: 4700,
     discountPct: 11,
@@ -195,13 +288,16 @@ export const cabins: Cabin[] = [
     description:
       "Arquitectura moderna de madera y cristal con una terraza espectacular sobre la cordillera. Atardeceres inolvidables garantizados.",
     type: "grupal",
+    ...miguelOwner,
   },
 ]
 
 export const statusLabel: Record<CabinStatus, string> = {
-  disponible: "Disponible",
-  ocupada: "Ocupada",
-  "no-disponible": "No disponible",
+  "por-confirmar": "Disponibilidad por confirmar",
+  "alta-demanda": "Alta demanda",
+  "propietario-contactado": "Propietario consultado",
+  confirmada: "Disponible confirmado",
+  "no-disponible": "No disponible temporalmente",
 }
 
 export const categoryLabel: Record<CabinCategory, string> = {
@@ -215,82 +311,139 @@ export const categoryLabel: Record<CabinCategory, string> = {
 
 // --- Panel administrativo ---
 
-export type RequestStatus = "nueva" | "en-revision" | "respondida"
+export type RequestStatus =
+  | "nueva"
+  | "pendiente-propietario"
+  | "propietario-contactado"
+  | "disponible-confirmada"
+  | "no-disponible"
+  | "alternativa-ofrecida"
+  | "cliente-no-respondio"
+  | "esperando-anticipo"
+  | "reservacion-confirmada"
+  | "en-estancia"
+  | "finalizada"
+  | "cancelada"
 
 export type ClientRequest = {
   id: string
   client: string
+  cabinId: string
   cabin: string
   date: string
+  checkIn: string
+  checkOut: string
   status: RequestStatus
   guests: number
   message: string
   email: string
   phone: string
+  ownerId: string
+  ownerName: string
+  ownerPhone: string
 }
 
 export const requests: ClientRequest[] = [
   {
     id: "req-01",
     client: "María González",
+    cabinId: "cab-03",
     cabin: "Cabaña Mirador",
     date: "22 jul. 2026",
+    checkIn: "14 ago 2026",
+    checkOut: "16 ago 2026",
     status: "nueva",
     guests: 4,
     email: "maria.gonzalez@email.com",
     phone: "(844) 111 2233",
+    ownerId: "owner-03",
+    ownerName: "Miguel Salazar",
+    ownerPhone: "844 345 6789",
     message: "Hola, me interesa reservar del 14 al 16 de agosto para 4 personas. ¿Tienen disponibilidad?",
   },
   {
     id: "req-02",
     client: "Carlos Ramírez",
+    cabinId: "cab-02",
     cabin: "Refugio del Pino",
     date: "22 jul. 2026",
-    status: "nueva",
+    checkIn: "28 ago 2026",
+    checkOut: "30 ago 2026",
+    status: "pendiente-propietario",
     guests: 2,
     email: "carlos.ramirez@email.com",
     phone: "(844) 222 3344",
+    ownerId: "owner-02",
+    ownerName: "Laura Hernández",
+    ownerPhone: "844 234 5678",
     message: "Buscamos una escapada romántica de fin de semana. ¿El precio incluye desayuno?",
   },
   {
     id: "req-03",
     client: "Ana López",
+    cabinId: "cab-01",
     cabin: "Cabaña Bosque Real",
     date: "21 jul. 2026",
-    status: "en-revision",
+    checkIn: "26 jul 2026",
+    checkOut: "28 jul 2026",
+    status: "propietario-contactado",
     guests: 6,
     email: "ana.lopez@email.com",
     phone: "(844) 333 4455",
+    ownerId: "owner-01",
+    ownerName: "Roberto Martínez",
+    ownerPhone: "844 123 4567",
     message: "Somos una familia de 6. ¿Se permite llevar mascota pequeña?",
   },
   {
     id: "req-04",
     client: "Luis Hernández",
+    cabinId: "cab-04",
     cabin: "Valle Escondido",
     date: "21 jul. 2026",
-    status: "en-revision",
+    checkIn: "5 sep 2026",
+    checkOut: "7 sep 2026",
+    status: "alternativa-ofrecida",
     guests: 10,
     email: "luis.hernandez@email.com",
     phone: "(844) 444 5566",
+    ownerId: "owner-04",
+    ownerName: "Patricia Gómez",
+    ownerPhone: "844 456 7890",
     message: "Queremos organizar una reunión familiar de 10 personas. ¿Cuentan con asador?",
   },
   {
     id: "req-05",
     client: "Sofía Martínez",
+    cabinId: "cab-06",
     cabin: "Refugio Sierra Alta",
     date: "20 jul. 2026",
-    status: "respondida",
+    checkIn: "10 sep 2026",
+    checkOut: "14 sep 2026",
+    status: "disponible-confirmada",
     guests: 8,
     email: "sofia.martinez@email.com",
     phone: "(844) 555 6677",
+    ownerId: "owner-04",
+    ownerName: "Patricia Gómez",
+    ownerPhone: "844 456 7890",
     message: "Gracias por la info, quedamos atentos a la confirmación del pago.",
   },
 ]
 
 export const requestStatusLabel: Record<RequestStatus, string> = {
-  nueva: "Nueva",
-  "en-revision": "En revisión",
-  respondida: "Respondida",
+  nueva: "Nueva solicitud",
+  "pendiente-propietario": "Pendiente de consultar propietario",
+  "propietario-contactado": "Propietario contactado",
+  "disponible-confirmada": "Disponible confirmada",
+  "no-disponible": "No disponible",
+  "alternativa-ofrecida": "Alternativa ofrecida",
+  "cliente-no-respondio": "Cliente no respondió",
+  "esperando-anticipo": "Esperando anticipo",
+  "reservacion-confirmada": "Reservación confirmada",
+  "en-estancia": "En estancia",
+  finalizada: "Finalizada",
+  cancelada: "Cancelada",
 }
 
 // --- Reservaciones (Pro) ---

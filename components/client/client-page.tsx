@@ -40,18 +40,18 @@ const categories = [
 ]
 
 const proIndicators = [
-  { icon: <CalendarClock className="size-5" aria-hidden />, title: "Disponibilidad en tiempo real", desc: "Calendario actualizado" },
+  { icon: <CalendarClock className="size-5" aria-hidden />, title: "Disponibilidad gestionada", desc: "Confirmamos con el propietario" },
   { icon: <Star className="size-5" aria-hidden />, title: "Mejores recomendaciones", desc: "Según tu búsqueda" },
   { icon: <Gift className="size-5" aria-hidden />, title: "Promociones exclusivas", desc: "Solo en plataforma" },
-  { icon: <Lock className="size-5" aria-hidden />, title: "Pago seguro", desc: "Protegemos tus datos" },
+  { icon: <Lock className="size-5" aria-hidden />, title: "Seguimiento personalizado", desc: "Acompañamos tu solicitud" },
 ]
 
 const proBenefits = [
   { icon: <CalendarClock className="size-5" aria-hidden />, title: "Cancelación flexible", desc: "Sin penalizaciones*" },
   { icon: <Headset className="size-5" aria-hidden />, title: "Atención personalizada", desc: "Te ayudamos a elegir" },
   { icon: <ShieldCheck className="size-5" aria-hidden />, title: "Cabañas verificadas", desc: "Calidad garantizada" },
-  { icon: <Lock className="size-5" aria-hidden />, title: "Pago seguro", desc: "Transacciones protegidas" },
-  { icon: <BadgeDollarSign className="size-5" aria-hidden />, title: "Mejor precio garantizado", desc: "Sin cargos extra" },
+  { icon: <Lock className="size-5" aria-hidden />, title: "Proceso acompañado", desc: "Sin reservación automática" },
+  { icon: <BadgeDollarSign className="size-5" aria-hidden />, title: "Precios transparentes", desc: "Consulta antes de confirmar" },
 ]
 
 export function ClientPage({ version }: { version: Version }) {
@@ -150,8 +150,8 @@ export function ClientPage({ version }: { version: Version }) {
               {isPro ? (
                 <div className="mt-6 flex flex-wrap gap-5 text-sm">
                   {[
-                    { icon: <ShieldCheck className="size-4" aria-hidden />, label: "Reservas seguras" },
-                    { icon: <BadgeDollarSign className="size-4" aria-hidden />, label: "Mejor precio garantizado" },
+                    { icon: <ShieldCheck className="size-4" aria-hidden />, label: "Confirmación con propietario" },
+                    { icon: <BadgeDollarSign className="size-4" aria-hidden />, label: "Precios transparentes" },
                     { icon: <Headset className="size-4" aria-hidden />, label: "Atención personalizada" },
                   ].map((b) => (
                     <span key={b.label} className="flex items-center gap-2 text-primary-foreground/90">
@@ -224,9 +224,9 @@ export function ClientPage({ version }: { version: Version }) {
               <p className="flex items-center gap-1 text-sm font-medium text-primary">
                 Recomendadas para ti <Star className="size-4 fill-gold text-gold" aria-hidden />
               </p>
-              <h2 className="mt-1 text-2xl font-semibold text-foreground">Cabañas ideales para tu estancia</h2>
+              <h2 className="mt-1 text-2xl font-semibold text-foreground">Cabañas ideales para solicitar</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Basadas en tu búsqueda: {search.query || "Todas las ubicaciones"} · {search.checkIn} – {search.checkOut} · {search.guests} huéspedes
+                Consultaremos tus fechas con el propietario: {search.query || "Todas las ubicaciones"} · {search.checkIn} – {search.checkOut} · {search.guests} huéspedes
               </p>
             </div>
             <button
@@ -377,12 +377,12 @@ export function ClientPage({ version }: { version: Version }) {
       </div>
 
       <CabinDetailsModal
+        key={selected?.id ?? "sin-cabana"}
         cabin={selected}
         version={version}
         onClose={() => setSelected(null)}
         onAction={(cabin) => {
-          setSelected(null)
-          showNotice(isPro ? `Reservación simulada iniciada para ${cabin.name}.` : `Solicitud simulada creada para ${cabin.name}.`)
+          showNotice(`Solicitud de disponibilidad creada para ${cabin.name}.`)
         }}
       />
     </div>

@@ -2,9 +2,9 @@
 
 import { LayoutGrid, Heart, Users, UsersRound, Flame, PawPrint, TreePine } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { CabinCategory } from "@/lib/demo-data"
+import type { PublicCabinCategory } from "@/lib/public-cabins"
 
-type ChipKey = "todos" | CabinCategory
+type ChipKey = "todos" | PublicCabinCategory
 
 const chips: { key: ChipKey; label: string; icon: React.ReactNode }[] = [
   { key: "todos", label: "Todos", icon: <LayoutGrid className="size-4" aria-hidden /> },

@@ -3,8 +3,13 @@
 import Image from "next/image"
 import { Heart, MapPin, Users, Bed, Star } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { StatusBadge, cabinStatusTone } from "@/components/shared/status-badge"
-import { statusLabel, currency, type Cabin } from "@/lib/demo-data"
+import { StatusBadge } from "@/components/shared/status-badge"
+import {
+  currency,
+  publicCabinStatusLabel,
+  publicCabinStatusTone,
+  type PublicCabin,
+} from "@/lib/public-cabins"
 
 export function CabinCard({
   cabin,
@@ -12,10 +17,10 @@ export function CabinCard({
   onToggleFavorite,
   onViewDetails,
 }: {
-  cabin: Cabin
+  cabin: PublicCabin
   isFavorite: boolean
   onToggleFavorite: (id: string) => void
-  onViewDetails: (cabin: Cabin) => void
+  onViewDetails: (cabin: PublicCabin) => void
 }) {
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-forest-dark/10 bg-card shadow-[0_8px_30px_rgba(31,60,43,0.07)] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(31,60,43,0.12)]">
@@ -40,10 +45,10 @@ export function CabinCard({
             </span>
           )}
           <StatusBadge
-            tone={cabinStatusTone[cabin.status]}
+            tone={publicCabinStatusTone[cabin.status]}
             className="border border-border bg-background/95 text-foreground shadow-sm backdrop-blur-sm"
           >
-            {statusLabel[cabin.status]}
+            {publicCabinStatusLabel[cabin.status]}
           </StatusBadge>
         </div>
 

@@ -3,8 +3,13 @@
 import { useEffect, useState, type FormEvent } from "react"
 import Image from "next/image"
 import { X, MapPin, Users, Bed, Bath, Star, Check, CalendarDays, Send } from "lucide-react"
-import { StatusBadge, cabinStatusTone } from "@/components/shared/status-badge"
-import { statusLabel, currency, type Cabin } from "@/lib/demo-data"
+import { StatusBadge } from "@/components/shared/status-badge"
+import {
+  currency,
+  publicCabinStatusLabel,
+  publicCabinStatusTone,
+  type PublicCabin,
+} from "@/lib/public-cabins"
 
 const formControlClass =
   "mt-1 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none [color-scheme:light] placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20 sm:h-10"
@@ -17,9 +22,9 @@ export function CabinDetailsModal({
   onClose,
   onAction,
 }: {
-  cabin: Cabin | null
+  cabin: PublicCabin | null
   onClose: () => void
-  onAction: (cabin: Cabin) => void
+  onAction: (cabin: PublicCabin) => void
 }) {
   const [submitted, setSubmitted] = useState(false)
   const [checkIn, setCheckIn] = useState("2026-08-14")
@@ -39,8 +44,7 @@ export function CabinDetailsModal({
   }, [cabin, onClose])
 
   if (!cabin) return null
-  const confirmation =
-    "Revisaremos tus fechas directamente con el propietario y te responderemos lo antes posible."
+  const confirmation = "Recibimos tu consulta de disponibilidad para las fechas seleccionadas."
 
   const submitRequest = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -53,7 +57,7 @@ export function CabinDetailsModal({
       className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
-      aria-label={`Detalles y solicitud para ${cabin.name}`}
+      aria-label={`Detalles y reserva para ${cabin.name}`}
       onClick={onClose}
     >
       <div
@@ -66,8 +70,8 @@ export function CabinDetailsModal({
             <X className="size-4" aria-hidden />
           </button>
           <div className="absolute left-3 top-3">
-            <StatusBadge tone={cabinStatusTone[cabin.status]} className="border border-border bg-white text-foreground shadow-sm">
-              {statusLabel[cabin.status]}
+            <StatusBadge tone={publicCabinStatusTone[cabin.status]} className="border border-border bg-white text-foreground shadow-sm">
+              {publicCabinStatusLabel[cabin.status]}
             </StatusBadge>
           </div>
         </div>
@@ -95,11 +99,11 @@ export function CabinDetailsModal({
           </div>
 
           <form onSubmit={submitRequest} className="rounded-2xl border border-border bg-secondary/30 p-4">
-            <h3 className="font-semibold text-foreground">Solicitar disponibilidad</h3>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">La disponibilidad no es automática. Nuestro equipo confirmará las fechas directamente con el propietario.</p>
+            <h3 className="font-semibold text-foreground">Reserva tu cabaña</h3>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Consulta la disponibilidad, elige tus fechas y confirma tu reservación de forma sencilla.</p>
             {submitted ? (
               <div className="mt-5 rounded-xl border border-success/30 bg-success/10 p-4" role="status">
-                <p className="font-semibold text-foreground">Solicitud recibida</p>
+                <p className="font-semibold text-foreground">Consulta recibida</p>
                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{confirmation}</p>
                 <button type="button" onClick={onClose} className="mt-4 min-h-11 w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Cerrar</button>
               </div>
@@ -112,7 +116,7 @@ export function CabinDetailsModal({
                 <label className="text-xs font-medium text-muted-foreground">Salida<span className="relative mt-1 flex"><CalendarDays className="pointer-events-none absolute left-3 top-3.5 size-4 text-primary sm:top-3" aria-hidden /><input name="checkOut" type="date" required value={checkOut} min={checkIn} onChange={(event) => setCheckOut(event.target.value)} className={dateControlClass} /></span></label>
                 <label className="text-xs font-medium text-muted-foreground">Huéspedes<input name="guests" type="number" inputMode="numeric" min={1} max={cabin.maxGuests} defaultValue={2} required className={formControlClass} /></label>
                 <label className="text-xs font-medium text-muted-foreground sm:col-span-2">Comentarios<textarea name="comments" rows={3} placeholder="Necesidades especiales o preguntas" className="mt-1 min-h-24 w-full resize-y rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none [color-scheme:light] placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20" /></label>
-                <button type="submit" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:col-span-2"><Send className="size-4" aria-hidden />Enviar solicitud de disponibilidad</button>
+                <button type="submit" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:col-span-2"><Send className="size-4" aria-hidden />Consultar disponibilidad</button>
               </div>
             )}
           </form>

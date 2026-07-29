@@ -6,7 +6,7 @@ import { CalendarCheck, Menu, Mountain, X } from "lucide-react"
 const links = [
   { label: "Inicio", href: "#inicio" },
   { label: "Cabañas", href: "#cabanas" },
-  { label: "Cómo funciona", href: "#como-funciona" },
+  { label: "Cómo funciona", href: "#como-reservar" },
   { label: "Contacto", href: "#contacto" },
 ]
 

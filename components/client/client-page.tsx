@@ -19,7 +19,7 @@ import {
   Users,
   UsersRound,
 } from "lucide-react"
-import { cabins, type Cabin } from "@/lib/demo-data"
+import type { PublicCabin } from "@/lib/public-cabins"
 import { siteContact } from "@/lib/site-config"
 import { PublicHeader } from "./public-header"
 import { SearchBar, initialClientSearch, type ClientSearchState } from "./search-bar"
@@ -75,41 +75,44 @@ const trustPoints = [
   {
     icon: <Headset className="size-5" aria-hidden />,
     title: "Atención cercana",
-    description: "Te acompañamos durante el proceso",
+    description: "Resuelve tus dudas antes de reservar",
   },
   {
     icon: <CalendarCheck className="size-5" aria-hidden />,
-    title: "Disponibilidad confirmada",
-    description: "Consultamos directamente al propietario",
+    title: "Fechas para tu viaje",
+    description: "Consulta la disponibilidad para las fechas seleccionadas",
   },
 ]
 
 const steps = [
   {
     number: "01",
-    title: "Cuéntanos tu plan",
-    description: "Elige fechas, número de huéspedes y el tipo de estancia que imaginas.",
+    icon: <Search className="size-5" aria-hidden />,
+    title: "Encuentra tu cabaña",
+    description: "Explora opciones, precios, capacidad y servicios.",
   },
   {
     number: "02",
-    title: "Explora y elige",
-    description: "Compara espacios, amenidades y precios para encontrar tu mejor opción.",
+    icon: <CalendarCheck className="size-5" aria-hidden />,
+    title: "Elige tus fechas",
+    description: "Consulta la disponibilidad y selecciona entrada y salida.",
   },
   {
     number: "03",
-    title: "Confirmamos contigo",
-    description: "Verificamos disponibilidad con el propietario y damos seguimiento a tu solicitud.",
+    icon: <CheckCircle2 className="size-5" aria-hidden />,
+    title: "Confirma tu reservación",
+    description: "Completa tus datos y confirma de forma sencilla.",
   },
 ]
 
 const focusClasses =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
 
-export function ClientPage() {
+export function ClientPage({ cabins }: { cabins: PublicCabin[] }) {
   const [search, setSearch] = useState<ClientSearchState>(initialClientSearch)
   const [category, setCategory] = useState<ChipKey>("todos")
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
-  const [selected, setSelected] = useState<Cabin | null>(null)
+  const [selected, setSelected] = useState<PublicCabin | null>(null)
   const [favoritesOnly, setFavoritesOnly] = useState(false)
   const [showAll, setShowAll] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
@@ -132,7 +135,7 @@ export function ClientPage() {
 
     if (category !== "todos") {
       list = list.filter((cabin) =>
-        cabin.categories.includes(category as Cabin["categories"][number]),
+        cabin.categories.includes(category as PublicCabin["categories"][number]),
       )
     }
 
@@ -165,7 +168,7 @@ export function ClientPage() {
     }
 
     return list
-  }, [category, favorites, favoritesOnly, search])
+  }, [cabins, category, favorites, favoritesOnly, search])
 
   const visibleCabins = showAll ? filtered : filtered.slice(0, 6)
 
@@ -305,8 +308,8 @@ export function ClientPage() {
                   Cabañas para tu próxima pausa
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                  Espacios elegidos por su entorno, comodidad y carácter. Consulta tus fechas y
-                  nuestro equipo confirmará la disponibilidad.
+                  Espacios elegidos por su entorno, comodidad y carácter. Elige tu favorita y
+                  consulta la disponibilidad para las fechas seleccionadas.
                 </p>
               </div>
 
@@ -407,29 +410,41 @@ export function ClientPage() {
           </div>
         </section>
 
-        <section id="como-funciona" className="scroll-mt-24 py-16 sm:py-20" aria-labelledby="process-title">
+        <section id="como-reservar" className="scroll-mt-24 bg-[#f5f1e7] py-16 sm:py-20" aria-labelledby="como-reservar-title">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Simple y acompañado</p>
-                <h2 id="process-title" className="mt-2 font-serif text-3xl font-semibold tracking-[-0.02em] text-forest-dark sm:text-4xl">
-                  De tu idea de viaje a la cabaña ideal
-                </h2>
-                <p className="mt-4 max-w-lg text-sm leading-7 text-muted-foreground sm:text-base">
-                  Sin procesos confusos. Te ayudamos a elegir y verificamos cada solicitud para que
-                  puedas planear con tranquilidad.
-                </p>
-              </div>
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Reserva en tres pasos</p>
+              <h2 id="como-reservar-title" className="mt-2 font-serif text-3xl font-semibold tracking-[-0.02em] text-forest-dark sm:text-4xl">
+                Cómo reservar
+              </h2>
+            </div>
 
-              <ol className="grid gap-4 sm:grid-cols-3">
-                {steps.map((step) => (
-                  <li key={step.number} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-                    <span className="font-serif text-3xl font-semibold text-gold-foreground/55">{step.number}</span>
-                    <h3 className="mt-4 font-bold text-forest-dark">{step.title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{step.description}</p>
-                  </li>
-                ))}
-              </ol>
+            <ol className="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-3">
+              {steps.map((step) => (
+                <li
+                  key={step.number}
+                  className="group rounded-2xl border border-forest-dark/10 bg-white p-6 shadow-[0_8px_30px_rgba(31,60,43,0.06)] transition-all duration-200 hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_16px_38px_rgba(31,60,43,0.12)]"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="inline-flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
+                      {step.icon}
+                    </span>
+                    <span className="font-serif text-3xl font-semibold text-gold-foreground/45">{step.number}</span>
+                  </div>
+                  <h3 className="mt-5 text-lg font-bold text-forest-dark">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{step.description}</p>
+                </li>
+              ))}
+            </ol>
+
+            <div className="mt-9 flex justify-center">
+              <a
+                href="#cabanas"
+                className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-forest-dark ${focusClasses}`}
+              >
+                Ver cabañas
+                <ChevronRight className="size-4" aria-hidden />
+              </a>
             </div>
           </div>
         </section>

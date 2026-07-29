@@ -4,7 +4,7 @@ import { siteContact } from "@/lib/site-config"
 const navigation = [
   { label: "Inicio", href: "#inicio" },
   { label: "Cabañas", href: "#cabanas" },
-  { label: "Cómo funciona", href: "#como-funciona" },
+  { label: "Cómo funciona", href: "#como-reservar" },
   { label: "Contacto", href: "#contacto" },
 ]
 
@@ -87,8 +87,8 @@ export function Footer() {
               </div>
             </div>
             <p className="mt-4 text-xs leading-5 text-white/55">
-              Respondemos solicitudes y confirmamos disponibilidad directamente con cada
-              propietario.
+              Consulta la disponibilidad para las fechas seleccionadas y planea tu próxima
+              estancia.
             </p>
           </div>
         </div>

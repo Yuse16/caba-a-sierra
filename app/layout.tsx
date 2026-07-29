@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Playfair_Display } from 'next/font/google'
+import { headers } from 'next/headers'
 import './globals.css'
 
 const geistSans = Geist({
@@ -15,11 +16,39 @@ const playfair = Playfair_Display({
   display: 'swap',
 })
 
-export const metadata: Metadata = {
-  title: 'Cabañas Sierra Norte — Demo de plataforma',
-  description:
-    'Demo interactiva de una plataforma de renta y administración de cabañas en la Sierra de Arteaga, Coahuila. Compara la versión Start y Pro.',
-  generator: 'v0.app',
+export async function generateMetadata(): Promise<Metadata> {
+  const requestHeaders = await headers()
+  const host = requestHeaders.get('x-forwarded-host') ?? requestHeaders.get('host')
+  const protocol = requestHeaders.get('x-forwarded-proto') ?? 'https'
+  const origin = host ? `${protocol}://${host}` : null
+
+  return {
+    title: 'Cabañas Sierra Norte — Cabañas en Arteaga',
+    description:
+      'Explora cabañas en la Sierra de Arteaga, Coahuila, consulta disponibilidad y encuentra opciones para tu próxima estancia.',
+    openGraph: {
+      title: 'Cabañas Sierra Norte',
+      description: 'Respira el bosque. Vive la sierra.',
+      locale: 'es_MX',
+      type: 'website',
+      images: origin
+        ? [
+            {
+              url: `${origin}/og.png`,
+              width: 1200,
+              height: 630,
+              alt: 'Cabañas Sierra Norte — Respira el bosque. Vive la sierra.',
+            },
+          ]
+        : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Cabañas Sierra Norte',
+      description: 'Respira el bosque. Vive la sierra.',
+      images: origin ? [`${origin}/og.png`] : undefined,
+    },
+  }
 }
 
 export const viewport: Viewport = {

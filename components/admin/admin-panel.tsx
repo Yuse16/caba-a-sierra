@@ -12,7 +12,7 @@ import {
   MessageCircle,
   X,
 } from "lucide-react"
-import type { Version } from "@/components/demo/demo-context"
+import type { PlatformVersion } from "@/lib/platform-types"
 import {
   cabins as initialCabins,
   cleaningTasks as initialCleaningTasks,
@@ -99,7 +99,19 @@ const sectionMeta: Record<string, { title: string; desc: string }> = {
   reportes: { title: "Reportes", desc: "Indicadores e informes simulados del desempeño del negocio." },
 }
 
-export function AdminPanel({ version }: { version: Version }) {
+export function AdminPanel({
+  version,
+  onVersionChange,
+  onManageCabins,
+  onCreateCabin,
+  onEditCabin,
+}: {
+  version: PlatformVersion
+  onVersionChange?: (version: PlatformVersion) => void
+  onManageCabins?: () => void
+  onCreateCabin?: () => void
+  onEditCabin?: (cabin: Cabin) => void
+}) {
   const isPro = version === "pro"
   const [active, setActive] = useState<SectionKey>("dashboard")
   const [cabins, setCabins] = useState<Cabin[]>(initialCabins.slice(0, 6))
@@ -142,6 +154,11 @@ export function AdminPanel({ version }: { version: Version }) {
   ]
 
   const handleSelect = (key: SectionKey) => {
+    if (key === "cabanas" && onManageCabins) {
+      setDrawerOpen(false)
+      onManageCabins()
+      return
+    }
     setActive(key)
     setDrawerOpen(false)
   }
@@ -151,8 +168,8 @@ export function AdminPanel({ version }: { version: Version }) {
     window.setTimeout(() => setNotice(null), 3000)
   }
 
-  const openAddCabin = () => setEditor({ open: true, cabin: null })
-  const openEditCabin = (cabin: Cabin) => setEditor({ open: true, cabin })
+  const openAddCabin = () => onCreateCabin ? onCreateCabin() : setEditor({ open: true, cabin: null })
+  const openEditCabin = (cabin: Cabin) => onEditCabin ? onEditCabin(cabin) : setEditor({ open: true, cabin })
 
   const saveCabin = (values: Pick<Cabin, "name" | "location" | "price" | "maxGuests" | "status">) => {
     if (editor.cabin) {
@@ -177,11 +194,11 @@ export function AdminPanel({ version }: { version: Version }) {
   }))
 
   return (
-    <div className="flex min-h-[calc(100vh-40px)] bg-background">
+    <div className="flex min-h-screen bg-background">
       {notice && <div className="fixed bottom-4 left-1/2 z-[80] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl bg-forest-dark px-4 py-3 text-center text-sm font-medium text-primary-foreground shadow-xl" role="status">{notice}</div>}
       {/* Sidebar (desktop) */}
-      <aside className="sticky top-10 hidden h-[calc(100vh-40px)] w-64 shrink-0 border-r border-sidebar-border lg:block">
-        <AdminSidebar version={version} active={visibleActive} onSelect={handleSelect} />
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r border-sidebar-border lg:block">
+        <AdminSidebar version={version} active={visibleActive} onSelect={handleSelect} onUpgrade={() => onVersionChange?.("pro")} />
       </aside>
 
       {/* Drawer (mobile) */}
@@ -195,12 +212,12 @@ export function AdminPanel({ version }: { version: Version }) {
           <div className="absolute left-0 top-0 h-full w-72 border-r border-sidebar-border bg-sidebar shadow-xl">
             <button
               onClick={() => setDrawerOpen(false)}
-              className="absolute right-3 top-3 z-10 rounded-md p-1 text-muted-foreground hover:bg-muted"
+              className="absolute right-3 top-3 z-10 inline-flex size-11 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
               aria-label="Cerrar"
             >
               <X className="size-5" aria-hidden />
             </button>
-            <AdminSidebar version={version} active={visibleActive} onSelect={handleSelect} />
+            <AdminSidebar version={version} active={visibleActive} onSelect={handleSelect} onUpgrade={() => onVersionChange?.("pro")} />
           </div>
         </div>
       )}

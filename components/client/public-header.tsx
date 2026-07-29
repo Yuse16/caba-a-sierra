@@ -1,138 +1,112 @@
 "use client"
 
-import { useState } from "react"
-import { Mountain, Heart, CalendarCheck, Menu, X } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { useDemo } from "@/components/demo/demo-context"
+import { useEffect, useState } from "react"
+import { CalendarCheck, Menu, Mountain, X } from "lucide-react"
 
-export function PublicHeader({
-  favoritesCount,
-  onShowFavorites,
-}: {
-  favoritesCount: number
-  onShowFavorites: () => void
-}) {
-  const { version, toggleVersion } = useDemo()
-  const isPro = version === "pro"
+const links = [
+  { label: "Inicio", href: "#inicio" },
+  { label: "Cabañas", href: "#cabanas" },
+  { label: "Cómo funciona", href: "#como-funciona" },
+  { label: "Contacto", href: "#contacto" },
+]
+
+const focusClasses =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+
+export function PublicHeader() {
   const [open, setOpen] = useState(false)
 
-  const links = isPro
-    ? [
-        { label: "Inicio", href: "#inicio" },
-        { label: "Cabañas", href: "#cabanas" },
-        { label: "Experiencias", href: "#como-funciona" },
-        { label: "Promociones", href: "#promociones" },
-        { label: "Cómo funciona", href: "#como-funciona" },
-        { label: "Contacto", href: "#contacto" },
-      ]
-    : [
-        { label: "Inicio", href: "#inicio" },
-        { label: "Cabañas", href: "#cabanas" },
-        { label: "Cómo funciona", href: "#como-funciona" },
-        { label: "Contacto", href: "#contacto" },
-      ]
+  useEffect(() => {
+    if (!open) return
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false)
+    }
+
+    window.addEventListener("keydown", closeOnEscape)
+    return () => window.removeEventListener("keydown", closeOnEscape)
+  }, [open])
 
   return (
-    <header className="relative z-40 border-b border-border bg-background/95 backdrop-blur xl:sticky xl:top-14">
-      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
-        <a href="#inicio" className="flex items-center gap-2">
-          <span className="inline-flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+    <header className="sticky top-0 z-50 border-b border-forest-dark/10 bg-background/95 shadow-[0_1px_0_rgba(24,55,39,0.04)] backdrop-blur-xl">
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-5 px-4 sm:px-6 lg:px-8">
+        <a
+          href="#inicio"
+          aria-label="Cabañas Sierra Norte, ir al inicio"
+          className={`flex min-w-0 items-center gap-3 rounded-lg ${focusClasses}`}
+        >
+          <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
             <Mountain className="size-5" aria-hidden />
           </span>
-          <span className="text-sm font-semibold leading-tight text-foreground">
-            Cabañas
-            <br />
-            Sierra Norte
+          <span className="min-w-0 leading-none">
+            <span className="block font-serif text-lg font-semibold tracking-[-0.02em] text-forest-dark">
+              Cabañas
+            </span>
+            <span className="mt-0.5 block text-[10px] font-bold uppercase tracking-[0.22em] text-primary">
+              Sierra Norte
+            </span>
           </span>
         </a>
 
-        <nav className="mx-auto hidden items-center gap-6 lg:flex">
-          {links.map((link, index) => (
+        <nav aria-label="Navegación principal" className="ml-auto hidden items-center gap-1 lg:flex">
+          {links.map((link) => (
             <a
               key={link.label}
               href={link.href}
-              className={cn(
-                "text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
-                index === 0 && "text-foreground underline decoration-primary decoration-2 underline-offset-8",
-              )}
+              className={`rounded-lg px-3 py-2 text-sm font-semibold text-foreground/75 transition-colors hover:bg-primary/8 hover:text-primary ${focusClasses}`}
             >
               {link.label}
             </a>
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2 lg:ml-0">
-          {isPro && (
-            <button
-              type="button"
-              onClick={onShowFavorites}
-              className="hidden items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-foreground hover:bg-muted sm:inline-flex"
-            >
-              <Heart className="size-4" aria-hidden />
-              Favoritos
-              <span className="inline-flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
-                {favoritesCount}
-              </span>
-            </button>
-          )}
+        <a
+          href="#cabanas"
+          className={`ml-auto hidden min-h-11 items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-forest-dark lg:ml-3 lg:inline-flex ${focusClasses}`}
+        >
+          Ver cabañas
+          <CalendarCheck className="size-4" aria-hidden />
+        </a>
 
-          <div className="group relative hidden sm:block">
-            <a href="#cabanas" className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-              Ver cabañas
-              <CalendarCheck className="size-4" aria-hidden />
-            </a>
-          </div>
-
-          <button
-            type="button"
-            className="inline-flex size-9 items-center justify-center rounded-lg border border-border text-foreground lg:hidden"
-            aria-label={open ? "Cerrar menú" : "Abrir menú"}
-            aria-expanded={open}
-            onClick={() => setOpen((o) => !o)}
-          >
-            {open ? <X className="size-5" aria-hidden /> : <Menu className="size-5" aria-hidden />}
-          </button>
-        </div>
+        <button
+          type="button"
+          className={`ml-auto inline-flex size-11 items-center justify-center rounded-xl border border-border bg-card text-forest-dark transition-colors hover:bg-secondary lg:hidden ${focusClasses}`}
+          aria-label={open ? "Cerrar menú" : "Abrir menú"}
+          aria-expanded={open}
+          aria-controls="menu-movil"
+          onClick={() => setOpen((current) => !current)}
+        >
+          {open ? <X className="size-5" aria-hidden /> : <Menu className="size-5" aria-hidden />}
+        </button>
       </div>
 
       {open && (
-        <nav className="border-t border-border bg-background px-4 py-3 lg:hidden">
-          <ul className="flex flex-col gap-1">
+        <nav
+          id="menu-movil"
+          aria-label="Navegación móvil"
+          className="border-t border-border bg-background px-4 pb-5 pt-3 shadow-lg lg:hidden"
+        >
+          <ul className="mx-auto flex max-w-7xl flex-col gap-1">
             {links.map((link) => (
               <li key={link.label}>
                 <a
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className="block rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                  className={`flex min-h-11 items-center rounded-xl px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-secondary hover:text-primary ${focusClasses}`}
                 >
                   {link.label}
                 </a>
               </li>
             ))}
-            {isPro && (
-              <li>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onShowFavorites()
-                    setOpen(false)
-                  }}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
-                >
-                  <Heart className="size-4" aria-hidden /> Favoritos ({favoritesCount})
-                </button>
-              </li>
-            )}
             <li className="pt-2">
-              <button
-                onClick={() => {
-                  toggleVersion()
-                  setOpen(false)
-                }}
-                className="w-full rounded-lg bg-gold px-3 py-2 text-sm font-semibold text-gold-foreground"
+              <a
+                href="#cabanas"
+                onClick={() => setOpen(false)}
+                className={`flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-forest-dark ${focusClasses}`}
               >
-                {isPro ? "Ver versión Start" : "Ver plataforma profesional"}
-              </button>
+                Ver cabañas
+                <CalendarCheck className="size-4" aria-hidden />
+              </a>
             </li>
           </ul>
         </nav>

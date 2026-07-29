@@ -25,6 +25,7 @@ import {
   StatusBadge,
 } from "@/components/shared/status-badge"
 import { AreaLineChart } from "@/components/shared/line-chart"
+import { siteContact } from "@/lib/site-config"
 
 const panelClass = "rounded-xl border border-border bg-card p-4 sm:p-5"
 const buttonClass =
@@ -122,7 +123,7 @@ export function RequestsSection({
           </dl>
           <div className="mt-4 grid grid-cols-2 gap-2">
             <a href={`tel:${selected.ownerPhone.replace(/\s/g, "")}`} onClick={() => onStatusChange(selected.id, "propietario-contactado")} className={secondaryButtonClass}><Phone className="size-4" />Llamar propietario</a>
-            <a href={`https://wa.me/${cabins.find((cabin) => cabin.ownerId === selected.ownerId)?.ownerWhatsApp ?? "528441234567"}`} onClick={() => onStatusChange(selected.id, "propietario-contactado")} className={secondaryButtonClass}><MessageCircle className="size-4" />WhatsApp</a>
+            <a href={`https://wa.me/${cabins.find((cabin) => cabin.ownerId === selected.ownerId)?.ownerWhatsApp ?? siteContact.whatsappNumber}`} onClick={() => onStatusChange(selected.id, "propietario-contactado")} className={secondaryButtonClass}><MessageCircle className="size-4" />WhatsApp</a>
             <button type="button" onClick={() => onStatusChange(selected.id, "disponible-confirmada")} className={buttonClass}><Check className="size-4" />Confirmar disponible</button>
             <button type="button" onClick={() => onStatusChange(selected.id, "no-disponible")} className={secondaryButtonClass}>No disponible</button>
             <button type="button" onClick={() => { setAlternativeId(""); setAlternativeOpen(true) }} className={`${secondaryButtonClass} col-span-2`}>Ofrecer otra cabaña</button>

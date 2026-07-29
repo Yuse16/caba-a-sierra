@@ -1,22 +1,22 @@
 "use client"
 
-import { Mountain, LogOut, ChevronDown, Sparkles } from "lucide-react"
+import { Mountain, ChevronDown, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { Version } from "@/components/demo/demo-context"
+import type { PlatformVersion } from "@/lib/platform-types"
 import { startNav, proNav, type SectionKey } from "./nav-config"
-import { useDemo } from "@/components/demo/demo-context"
 
 export function AdminSidebar({
   version,
   active,
   onSelect,
+  onUpgrade,
 }: {
-  version: Version
+  version: PlatformVersion
   active: SectionKey
   onSelect: (key: SectionKey) => void
+  onUpgrade?: () => void
 }) {
   const isPro = version === "pro"
-  const { setVersion } = useDemo()
   const groups = isPro ? proNav : startNav
 
   return (
@@ -56,7 +56,7 @@ export function AdminSidebar({
                       onClick={() => onSelect(item.key)}
                       aria-current={isActive ? "page" : undefined}
                       className={cn(
-                        "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                        "flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                         isActive
                           ? "bg-primary text-primary-foreground"
                           : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -90,7 +90,7 @@ export function AdminSidebar({
             <p className="mt-1 text-xs text-muted-foreground">
               Panel básico para administrar tus cabañas y solicitudes.
             </p>
-            <button type="button" onClick={() => setVersion("pro")} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted">
+            <button type="button" onClick={onUpgrade} disabled={!onUpgrade} className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">
               <Sparkles className="size-3.5 text-gold-foreground" aria-hidden />
               Conocer más funciones
             </button>
@@ -100,7 +100,7 @@ export function AdminSidebar({
 
       {/* User */}
       <div className="border-t border-sidebar-border p-3">
-        <button type="button" onClick={() => onSelect("perfil")} className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-sidebar-accent">
+        <button type="button" onClick={() => onSelect("perfil")} className="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-sidebar-accent">
           <span className="inline-flex size-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
             JS
           </span>
@@ -110,12 +110,6 @@ export function AdminSidebar({
           </span>
           <ChevronDown className="size-4 text-muted-foreground" aria-hidden />
         </button>
-        {isPro && (
-          <button type="button" disabled title="La autenticación real no está conectada en esta demo" className="mt-1 flex w-full cursor-not-allowed items-center gap-2.5 rounded-lg px-2 py-2 text-sm text-muted-foreground opacity-60">
-            <LogOut className="size-4" aria-hidden />
-            Cerrar sesión
-          </button>
-        )}
       </div>
     </div>
   )

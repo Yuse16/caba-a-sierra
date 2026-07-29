@@ -5,25 +5,20 @@ import { Heart, MapPin, Users, Bed, Star } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { StatusBadge, cabinStatusTone } from "@/components/shared/status-badge"
 import { statusLabel, currency, type Cabin } from "@/lib/demo-data"
-import type { Version } from "@/components/demo/demo-context"
 
 export function CabinCard({
   cabin,
-  version,
   isFavorite,
   onToggleFavorite,
   onViewDetails,
 }: {
   cabin: Cabin
-  version: Version
   isFavorite: boolean
   onToggleFavorite: (id: string) => void
   onViewDetails: (cabin: Cabin) => void
 }) {
-  const isPro = version === "pro"
-
   return (
-    <article className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md">
+    <article className="group flex flex-col overflow-hidden rounded-2xl border border-forest-dark/10 bg-card shadow-[0_8px_30px_rgba(31,60,43,0.07)] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(31,60,43,0.12)]">
       <div className="relative aspect-[4/3] w-full">
         <Image
           src={cabin.image || "/placeholder.svg"}
@@ -33,19 +28,22 @@ export function CabinCard({
           className="object-cover"
         />
         {/* status / badge top-left */}
-        <div className="absolute left-3 top-3 flex gap-2">
-          {isPro && cabin.badge === "popular" && (
+        <div className="absolute left-3 right-16 top-3 flex flex-wrap items-start gap-2">
+          {cabin.badge === "popular" && (
             <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-primary-foreground">
               Más popular
             </span>
           )}
-          {isPro && cabin.badge === "oferta" && (
+          {cabin.badge === "oferta" && (
             <span className="rounded-full bg-[oklch(0.6_0.16_30)] px-2.5 py-0.5 text-xs font-semibold text-white">
               Oferta
             </span>
           )}
-          <StatusBadge tone={cabinStatusTone[cabin.status]} className="shadow-sm">
-            {isPro ? statusLabel[cabin.status] : "Disponibilidad por confirmar"}
+          <StatusBadge
+            tone={cabinStatusTone[cabin.status]}
+            className="border border-border bg-background/95 text-foreground shadow-sm backdrop-blur-sm"
+          >
+            {statusLabel[cabin.status]}
           </StatusBadge>
         </div>
 
@@ -54,7 +52,7 @@ export function CabinCard({
           onClick={() => onToggleFavorite(cabin.id)}
           aria-label={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}
           aria-pressed={isFavorite}
-          className="absolute right-3 top-3 inline-flex size-8 items-center justify-center rounded-full bg-background/90 text-foreground shadow-sm transition-colors hover:bg-background"
+          className="absolute right-3 top-3 inline-flex size-11 items-center justify-center rounded-full bg-white text-forest-dark shadow-md transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 sm:size-9"
         >
           <Heart
             className={cn("size-4", isFavorite && "fill-destructive text-destructive")}
@@ -72,13 +70,11 @@ export function CabinCard({
               {cabin.location}
             </p>
           </div>
-          {isPro && (
-            <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-foreground">
-              <Star className="size-3.5 fill-gold text-gold" aria-hidden />
-              {cabin.rating}
-              <span className="text-muted-foreground">({cabin.reviews})</span>
-            </span>
-          )}
+          <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-foreground">
+            <Star className="size-3.5 fill-gold text-gold" aria-hidden />
+            {cabin.rating}
+            <span className="text-muted-foreground">({cabin.reviews})</span>
+          </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
@@ -110,12 +106,12 @@ export function CabinCard({
                 ${currency(cabin.price)}
               </span>
               <span className="text-xs text-muted-foreground">MXN</span>
-              {isPro && cabin.oldPrice && (
+              {cabin.oldPrice && (
                 <span className="text-xs text-muted-foreground line-through">
                   ${currency(cabin.oldPrice)}
                 </span>
               )}
-              {isPro && cabin.discountPct && (
+              {cabin.discountPct && (
                 <span className="rounded bg-[oklch(0.6_0.16_30)]/12 px-1.5 py-0.5 text-[11px] font-semibold text-[oklch(0.55_0.16_30)]">
                   -{cabin.discountPct}%
                 </span>
@@ -129,14 +125,14 @@ export function CabinCard({
           <button
             type="button"
             onClick={() => onViewDetails(cabin)}
-            className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="min-h-11 rounded-xl bg-primary px-3 py-2 text-sm font-bold text-white transition-colors hover:bg-forest-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
           >
             Consultar disponibilidad
           </button>
           <button
             type="button"
             onClick={() => onViewDetails(cabin)}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            className="min-h-11 rounded-xl border border-border bg-background px-3 py-2 text-sm font-bold text-foreground transition-colors hover:border-primary hover:bg-secondary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
           >
             Ver detalles
           </button>

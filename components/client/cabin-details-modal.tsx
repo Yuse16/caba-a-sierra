@@ -5,16 +5,19 @@ import Image from "next/image"
 import { X, MapPin, Users, Bed, Bath, Star, Check, CalendarDays, Send } from "lucide-react"
 import { StatusBadge, cabinStatusTone } from "@/components/shared/status-badge"
 import { statusLabel, currency, type Cabin } from "@/lib/demo-data"
-import type { Version } from "@/components/demo/demo-context"
+
+const formControlClass =
+  "mt-1 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none [color-scheme:light] placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20 sm:h-10"
+
+const dateControlClass =
+  "h-11 w-full appearance-auto rounded-lg border border-border bg-background pl-9 pr-2 text-sm text-foreground outline-none [color-scheme:light] focus:border-ring focus:ring-2 focus:ring-ring/20 sm:h-10"
 
 export function CabinDetailsModal({
   cabin,
-  version,
   onClose,
   onAction,
 }: {
   cabin: Cabin | null
-  version: Version
   onClose: () => void
   onAction: (cabin: Cabin) => void
 }) {
@@ -36,10 +39,8 @@ export function CabinDetailsModal({
   }, [cabin, onClose])
 
   if (!cabin) return null
-  const isPro = version === "pro"
-  const confirmation = isPro
-    ? "Revisaremos tus fechas directamente con el propietario y te responderemos lo antes posible."
-    : "Recibimos tu solicitud. Verificaremos la disponibilidad con el propietario y nos comunicaremos contigo."
+  const confirmation =
+    "Revisaremos tus fechas directamente con el propietario y te responderemos lo antes posible."
 
   const submitRequest = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -56,17 +57,17 @@ export function CabinDetailsModal({
       onClick={onClose}
     >
       <div
-        className="max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-t-2xl bg-card shadow-xl sm:rounded-2xl"
+        className="max-h-[100dvh] w-full max-w-3xl scroll-pb-24 overscroll-contain overflow-y-auto rounded-t-2xl bg-card pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:max-h-[94vh] sm:rounded-2xl sm:pb-0"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="relative aspect-[16/8] w-full">
           <Image src={cabin.image || "/placeholder.svg"} alt={`Foto de ${cabin.name}`} fill sizes="(max-width: 768px) 100vw, 720px" className="rounded-t-2xl object-cover" />
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="absolute right-3 top-3 inline-flex size-9 items-center justify-center rounded-full bg-background/90 text-foreground shadow-sm hover:bg-background">
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="absolute right-3 top-3 inline-flex size-11 items-center justify-center rounded-full bg-background/90 text-foreground shadow-sm hover:bg-background sm:size-9">
             <X className="size-4" aria-hidden />
           </button>
           <div className="absolute left-3 top-3">
-            <StatusBadge tone={cabinStatusTone[cabin.status]} className="shadow-sm">
-              {isPro ? statusLabel[cabin.status] : "Disponibilidad por confirmar"}
+            <StatusBadge tone={cabinStatusTone[cabin.status]} className="border border-border bg-white text-foreground shadow-sm">
+              {statusLabel[cabin.status]}
             </StatusBadge>
           </div>
         </div>
@@ -78,7 +79,7 @@ export function CabinDetailsModal({
                 <h2 className="text-xl font-semibold text-foreground">{cabin.name}</h2>
                 <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground"><MapPin className="size-4" aria-hidden />{cabin.location}</p>
               </div>
-              {isPro && <span className="flex items-center gap-1 text-sm font-medium"><Star className="size-4 fill-gold text-gold" aria-hidden />{cabin.rating} <span className="text-muted-foreground">({cabin.reviews})</span></span>}
+              <span className="flex items-center gap-1 text-sm font-medium"><Star className="size-4 fill-gold text-gold" aria-hidden />{cabin.rating} <span className="text-muted-foreground">({cabin.reviews})</span></span>
             </div>
             <p className="text-sm leading-relaxed text-muted-foreground">{cabin.description}</p>
             <div className="grid grid-cols-3 gap-3 rounded-xl bg-secondary/60 p-3 text-center text-sm">
@@ -100,17 +101,17 @@ export function CabinDetailsModal({
               <div className="mt-5 rounded-xl border border-success/30 bg-success/10 p-4" role="status">
                 <p className="font-semibold text-foreground">Solicitud recibida</p>
                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{confirmation}</p>
-                <button type="button" onClick={onClose} className="mt-4 w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Cerrar</button>
+                <button type="button" onClick={onClose} className="mt-4 min-h-11 w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Cerrar</button>
               </div>
             ) : (
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <label className="text-xs font-medium text-muted-foreground sm:col-span-2">Cabaña seleccionada<input value={cabin.name} readOnly className="mt-1 h-10 w-full rounded-lg border border-border bg-muted px-3 text-sm text-foreground" /></label>
-                <label className="text-xs font-medium text-muted-foreground">Nombre<input name="name" required placeholder="Tu nombre" className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground" /></label>
-                <label className="text-xs font-medium text-muted-foreground">Teléfono<input name="phone" type="tel" required placeholder="844 000 0000" className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground" /></label>
-                <label className="text-xs font-medium text-muted-foreground">Entrada<span className="relative mt-1 flex"><CalendarDays className="pointer-events-none absolute left-3 top-3 size-4 text-primary" aria-hidden /><input name="checkIn" type="date" required value={checkIn} max={checkOut} onChange={(event) => setCheckIn(event.target.value)} className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-2 text-sm text-foreground" /></span></label>
-                <label className="text-xs font-medium text-muted-foreground">Salida<span className="relative mt-1 flex"><CalendarDays className="pointer-events-none absolute left-3 top-3 size-4 text-primary" aria-hidden /><input name="checkOut" type="date" required value={checkOut} min={checkIn} onChange={(event) => setCheckOut(event.target.value)} className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-2 text-sm text-foreground" /></span></label>
-                <label className="text-xs font-medium text-muted-foreground">Huéspedes<input name="guests" type="number" min={1} max={cabin.maxGuests} defaultValue={2} required className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground" /></label>
-                <label className="text-xs font-medium text-muted-foreground sm:col-span-2">Comentarios<textarea name="comments" rows={3} placeholder="Necesidades especiales o preguntas" className="mt-1 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" /></label>
+                <label className="text-xs font-medium text-muted-foreground sm:col-span-2">Cabaña seleccionada<input value={cabin.name} readOnly className={`${formControlClass} bg-muted`} /></label>
+                <label className="text-xs font-medium text-muted-foreground">Nombre<input name="name" autoComplete="name" required placeholder="Tu nombre" className={formControlClass} /></label>
+                <label className="text-xs font-medium text-muted-foreground">Teléfono<input name="phone" type="tel" inputMode="tel" autoComplete="tel" required placeholder="Tu número con lada" className={formControlClass} /></label>
+                <label className="text-xs font-medium text-muted-foreground">Entrada<span className="relative mt-1 flex"><CalendarDays className="pointer-events-none absolute left-3 top-3.5 size-4 text-primary sm:top-3" aria-hidden /><input name="checkIn" type="date" required value={checkIn} max={checkOut} onChange={(event) => setCheckIn(event.target.value)} className={dateControlClass} /></span></label>
+                <label className="text-xs font-medium text-muted-foreground">Salida<span className="relative mt-1 flex"><CalendarDays className="pointer-events-none absolute left-3 top-3.5 size-4 text-primary sm:top-3" aria-hidden /><input name="checkOut" type="date" required value={checkOut} min={checkIn} onChange={(event) => setCheckOut(event.target.value)} className={dateControlClass} /></span></label>
+                <label className="text-xs font-medium text-muted-foreground">Huéspedes<input name="guests" type="number" inputMode="numeric" min={1} max={cabin.maxGuests} defaultValue={2} required className={formControlClass} /></label>
+                <label className="text-xs font-medium text-muted-foreground sm:col-span-2">Comentarios<textarea name="comments" rows={3} placeholder="Necesidades especiales o preguntas" className="mt-1 min-h-24 w-full resize-y rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none [color-scheme:light] placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20" /></label>
                 <button type="submit" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:col-span-2"><Send className="size-4" aria-hidden />Enviar solicitud de disponibilidad</button>
               </div>
             )}

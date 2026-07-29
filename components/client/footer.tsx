@@ -1,66 +1,101 @@
-import { MessageCircle, Phone, ShieldCheck, MapPin } from "lucide-react"
-import type { Version } from "@/components/demo/demo-context"
+import { Clock3, MapPin, MessageCircle, Mountain, Phone } from "lucide-react"
+import { siteContact } from "@/lib/site-config"
 
-export function Footer({ version }: { version: Version }) {
+const navigation = [
+  { label: "Inicio", href: "#inicio" },
+  { label: "Cabañas", href: "#cabanas" },
+  { label: "Cómo funciona", href: "#como-funciona" },
+  { label: "Contacto", href: "#contacto" },
+]
+
+const linkClasses =
+  "rounded-sm text-sm text-white/75 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-[#14261b]"
+
+export function Footer() {
+  const currentYear = new Date().getFullYear()
+
   return (
-    <footer className="bg-forest-dark text-primary-foreground">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="flex gap-3">
-            <MessageCircle className="size-6 shrink-0 text-primary-foreground/80" aria-hidden />
-            <div>
-              <h3 className="text-base font-semibold">¿Tienes dudas?</h3>
-              <p className="mt-1 text-sm text-primary-foreground/70">
-                Escríbenos por WhatsApp y te ayudamos{version === "pro" ? " al instante." : "."}
-              </p>
-              <a
-                href="https://wa.me/528441234567?text=Hola%2C%20quiero%20informaci%C3%B3n%20sobre%20las%20caba%C3%B1as"
-                className="mt-3 inline-flex rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-gold-foreground hover:bg-gold/90"
-              >
-                {version === "pro" ? "Enviar mensaje" : "Abrir WhatsApp"}
-              </a>
-            </div>
+    <footer className="bg-[#14261b] text-white">
+      <div className="mx-auto max-w-7xl px-4 pb-7 pt-14 sm:px-6 sm:pt-16 lg:px-8">
+        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.25fr_0.8fr_1fr_1fr]">
+          <div>
+            <a
+              href="#inicio"
+              aria-label="Cabañas Sierra Norte, volver al inicio"
+              className="inline-flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-[#14261b]"
+            >
+              <span className="inline-flex size-11 items-center justify-center rounded-xl bg-white/10 text-[#f4d58b]">
+                <Mountain className="size-6" aria-hidden />
+              </span>
+              <span>
+                <span className="block font-serif text-xl font-semibold text-white">Cabañas</span>
+                <span className="block text-[10px] font-bold uppercase tracking-[0.22em] text-[#f4d58b]">
+                  Sierra Norte
+                </span>
+              </span>
+            </a>
+            <p className="mt-5 max-w-sm text-sm leading-6 text-white/70">
+              Escapadas entre pinos, montañas y noches de chimenea en la Sierra de Arteaga.
+              Encuentra un espacio para desconectar y volver a lo esencial.
+            </p>
           </div>
 
-          <div className="flex gap-3">
-            <Phone className="size-6 shrink-0 text-primary-foreground/80" aria-hidden />
-            <div>
-              <h3 className="text-base font-semibold">Llámanos</h3>
-              <p className="mt-1 text-sm font-medium">(844) 123 4567</p>
-              <p className="mt-1 text-sm text-primary-foreground/70">
-                Atención diaria
-                <br />
-                8:00 AM - 9:00 PM
-              </p>
-            </div>
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-white">Navegación</h2>
+            <nav aria-label="Navegación del pie de página" className="mt-4">
+              <ul className="space-y-3">
+                {navigation.map((item) => (
+                  <li key={item.label}>
+                    <a href={item.href} className={linkClasses}>
+                      {item.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
           </div>
 
-          <div className="flex gap-3">
-            <ShieldCheck className="size-6 shrink-0 text-primary-foreground/80" aria-hidden />
-            <div>
-              <h3 className="text-base font-semibold">Confirmación acompañada</h3>
-              <p className="mt-1 text-sm text-primary-foreground/70">
-                {version === "pro"
-                  ? "Verificamos la disponibilidad con cada propietario antes de confirmar."
-                  : "Tu solicitud se consulta con el propietario. Sin pagos en línea en esta demo."}
-              </p>
-            </div>
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-white">Contacto</h2>
+            <ul className="mt-4 space-y-4">
+              <li className="flex items-start gap-3">
+                <MessageCircle className="mt-0.5 size-4 shrink-0 text-[#f4d58b]" aria-hidden />
+                <a href={siteContact.whatsappUrl} target="_blank" rel="noreferrer" className={linkClasses}>
+                  WhatsApp
+                </a>
+              </li>
+              <li className="flex items-start gap-3">
+                <Phone className="mt-0.5 size-4 shrink-0 text-[#f4d58b]" aria-hidden />
+                <a href={siteContact.phoneHref} className={linkClasses}>
+                  {siteContact.phoneDisplay}
+                </a>
+              </li>
+              <li className="flex items-start gap-3">
+                <MapPin className="mt-0.5 size-4 shrink-0 text-[#f4d58b]" aria-hidden />
+                <span className="text-sm leading-6 text-white/75">Arteaga, Coahuila, México</span>
+              </li>
+            </ul>
           </div>
 
-          <div className="flex gap-3">
-            <MapPin className="size-6 shrink-0 text-primary-foreground/80" aria-hidden />
-            <div>
-              <h3 className="text-base font-semibold">Ubicación</h3>
-              <p className="mt-1 text-sm font-medium">Arteaga, Coahuila, México</p>
-              <p className="mt-1 text-sm text-primary-foreground/70">
-                Rodeado de montañas, bosques y naturaleza.
-              </p>
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-white">Horario de atención</h2>
+            <div className="mt-4 flex items-start gap-3">
+              <Clock3 className="mt-0.5 size-4 shrink-0 text-[#f4d58b]" aria-hidden />
+              <div className="text-sm leading-6 text-white/75">
+                <p>Lunes a domingo</p>
+                <p className="font-semibold text-white">8:00 a 21:00 h</p>
+              </div>
             </div>
+            <p className="mt-4 text-xs leading-5 text-white/55">
+              Respondemos solicitudes y confirmamos disponibilidad directamente con cada
+              propietario.
+            </p>
           </div>
         </div>
 
-        <div className="mt-10 border-t border-primary-foreground/15 pt-6 text-center text-xs text-primary-foreground/60">
-          © 2026 Cabañas Sierra Norte. Todos los derechos reservados.
+        <div className="mt-12 flex flex-col gap-2 border-t border-white/12 pt-6 text-xs text-white/55 sm:flex-row sm:items-center sm:justify-between">
+          <p>© {currentYear} Cabañas Sierra Norte. Todos los derechos reservados.</p>
+          <p>Hecho para disfrutar la sierra con tranquilidad.</p>
         </div>
       </div>
     </footer>

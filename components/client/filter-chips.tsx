@@ -24,7 +24,10 @@ export function FilterChips({
   onChange: (k: ChipKey) => void
 }) {
   return (
-    <div className="flex flex-wrap justify-center gap-2">
+    <div
+      className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0"
+      aria-label="Filtrar por tipo de viaje"
+    >
       {chips.map((c) => (
         <button
           key={c.key}
@@ -32,10 +35,10 @@ export function FilterChips({
           onClick={() => onChange(c.key)}
           aria-pressed={active === c.key}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors",
+            "inline-flex min-h-11 shrink-0 snap-start items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2",
             active === c.key
-              ? "bg-primary text-primary-foreground"
-              : "bg-secondary text-secondary-foreground hover:bg-muted",
+              ? "border-primary bg-primary text-white shadow-sm"
+              : "border-border bg-card text-foreground hover:border-primary/35 hover:bg-secondary hover:text-primary",
           )}
         >
           {c.icon}

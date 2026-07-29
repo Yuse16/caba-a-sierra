@@ -1,6 +1,8 @@
 // Datos simulados locales para la demo.
 // Estructura pensada para migrarse fácilmente a Supabase (ids, campos planos).
 
+import { siteContact } from "@/lib/site-config"
+
 export type CabinStatus =
   | "por-confirmar"
   | "alta-demanda"
@@ -60,8 +62,8 @@ export type Cabin = CabinOwnerFields & {
 const robertoOwner: CabinOwnerFields = {
   ownerId: "owner-01",
   ownerName: "Roberto Martínez",
-  ownerPhone: "844 123 4567",
-  ownerWhatsApp: "528441234567",
+  ownerPhone: siteContact.phoneNational,
+  ownerWhatsApp: siteContact.whatsappNumber,
   ownerNotes: "Prefiere recibir mensajes por WhatsApp y confirmar antes de las 18:00.",
   agreedCommission: 10,
   lastAvailabilityCheck: "Hoy, 12:30",
@@ -392,7 +394,7 @@ export const requests: ClientRequest[] = [
     phone: "(844) 333 4455",
     ownerId: "owner-01",
     ownerName: "Roberto Martínez",
-    ownerPhone: "844 123 4567",
+    ownerPhone: siteContact.phoneNational,
     message: "Somos una familia de 6. ¿Se permite llevar mascota pequeña?",
   },
   {

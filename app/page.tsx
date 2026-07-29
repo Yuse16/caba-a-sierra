@@ -1,13 +1,16 @@
-import { Suspense } from "react"
-import { DemoProvider } from "@/components/demo/demo-context"
-import { DemoShell } from "@/components/demo/demo-shell"
+import { redirect } from "next/navigation"
+import { ClientPage } from "@/components/client/client-page"
 
-export default function Page() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-background" />}>
-      <DemoProvider>
-        <DemoShell />
-      </DemoProvider>
-    </Suspense>
-  )
+type PublicPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}
+
+export default async function Page({ searchParams }: PublicPageProps) {
+  const params = await searchParams
+
+  if (params.vista !== undefined || params.version !== undefined) {
+    redirect("/")
+  }
+
+  return <ClientPage />
 }

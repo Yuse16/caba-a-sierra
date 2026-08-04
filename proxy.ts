@@ -1,18 +1,10 @@
-import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
+import { updateSupabaseSession } from "@/lib/supabase/proxy"
 
-export function proxy() {
-  if (process.env.NODE_ENV === "production") {
-    return new NextResponse("Not Found", {
-      status: 404,
-      headers: {
-        "Cache-Control": "no-store",
-      },
-    })
-  }
-
-  return NextResponse.next()
+export function proxy(request: NextRequest) {
+  return updateSupabaseSession(request)
 }
 
 export const config = {
-  matcher: ["/panel/:path*", "/admin"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 }

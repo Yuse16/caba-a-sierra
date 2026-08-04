@@ -1,7 +1,6 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Playfair_Display } from 'next/font/google'
-import { headers } from 'next/headers'
 import './globals.css'
 
 const geistSans = Geist({
@@ -16,25 +15,37 @@ const playfair = Playfair_Display({
   display: 'swap',
 })
 
-export async function generateMetadata(): Promise<Metadata> {
-  const requestHeaders = await headers()
-  const host = requestHeaders.get('x-forwarded-host') ?? requestHeaders.get('host')
-  const protocol = requestHeaders.get('x-forwarded-proto') ?? 'https'
-  const origin = host ? `${protocol}://${host}` : null
+function configuredProductionOrigin() {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim()
+  const vercelProduction = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim()
+  const value = configured || (vercelProduction ? `https://${vercelProduction}` : '')
+
+  try {
+    return value ? new URL(value) : null
+  } catch {
+    return null
+  }
+}
+
+export function generateMetadata(): Metadata {
+  const origin = configuredProductionOrigin()
 
   return {
+    metadataBase: origin ?? undefined,
     title: 'Cabañas Sierra Norte — Cabañas en Arteaga',
     description:
       'Explora cabañas en la Sierra de Arteaga, Coahuila, consulta disponibilidad y encuentra opciones para tu próxima estancia.',
+    alternates: origin ? { canonical: '/' } : undefined,
     openGraph: {
       title: 'Cabañas Sierra Norte',
       description: 'Respira el bosque. Vive la sierra.',
       locale: 'es_MX',
       type: 'website',
+      url: origin ? '/' : undefined,
       images: origin
         ? [
             {
-              url: `${origin}/og.png`,
+              url: '/og.png',
               width: 1200,
               height: 630,
               alt: 'Cabañas Sierra Norte — Respira el bosque. Vive la sierra.',
@@ -46,7 +57,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: 'summary_large_image',
       title: 'Cabañas Sierra Norte',
       description: 'Respira el bosque. Vive la sierra.',
-      images: origin ? [`${origin}/og.png`] : undefined,
+      images: origin ? ['/og.png'] : undefined,
     },
   }
 }
@@ -62,7 +73,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className={`${geistSans.variable} ${playfair.variable} bg-background`}>
+    <html lang="es" data-scroll-behavior="smooth" className={`${geistSans.variable} ${playfair.variable} bg-background`}>
       <body className="font-sans antialiased">
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}

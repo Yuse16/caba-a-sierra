@@ -2,8 +2,9 @@
 
 import Image from "next/image"
 import { Eye, MessageCircle, Phone, Users } from "lucide-react"
-import { StatusBadge, cabinStatusTone } from "@/components/shared/status-badge"
-import { statusLabel, currency, type Cabin } from "@/lib/demo-data"
+import { StatusBadge } from "@/components/shared/status-badge"
+import type { Cabin } from "@/lib/demo-data"
+import { cabinStatusLabel as statusLabel, cabinStatusTone, formatCurrency as currency } from "@/lib/admin-presentational"
 
 export function CabinsTable({ cabins, onEdit, onCycleStatus }: { cabins: Cabin[]; onEdit: (cabin: Cabin) => void; onCycleStatus: (id: string) => void }) {
   return (

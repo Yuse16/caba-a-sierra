@@ -13,23 +13,9 @@ import {
   X,
 } from "lucide-react"
 import type { PlatformVersion } from "@/lib/platform-types"
-import {
-  cabins as initialCabins,
-  cleaningTasks as initialCleaningTasks,
-  currency,
-  maintenanceTasks as initialMaintenanceTasks,
-  payments as initialPayments,
-  promotions as initialPromotions,
-  requests as initialRequests,
-  reservations as initialReservations,
-  seasons as initialSeasons,
-  owners,
-  type Cabin,
-  type CabinStatus,
-  type ClientRequest,
-  type RequestStatus,
-  type ReservationStatus,
-} from "@/lib/demo-data"
+import type { Cabin, CabinStatus, ClientRequest, RequestStatus, ReservationStatus } from "@/lib/demo-data"
+import type { AdminPanelInitialData } from "@/lib/admin-panel-data"
+import { formatCurrency as currency } from "@/lib/admin-presentational"
 import { AdminSidebar } from "./admin-sidebar"
 import { AdminHeader } from "./admin-header"
 import { CabinsTable } from "./cabins-table"
@@ -101,29 +87,34 @@ const sectionMeta: Record<string, { title: string; desc: string }> = {
 
 export function AdminPanel({
   version,
+  initialData,
   onVersionChange,
   onManageCabins,
+  onManagePromotions,
   onCreateCabin,
   onEditCabin,
 }: {
   version: PlatformVersion
+  initialData: AdminPanelInitialData
   onVersionChange?: (version: PlatformVersion) => void
   onManageCabins?: () => void
+  onManagePromotions?: () => void
   onCreateCabin?: () => void
   onEditCabin?: (cabin: Cabin) => void
 }) {
   const isPro = version === "pro"
+  const { owners } = initialData
   const [active, setActive] = useState<SectionKey>("dashboard")
-  const [cabins, setCabins] = useState<Cabin[]>(initialCabins.slice(0, 6))
+  const [cabins, setCabins] = useState<Cabin[]>(initialData.cabins)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editor, setEditor] = useState<{ open: boolean; cabin: Cabin | null }>({ open: false, cabin: null })
-  const [requests, setRequests] = useState(() => initialRequests.map((item) => ({ ...item })))
-  const [reservations, setReservations] = useState(() => initialReservations.map((item) => ({ ...item })))
-  const [payments, setPayments] = useState(() => initialPayments.map((item) => ({ ...item })))
-  const [cleaning, setCleaning] = useState<OperationTask[]>(() => initialCleaningTasks.map((item) => ({ id: item.id, cabin: item.cabin, detail: `Responsable: ${item.assignee}`, when: item.when, status: item.status, meta: item.assignee })))
-  const [maintenance, setMaintenance] = useState<OperationTask[]>(() => initialMaintenanceTasks.map((item) => ({ id: item.id, cabin: item.cabin, detail: item.issue, when: item.when, status: item.status, meta: `Prioridad ${item.priority}` })))
-  const [promotions, setPromotions] = useState(() => initialPromotions.map((item) => ({ ...item })))
-  const [seasons, setSeasons] = useState<Season[]>(() => initialSeasons.map((item) => ({ ...item })))
+  const [requests, setRequests] = useState(() => initialData.requests.map((item) => ({ ...item })))
+  const [reservations, setReservations] = useState(() => initialData.reservations.map((item) => ({ ...item })))
+  const [payments, setPayments] = useState(() => initialData.payments.map((item) => ({ ...item })))
+  const [cleaning, setCleaning] = useState<OperationTask[]>(() => initialData.cleaningTasks.map((item) => ({ id: item.id, cabin: item.cabin, detail: `Responsable: ${item.assignee}`, when: item.when, status: item.status, meta: item.assignee })))
+  const [maintenance, setMaintenance] = useState<OperationTask[]>(() => initialData.maintenanceTasks.map((item) => ({ id: item.id, cabin: item.cabin, detail: item.issue, when: item.when, status: item.status, meta: `Prioridad ${item.priority}` })))
+  const [promotions, setPromotions] = useState(() => initialData.promotions.map((item) => ({ ...item })))
+  const [seasons, setSeasons] = useState<Season[]>(() => initialData.seasons.map((item) => ({ ...item })))
   const [notice, setNotice] = useState<string | null>(null)
 
   const availableSections = (isPro ? proNav : startNav).flatMap((group) => group.items.map((item) => item.key))
@@ -134,7 +125,7 @@ export function AdminPanel({
     const ocupada = cabins.filter((c) => ["por-confirmar", "alta-demanda", "propietario-contactado"].includes(c.status)).length
     const noDisp = cabins.filter((c) => c.status === "no-disponible").length
     const total = cabins.length
-    const pct = (n: number) => `${n} (${Math.round((n / total) * 100)}%)`
+    const pct = (n: number) => `${n} (${total ? Math.round((n / total) * 100) : 0}%)`
     return { disponible, ocupada, noDisp, total, pct }
   }, [cabins])
 
@@ -159,6 +150,11 @@ export function AdminPanel({
       onManageCabins()
       return
     }
+    if (key === "promociones" && onManagePromotions) {
+      setDrawerOpen(false)
+      onManagePromotions()
+      return
+    }
     setActive(key)
     setDrawerOpen(false)
   }
@@ -176,8 +172,10 @@ export function AdminPanel({
       setCabins((current) => current.map((cabin) => cabin.id === editor.cabin?.id ? { ...cabin, ...values } : cabin))
       showNotice("La información de la cabaña fue actualizada.")
     } else {
+      const baseCabin = initialData.cabins[0]
+      if (!baseCabin) { showNotice("No hay una plantilla disponible para crear la cabaña."); return }
       const id = `cab-demo-${Date.now()}`
-      setCabins((current) => [...current, { ...initialCabins[0], ...values, id, slug: id, minGuests: 1 }])
+      setCabins((current) => [...current, { ...baseCabin, ...values, id, slug: id, minGuests: 1 }])
       showNotice("La cabaña fue agregada a la demo.")
     }
     setEditor({ open: false, cabin: null })
@@ -238,6 +236,7 @@ export function AdminPanel({
           {visibleActive === "dashboard" ? (
             isPro ? (
               <ProDashboard
+                initialData={initialData}
                 cabins={cabins}
                 requests={requests}
                 onRequestStatus={(id, status) => setRequests((items) => items.map((item) => item.id === id ? { ...item, status } : item))}
@@ -246,6 +245,7 @@ export function AdminPanel({
               />
             ) : (
               <StartDashboard
+                initialData={initialData}
                 cabins={cabins}
                 onEdit={openEditCabin}
                 onCycleStatus={cycleStatus}
@@ -265,7 +265,7 @@ export function AdminPanel({
               <CabinsTable cabins={cabins} onEdit={openEditCabin} onCycleStatus={cycleStatus} />
             </div>
           ) : visibleActive === "calendario" ? (
-            <OccupancyCalendar />
+            <OccupancyCalendar days={initialData.calendarDays} cabins={initialData.calendarCabins} bookings={initialData.calendarBookings} />
           ) : visibleActive === "propietarios" ? (
             <OwnersSection owners={owners} cabins={cabins} requests={requests} reservations={reservations} />
           ) : visibleActive === "solicitudes" ? (
@@ -311,6 +311,7 @@ export function AdminPanel({
 /* ---------------- START dashboard ---------------- */
 
 function StartDashboard({
+  initialData,
   cabins,
   onEdit,
   onCycleStatus,
@@ -318,6 +319,7 @@ function StartDashboard({
   onNavigate,
   onAdd,
 }: {
+  initialData: AdminPanelInitialData
   cabins: Cabin[]
   onEdit: (c: Cabin) => void
   onCycleStatus: (id: string) => void
@@ -352,7 +354,7 @@ function StartDashboard({
       </div>
 
       <div className="min-w-0 space-y-6">
-        <RecentRequestsPanel onOpen={() => onNavigate("solicitudes")} />
+        <RecentRequestsPanel items={initialData.requests} onOpen={() => onNavigate("solicitudes")} />
         <QuickActionsPanel onAction={(key) => key === "add" ? onAdd() : onNavigate(key)} />
         <OccupancyDonutPanel segments={occupancySegments} />
       </div>
@@ -363,12 +365,14 @@ function StartDashboard({
 /* ---------------- PRO dashboard ---------------- */
 
 function ProDashboard({
+  initialData,
   cabins,
   requests,
   onRequestStatus,
   onNavigate,
   onAdd,
 }: {
+  initialData: AdminPanelInitialData
   cabins: Cabin[]
   requests: ClientRequest[]
   onRequestStatus: (id: string, status: RequestStatus) => void
@@ -457,14 +461,14 @@ function ProDashboard({
         </div>
 
         {/* Occupancy calendar */}
-        <OccupancyCalendar />
+        <OccupancyCalendar days={initialData.calendarDays} cabins={initialData.calendarCabins} bookings={initialData.calendarBookings} />
       </div>
 
       {/* Right column */}
       <div className="min-w-0 space-y-6">
-        <RecentActivityPanel onOpen={() => onNavigate("reservaciones")} />
-        <PendingTasksPanel onOpen={() => onNavigate("limpieza")} />
-        <UpcomingArrivalsPanel onOpen={() => onNavigate("reservaciones")} />
+        <RecentActivityPanel items={initialData.recentActivity} onOpen={() => onNavigate("reservaciones")} />
+        <PendingTasksPanel items={initialData.pendingTasks} onOpen={() => onNavigate("limpieza")} />
+        <UpcomingArrivalsPanel items={initialData.upcomingArrivals} onOpen={() => onNavigate("reservaciones")} />
         <QuickActionsGridPanel onAction={(key) => key === "add" ? onAdd() : onNavigate(key)} />
       </div>
     </div>

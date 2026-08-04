@@ -15,15 +15,9 @@ import {
   CreditCard,
   Wrench,
 } from "lucide-react"
-import { StatusBadge, requestStatusTone } from "@/components/shared/status-badge"
-import {
-  requests,
-  requestStatusLabel,
-  recentActivity,
-  pendingTasks,
-  upcomingArrivals,
-  initials,
-} from "@/lib/demo-data"
+import { StatusBadge } from "@/components/shared/status-badge"
+import type { ClientRequest } from "@/lib/demo-data"
+import { initials, requestStatusLabel, requestStatusTone } from "@/lib/admin-presentational"
 import type { SectionKey } from "./nav-config"
 
 function PanelCard({
@@ -42,7 +36,7 @@ function PanelCard({
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-foreground">{title}</h2>
         {action ? (
-          <button type="button" onClick={onAction} className="text-xs font-medium text-primary hover:underline">{action}</button>
+          <button type="button" onClick={onAction} className="inline-flex min-h-11 items-center rounded-lg px-2 text-xs font-medium text-primary hover:bg-muted">{action}</button>
         ) : null}
       </div>
       {children}
@@ -60,21 +54,21 @@ function Avatar({ name }: { name: string }) {
 
 /* ---------- START panels ---------- */
 
-export function RecentRequestsPanel({ onOpen }: { onOpen: () => void }) {
+export function RecentRequestsPanel({ items, onOpen }: { items: ClientRequest[]; onOpen: () => void }) {
   return (
     <PanelCard title="Solicitudes recientes" action="Ver todas" onAction={onOpen}>
       <ul className="flex flex-col gap-4">
-        {requests.map((r) => (
-          <li key={r.id} className="flex items-center gap-3">
+        {items.map((r) => (
+          <li key={r.id} className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-3 rounded-lg py-1">
             <Avatar name={r.client} />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-foreground">{r.client}</p>
-              <p className="truncate text-xs text-muted-foreground">{r.cabin}</p>
-              <p className="text-xs text-muted-foreground">{r.date}</p>
+              <p className="break-words text-sm font-medium leading-snug text-foreground">{r.client}</p>
+              <p className="mt-0.5 break-words text-xs leading-snug text-muted-foreground">{r.cabin}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{r.date}</p>
+              <StatusBadge className="mt-2 max-w-full whitespace-normal text-left leading-snug" tone={requestStatusTone[r.status]}>
+                {requestStatusLabel[r.status]}
+              </StatusBadge>
             </div>
-            <StatusBadge tone={requestStatusTone[r.status]}>
-              {requestStatusLabel[r.status]}
-            </StatusBadge>
           </li>
         ))}
       </ul>
@@ -117,7 +111,7 @@ export function OccupancyDonutPanel({
 }: {
   segments: { label: string; count: number; percent: string; color: string }[]
 }) {
-  const total = segments.reduce((s, x) => s + x.count, 0)
+  const total = segments.reduce((s, x) => s + x.count, 0) || 1
   const radius = 42
   const circ = 2 * Math.PI * radius
   return (
@@ -168,11 +162,11 @@ const activityIcons: Record<string, typeof Bell> = {
   maintenance: Wrench,
 }
 
-export function RecentActivityPanel({ onOpen }: { onOpen: () => void }) {
+export function RecentActivityPanel({ items, onOpen }: { items: { id: string; type: string; title: string; detail: string; time: string }[]; onOpen: () => void }) {
   return (
     <PanelCard title="Actividad reciente" action="Ver todas" onAction={onOpen}>
       <ul className="flex flex-col gap-4">
-        {recentActivity.map((a) => {
+        {items.map((a) => {
           const Icon = activityIcons[a.type] ?? Bell
           return (
             <li key={a.id} className="flex items-start gap-3">
@@ -192,11 +186,11 @@ export function RecentActivityPanel({ onOpen }: { onOpen: () => void }) {
   )
 }
 
-export function PendingTasksPanel({ onOpen }: { onOpen: () => void }) {
+export function PendingTasksPanel({ items, onOpen }: { items: { id: string; title: string; cabin: string; when: string; status: string }[]; onOpen: () => void }) {
   return (
     <PanelCard title="Tareas pendientes" action="Ver todas" onAction={onOpen}>
       <ul className="flex flex-col gap-3">
-        {pendingTasks.map((t) => (
+        {items.map((t) => (
           <li key={t.id} className="flex items-center gap-3">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
               {t.title === "Limpieza" ? (
@@ -223,11 +217,11 @@ export function PendingTasksPanel({ onOpen }: { onOpen: () => void }) {
   )
 }
 
-export function UpcomingArrivalsPanel({ onOpen }: { onOpen: () => void }) {
+export function UpcomingArrivalsPanel({ items, onOpen }: { items: { id: string; client: string; cabin: string; dates: string; guests: number; status: string }[]; onOpen: () => void }) {
   return (
     <PanelCard title="Próximas llegadas" action="Ver todas" onAction={onOpen}>
       <ul className="flex flex-col gap-4">
-        {upcomingArrivals.map((a) => (
+        {items.map((a) => (
           <li key={a.id} className="flex items-center gap-3">
             <Avatar name={a.client} />
             <div className="min-w-0 flex-1">

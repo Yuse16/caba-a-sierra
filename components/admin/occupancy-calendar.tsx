@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import { ChevronLeft, ChevronRight, Users } from "lucide-react"
-import { calendarCabins, calendarDays, calendarBookings } from "@/lib/demo-data"
+import type { CalendarBar } from "@/lib/demo-data"
 
 const statusStyle: Record<string, string> = {
   reserved: "bg-primary/85 text-primary-foreground",
@@ -13,7 +13,10 @@ const statusStyle: Record<string, string> = {
     "bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,rgba(0,0,0,0.08)_5px,rgba(0,0,0,0.08)_10px)] bg-muted",
 }
 
-export function OccupancyCalendar() {
+export function OccupancyCalendar({ days, cabins, bookings }: { days: { date: string; dow: string }[]; cabins: { id: string; name: string; image: string; capacity: string }[]; bookings: Record<string, CalendarBar[]> }) {
+  const calendarDays = days
+  const calendarCabins = cabins
+  const calendarBookings = bookings
   const cols = calendarDays.length
   const [period, setPeriod] = useState(0)
   const periodLabels = ["Mayo - Junio 2026", "Junio - Julio 2026", "Julio - Agosto 2026", "Agosto - Septiembre 2026", "Septiembre - Octubre 2026"]

@@ -75,11 +75,13 @@ export function CabinCard({
               {cabin.location}
             </p>
           </div>
-          <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-foreground">
-            <Star className="size-3.5 fill-gold text-gold" aria-hidden />
-            {cabin.rating}
-            <span className="text-muted-foreground">({cabin.reviews})</span>
-          </span>
+          {typeof cabin.rating === "number" && typeof cabin.reviews === "number" && (
+            <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-foreground">
+              <Star className="size-3.5 fill-gold text-gold" aria-hidden />
+              {cabin.rating}
+              <span className="text-muted-foreground">({cabin.reviews})</span>
+            </span>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">

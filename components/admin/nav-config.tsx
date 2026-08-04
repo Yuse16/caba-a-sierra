@@ -66,6 +66,7 @@ export const startNav: NavGroup[] = [
     items: [
       { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
       { key: "cabanas", label: "Cabañas", icon: Home },
+      { key: "promociones", label: "Promociones", icon: BadgePercent },
       { key: "propietarios", label: "Propietarios", icon: ContactRound },
       { key: "solicitudes", label: "Solicitudes", icon: FileText, badge: 8 },
       { key: "confirmaciones", label: "Confirmaciones", icon: BadgeCheck, badge: 3 },

@@ -53,7 +53,7 @@ export function MetricCard({
         <button
           type="button"
           onClick={onAction}
-          className="mt-auto inline-flex items-center gap-1 text-left text-sm font-medium text-primary hover:underline"
+          className="mt-auto inline-flex min-h-11 items-center gap-1 rounded-md text-left text-sm font-medium text-primary hover:underline"
         >
           {action} <span aria-hidden>→</span>
         </button>

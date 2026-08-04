@@ -1,6 +1,8 @@
 "use client"
 
 import { Calendar, ChevronDown, Menu } from "lucide-react"
+import { PanelLogoutButton } from "@/components/auth/panel-logout-button"
+import { usePanelSession } from "@/components/auth/panel-session-provider"
 
 export function AdminHeader({
   title,
@@ -19,6 +21,9 @@ export function AdminHeader({
   onDate?: () => void
   onProfile?: () => void
 }) {
+  const session = usePanelSession()
+  const initials = session.displayName.split(" ").slice(0, 2).map((word) => word[0]).join("").toUpperCase()
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
       <div className="flex items-center gap-3">
@@ -44,15 +49,17 @@ export function AdminHeader({
         {showUser ? (
           <button type="button" onClick={onProfile} className="flex min-h-11 items-center gap-2 rounded-lg border border-border bg-card px-2 py-1.5 hover:bg-accent">
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-              JS
+              {initials}
             </span>
             <span className="hidden text-left sm:block">
-              <span className="block text-sm font-semibold leading-tight text-foreground">Jorge Sierra</span>
-              <span className="block text-xs text-muted-foreground">Administrador</span>
+              <span className="block text-sm font-semibold leading-tight text-foreground">{session.displayName}</span>
+              <span className="block text-xs text-muted-foreground">{session.role === "admin" ? "Administrador" : "Editor"}</span>
+              {session.isLocal && <span className="block text-[10px] font-semibold uppercase tracking-wide text-primary">Entorno local</span>}
             </span>
             <ChevronDown className="hidden h-4 w-4 text-muted-foreground sm:block" />
           </button>
         ) : null}
+        {showUser ? <PanelLogoutButton /> : null}
       </div>
     </div>
   )

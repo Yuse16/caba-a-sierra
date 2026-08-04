@@ -10,6 +10,7 @@ import {
   publicCabinStatusTone,
   type PublicCabin,
 } from "@/lib/public-cabins"
+import { siteContact } from "@/lib/site-config"
 
 const formControlClass =
   "mt-1 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none [color-scheme:light] placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20 sm:h-10"
@@ -29,6 +30,7 @@ export function CabinDetailsModal({
   const [submitted, setSubmitted] = useState(false)
   const [checkIn, setCheckIn] = useState("2026-08-14")
   const [checkOut, setCheckOut] = useState("2026-08-16")
+  const [whatsappUrl, setWhatsappUrl] = useState<string>(siteContact.whatsappUrl)
 
   useEffect(() => {
     if (!cabin) return
@@ -44,12 +46,24 @@ export function CabinDetailsModal({
   }, [cabin, onClose])
 
   if (!cabin) return null
-  const confirmation = "Recibimos tu consulta de disponibilidad para las fechas seleccionadas."
-
   const submitRequest = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    const message = [
+      "Hola, quiero consultar disponibilidad.",
+      `Cabaña: ${cabin.name}`,
+      `Nombre: ${String(formData.get("name") ?? "")}`,
+      `Teléfono: ${String(formData.get("phone") ?? "")}`,
+      `Entrada: ${checkIn}`,
+      `Salida: ${checkOut}`,
+      `Huéspedes: ${String(formData.get("guests") ?? "")}`,
+      String(formData.get("comments") ?? "").trim() ? `Comentarios: ${String(formData.get("comments"))}` : "",
+    ].filter(Boolean).join("\n")
+    const nextWhatsappUrl = `https://wa.me/${siteContact.whatsappNumber}?text=${encodeURIComponent(message)}`
+    setWhatsappUrl(nextWhatsappUrl)
     setSubmitted(true)
     onAction(cabin)
+    window.open(nextWhatsappUrl, "_blank", "noopener,noreferrer")
   }
 
   return (
@@ -83,7 +97,7 @@ export function CabinDetailsModal({
                 <h2 className="text-xl font-semibold text-foreground">{cabin.name}</h2>
                 <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground"><MapPin className="size-4" aria-hidden />{cabin.location}</p>
               </div>
-              <span className="flex items-center gap-1 text-sm font-medium"><Star className="size-4 fill-gold text-gold" aria-hidden />{cabin.rating} <span className="text-muted-foreground">({cabin.reviews})</span></span>
+              {typeof cabin.rating === "number" && typeof cabin.reviews === "number" && <span className="flex items-center gap-1 text-sm font-medium"><Star className="size-4 fill-gold text-gold" aria-hidden />{cabin.rating} <span className="text-muted-foreground">({cabin.reviews})</span></span>}
             </div>
             <p className="text-sm leading-relaxed text-muted-foreground">{cabin.description}</p>
             <div className="grid grid-cols-3 gap-3 rounded-xl bg-secondary/60 p-3 text-center text-sm">
@@ -103,9 +117,10 @@ export function CabinDetailsModal({
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Consulta la disponibilidad, elige tus fechas y confirma tu reservación de forma sencilla.</p>
             {submitted ? (
               <div className="mt-5 rounded-xl border border-success/30 bg-success/10 p-4" role="status">
-                <p className="font-semibold text-foreground">Consulta recibida</p>
-                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{confirmation}</p>
-                <button type="button" onClick={onClose} className="mt-4 min-h-11 w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Cerrar</button>
+                <p className="font-semibold text-foreground">Tu consulta está lista</p>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Envíala por WhatsApp para continuar con la consulta de disponibilidad.</p>
+                <a href={whatsappUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Abrir WhatsApp</a>
+                <button type="button" onClick={onClose} className="mt-2 min-h-11 w-full rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground">Cerrar</button>
               </div>
             ) : (
               <div className="mt-4 grid gap-3 sm:grid-cols-2">

@@ -134,7 +134,7 @@ export function SearchBar({
                   type="button"
                   aria-label="Reducir huéspedes"
                   onClick={() => update("guests", Math.max(1, value.guests - 1))}
-                  className={`inline-flex size-8 items-center justify-center rounded-lg border border-border bg-card text-base font-semibold text-foreground transition-colors hover:border-primary hover:bg-secondary ${actionFocus}`}
+                  className={`inline-flex size-11 items-center justify-center rounded-lg border border-border bg-card text-base font-semibold text-foreground transition-colors hover:border-primary hover:bg-secondary ${actionFocus}`}
                 >
                   −
                 </button>
@@ -142,7 +142,7 @@ export function SearchBar({
                   type="button"
                   aria-label="Agregar huésped"
                   onClick={() => update("guests", Math.min(16, value.guests + 1))}
-                  className={`inline-flex size-8 items-center justify-center rounded-lg border border-border bg-card text-base font-semibold text-foreground transition-colors hover:border-primary hover:bg-secondary ${actionFocus}`}
+                  className={`inline-flex size-11 items-center justify-center rounded-lg border border-border bg-card text-base font-semibold text-foreground transition-colors hover:border-primary hover:bg-secondary ${actionFocus}`}
                 >
                   +
                 </button>
@@ -167,7 +167,7 @@ export function SearchBar({
           aria-expanded={advancedOpen}
           aria-controls="filtros-avanzados"
           onClick={() => setAdvancedOpen((open) => !open)}
-          className={`inline-flex min-h-10 items-center gap-2 rounded-lg px-2.5 text-xs font-bold text-primary transition-colors hover:bg-primary/8 ${actionFocus}`}
+          className={`inline-flex min-h-11 items-center gap-2 rounded-lg px-2.5 text-xs font-bold text-primary transition-colors hover:bg-primary/8 ${actionFocus}`}
         >
           <SlidersHorizontal className="size-4" aria-hidden />
           Más filtros
@@ -180,7 +180,7 @@ export function SearchBar({
         <button
           type="button"
           onClick={reset}
-          className={`inline-flex min-h-10 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground ${actionFocus}`}
+          className={`inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground ${actionFocus}`}
         >
           <X className="size-3.5" aria-hidden />
           Limpiar filtros

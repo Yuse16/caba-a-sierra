@@ -13,17 +13,8 @@ import type {
   Reservation,
   ReservationStatus,
 } from "@/lib/demo-data"
-import {
-  currency,
-  requestStatusLabel,
-  reservationStatusLabel,
-  statusLabel,
-} from "@/lib/demo-data"
-import {
-  cabinStatusTone,
-  requestStatusTone,
-  StatusBadge,
-} from "@/components/shared/status-badge"
+import { cabinStatusLabel as statusLabel, cabinStatusTone, formatCurrency as currency, requestStatusLabel, requestStatusTone, reservationStatusLabel } from "@/lib/admin-presentational"
+import { StatusBadge } from "@/components/shared/status-badge"
 import { AreaLineChart } from "@/components/shared/line-chart"
 import { siteContact } from "@/lib/site-config"
 

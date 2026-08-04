@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils"
 
-type Tone = "success" | "danger" | "muted" | "warning" | "info" | "gold"
+export type Tone = "success" | "danger" | "muted" | "warning" | "info" | "gold"
 
 const toneClasses: Record<Tone, string> = {
   success: "bg-success/12 text-success",
@@ -34,35 +34,4 @@ export function StatusBadge({
       {children}
     </span>
   )
-}
-
-export const cabinStatusTone: Record<string, Tone> = {
-  "por-confirmar": "warning",
-  "alta-demanda": "gold",
-  "propietario-contactado": "info",
-  confirmada: "success",
-  "no-disponible": "muted",
-}
-
-export const requestStatusTone: Record<string, Tone> = {
-  nueva: "gold",
-  "pendiente-propietario": "warning",
-  "propietario-contactado": "info",
-  "disponible-confirmada": "success",
-  "no-disponible": "danger",
-  "alternativa-ofrecida": "gold",
-  "cliente-no-respondio": "muted",
-  "esperando-anticipo": "warning",
-  "reservacion-confirmada": "success",
-  "en-estancia": "info",
-  finalizada: "muted",
-  cancelada: "danger",
-}
-
-export const reservationStatusTone: Record<string, Tone> = {
-  pendiente: "warning",
-  confirmada: "success",
-  "en-uso": "info",
-  finalizada: "muted",
-  cancelada: "danger",
 }

@@ -4,6 +4,7 @@ import { Mountain, ChevronDown, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { PlatformVersion } from "@/lib/platform-types"
 import { startNav, proNav, type SectionKey } from "./nav-config"
+import { usePanelSession } from "@/components/auth/panel-session-provider"
 
 export function AdminSidebar({
   version,
@@ -16,8 +17,10 @@ export function AdminSidebar({
   onSelect: (key: SectionKey) => void
   onUpgrade?: () => void
 }) {
+  const session = usePanelSession()
   const isPro = version === "pro"
   const groups = isPro ? proNav : startNav
+  const userInitials = session.displayName.split(/\s+/).slice(0, 2).map((word) => word[0]).join("").toUpperCase()
 
   return (
     <div className="flex h-full flex-col bg-sidebar">
@@ -102,11 +105,12 @@ export function AdminSidebar({
       <div className="border-t border-sidebar-border p-3">
         <button type="button" onClick={() => onSelect("perfil")} className="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-2 py-2 hover:bg-sidebar-accent">
           <span className="inline-flex size-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-            JS
+            {userInitials}
           </span>
           <span className="flex-1 text-left leading-tight">
-            <span className="block text-sm font-medium text-sidebar-foreground">Jorge Sierra</span>
-            <span className="block text-xs text-muted-foreground">Administrador</span>
+            <span className="block text-sm font-medium text-sidebar-foreground">{session.displayName}</span>
+            <span className="block text-xs text-muted-foreground">{session.role === "admin" ? "Administrador" : "Editor"}</span>
+            {session.isLocal && <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wide text-primary">Entorno local</span>}
           </span>
           <ChevronDown className="size-4 text-muted-foreground" aria-hidden />
         </button>

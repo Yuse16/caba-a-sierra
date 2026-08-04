@@ -27,6 +27,8 @@ import { FilterChips, type ChipKey } from "./filter-chips"
 import { CabinCard } from "./cabin-card"
 import { CabinDetailsModal } from "./cabin-details-modal"
 import { Footer } from "./footer"
+import { PublicPromotionsSection } from "@/components/promotions/public-promotions-section"
+import type { PublicPromotion } from "@/lib/public-promotions"
 
 const tripTypes = [
   {
@@ -108,7 +110,7 @@ const steps = [
 const focusClasses =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
 
-export function ClientPage({ cabins }: { cabins: PublicCabin[] }) {
+export function ClientPage({ cabins, promotions }: { cabins: PublicCabin[]; promotions: PublicPromotion[] }) {
   const [search, setSearch] = useState<ClientSearchState>(initialClientSearch)
   const [category, setCategory] = useState<ChipKey>("todos")
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
@@ -191,7 +193,8 @@ export function ClientPage({ cabins }: { cabins: PublicCabin[] }) {
             src="/cabins/hero.png"
             alt="Cabaña de madera iluminada entre pinos y montañas al atardecer"
             fill
-            priority
+            loading="eager"
+            fetchPriority="high"
             sizes="100vw"
             className="-z-20 object-cover object-[center_58%]"
           />
@@ -277,6 +280,8 @@ export function ClientPage({ cabins }: { cabins: PublicCabin[] }) {
             ))}
           </div>
         </section>
+
+        <PublicPromotionsSection promotions={promotions} />
 
         <section className="border-y border-border bg-[#f5f1e7] py-6" aria-labelledby="categories-title">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -480,7 +485,7 @@ export function ClientPage({ cabins }: { cabins: PublicCabin[] }) {
         key={selected?.id ?? "sin-cabana"}
         cabin={selected}
         onClose={() => setSelected(null)}
-        onAction={(cabin) => showNotice(`Recibimos tu solicitud para ${cabin.name}.`)}
+        onAction={(cabin) => showNotice(`Tu consulta para ${cabin.name} está lista para enviarse por WhatsApp.`)}
       />
     </div>
   )

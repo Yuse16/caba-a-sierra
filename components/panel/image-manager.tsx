@@ -9,6 +9,7 @@ import {
   validateImageFiles,
 } from "@/lib/admin-cabins/image-processing"
 import type { AdminCabinImage } from "@/lib/admin-cabins/types"
+import { discardAdminMediaAction, uploadAdminMediaAction } from "@/app/panel/media/actions"
 import { ConfirmDialog } from "./confirm-dialog"
 
 function readableSize(size: number) {
@@ -42,7 +43,26 @@ export function ImageManager({
       const prepared = await Promise.all(
         result.valid.map((file, index) => prepareCabinImage(file, images.length === 0 && index === 0)),
       )
-      onChange([...images, ...prepared])
+      const uploaded: Array<{ image: AdminCabinImage } | { message: string }> = await Promise.all(prepared.map(async (image) => {
+        const upload = await uploadAdminMediaAction({ dataUrl: image.url, originalName: image.name, scope: "cabins" })
+        if (!upload.ok) return { message: `${image.name}: ${upload.message}` }
+        return {
+          image: {
+            id: upload.data.assetId,
+            assetId: upload.data.assetId,
+            url: upload.data.url,
+            name: upload.data.name,
+            size: upload.data.size,
+            type: upload.data.type,
+            isCover: image.isCover,
+            pendingUpload: upload.data.pendingUpload,
+          } satisfies AdminCabinImage,
+        }
+      }))
+      const successful = uploaded.flatMap((item) => "image" in item ? [item.image] : [])
+      const failed = uploaded.flatMap((item) => "message" in item ? [item.message] : [])
+      if (successful.length) onChange([...images, ...successful])
+      if (failed.length) setUploadErrors((current) => [...current, ...failed])
     } catch {
       setUploadErrors((current) => [...current, "No pudimos preparar una de las imágenes. Intenta con otra fotografía."])
     } finally {
@@ -66,6 +86,11 @@ export function ImageManager({
 
   const removePendingImage = () => {
     if (!pendingDelete) return
+    if (pendingDelete.pendingUpload && pendingDelete.assetId) {
+      void discardAdminMediaAction([pendingDelete.assetId], "cabins").then((result) => {
+        if (!result.ok) setUploadErrors((current) => [...current, result.message])
+      })
+    }
     const remaining = images.filter((image) => image.id !== pendingDelete.id)
     if (pendingDelete.isCover && remaining.length > 0) remaining[0] = { ...remaining[0], isCover: true }
     onChange(remaining)
@@ -86,7 +111,7 @@ export function ImageManager({
           className="inline-flex min-h-12 items-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
         >
           {processing ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <ImagePlus className="size-4" aria-hidden />}
-          {processing ? "Preparando…" : "Agregar imágenes"}
+          {processing ? "Subiendo…" : "Agregar imágenes"}
         </button>
         <input
           ref={inputRef}

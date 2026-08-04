@@ -83,6 +83,7 @@ export async function prepareCabinImage(file: File, makeCover: boolean): Promise
 
   return {
     id: `image-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`,
+    assetId: null,
     url: await readFileAsDataUrl(output),
     name: file.name,
     size: output.size,

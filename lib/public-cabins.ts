@@ -24,8 +24,8 @@ export type PublicCabin = {
   bathrooms: number
   amenities: string[]
   categories: PublicCabinCategory[]
-  rating: number
-  reviews: number
+  rating?: number
+  reviews?: number
   badge?: "popular" | "oferta"
   description: string
   type: "romantica" | "familiar" | "grupal" | "premium"

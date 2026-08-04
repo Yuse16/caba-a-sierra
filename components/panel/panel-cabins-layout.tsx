@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Home, Mountain, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { PanelLogoutButton } from "@/components/auth/panel-logout-button"
 
 export function PanelCabinsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -45,6 +46,7 @@ export function PanelCabinsLayout({ children }: { children: React.ReactNode }) {
               </Link>
             </nav>
           )}
+          <PanelLogoutButton className={editing ? "ml-auto" : undefined} />
         </div>
       </header>
       {children}

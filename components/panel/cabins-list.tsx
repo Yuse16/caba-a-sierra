@@ -3,10 +3,12 @@
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Bed, Edit3, Eye, MapPin, Plus, Users, X } from "lucide-react"
-import { currency } from "@/lib/demo-data"
+import { Archive, Bed, Edit3, Eye, MapPin, Plus, RefreshCw, Users, X } from "lucide-react"
+import { formatCurrency as currency } from "@/lib/admin-presentational"
 import type { AdminCabin } from "@/lib/admin-cabins/types"
 import { useAdminCabins } from "./cabins-provider"
+import { usePanelSession } from "@/components/auth/panel-session-provider"
+import { ConfirmDialog } from "./confirm-dialog"
 
 function coverFor(cabin: AdminCabin) {
   return cabin.images.find((image) => image.isCover) ?? cabin.images[0]
@@ -46,15 +48,27 @@ function CabinPreview({ cabin, onClose }: { cabin: AdminCabin; onClose: () => vo
 }
 
 export function CabinsList() {
-  const { cabins, setCabinStatus } = useAdminCabins()
+  const session = usePanelSession()
+  const { cabins, ready, error, reload, setCabinStatus, archiveCabin } = useAdminCabins()
   const [preview, setPreview] = useState<AdminCabin | null>(null)
   const [notice, setNotice] = useState<{ tone: "success" | "error"; message: string } | null>(null)
   const [changingId, setChangingId] = useState<string | null>(null)
+  const [pendingArchive, setPendingArchive] = useState<AdminCabin | null>(null)
 
   const changeStatus = async (cabin: AdminCabin) => {
     setChangingId(cabin.id)
     const result = await setCabinStatus(cabin.id, cabin.status === "published" ? "draft" : "published")
     setChangingId(null)
+    setNotice({ tone: result.ok ? "success" : "error", message: result.message })
+    window.setTimeout(() => setNotice(null), 3500)
+  }
+
+  const archive = async () => {
+    if (!pendingArchive) return
+    setChangingId(pendingArchive.id)
+    const result = await archiveCabin(pendingArchive.id)
+    setChangingId(null)
+    setPendingArchive(null)
     setNotice({ tone: result.ok ? "success" : "error", message: result.message })
     window.setTimeout(() => setNotice(null), 3500)
   }
@@ -85,13 +99,16 @@ export function CabinsList() {
       </div>
 
       <div className="mt-5 space-y-4">
-        {cabins.map((cabin, index) => {
+        {!ready && <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground" role="status">Cargando cabañas…</div>}
+        {ready && error && <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-5" role="alert"><p className="text-sm text-destructive">{error}</p><button type="button" onClick={() => void reload()} className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground hover:bg-muted"><RefreshCw className="size-4" aria-hidden />Reintentar</button></div>}
+        {ready && !error && cabins.length === 0 && <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center"><p className="font-semibold text-foreground">Todavía no hay cabañas</p><p className="mt-1 text-sm text-muted-foreground">Crea la primera cabaña para comenzar.</p></div>}
+        {ready && !error && cabins.map((cabin, index) => {
           const cover = coverFor(cabin)
           const published = cabin.status === "published"
           return (
             <article key={cabin.id} className="grid min-w-0 gap-4 rounded-2xl border border-border bg-card p-3 shadow-sm sm:p-4 md:grid-cols-[112px_minmax(0,1fr)_auto] md:items-center">
               <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted md:aspect-square">
-                {cover ? <Image src={cover.url} alt={`Portada de ${cabin.name}`} fill sizes="112px" priority={index === 0} className="object-cover" /> : null}
+                {cover ? <Image src={cover.url} alt={`Portada de ${cabin.name}`} fill sizes="112px" loading={index === 0 ? "eager" : "lazy"} fetchPriority={index === 0 ? "high" : "auto"} className="object-cover" /> : null}
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
@@ -125,6 +142,11 @@ export function CabinsList() {
                     <span className={`absolute top-1 size-5 rounded-full bg-white shadow transition-transform ${published ? "translate-x-6" : "translate-x-1"}`} />
                   </span>
                 </button>
+                {session.role === "admin" && (
+                  <button type="button" disabled={changingId === cabin.id} onClick={() => setPendingArchive(cabin)} className="col-span-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-destructive/30 px-3 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-60">
+                    <Archive className="size-4" aria-hidden />Archivar
+                  </button>
+                )}
               </div>
             </article>
           )
@@ -132,6 +154,7 @@ export function CabinsList() {
       </div>
 
       {preview && <CabinPreview cabin={preview} onClose={() => setPreview(null)} />}
+      <ConfirmDialog open={pendingArchive !== null} title="¿Archivar esta cabaña?" description="La cabaña dejará de aparecer en el panel y en la página pública. Sus datos se conservarán para auditoría." confirmLabel="Archivar cabaña" onCancel={() => setPendingArchive(null)} onConfirm={() => void archive()} />
     </main>
   )
 }

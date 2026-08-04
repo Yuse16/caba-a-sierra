@@ -2,11 +2,13 @@ export type AdminCabinStatus = "draft" | "published"
 
 export type AdminCabinImage = {
   id: string
+  assetId?: string | null
   url: string
   name: string
   size: number
   type: string
   isCover: boolean
+  pendingUpload?: boolean
 }
 
 export type AdminCabin = {

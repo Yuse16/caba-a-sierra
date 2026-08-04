@@ -14,11 +14,11 @@ import {
 import { useAdminCabins } from "./cabins-provider"
 import { ConfirmDialog } from "./confirm-dialog"
 import { ImageManager } from "./image-manager"
+import { discardAdminMediaAction } from "@/app/panel/media/actions"
 
 const controlClass =
   "mt-1.5 min-h-12 w-full appearance-auto rounded-lg border border-border bg-background px-3 text-base text-foreground outline-none [color-scheme:light] placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20 sm:min-h-11 sm:text-sm"
 const textareaClass = `${controlClass} min-h-28 resize-y py-3`
-const FORM_NOTICE_KEY = "cabanas-sierra-norte:cabin-form-notice"
 
 function toInput(cabin: AdminCabin): AdminCabinInput {
   return {
@@ -53,7 +53,7 @@ function FieldError({ message }: { message?: string }) {
   return message ? <span className="mt-1 block text-xs font-medium text-destructive">{message}</span> : null
 }
 
-function CabinForm({ cabin }: { cabin?: AdminCabin }) {
+function CabinForm({ cabin, created = false }: { cabin?: AdminCabin; created?: boolean }) {
   const router = useRouter()
   const { saveCabin } = useAdminCabins()
   const [form, setForm] = useState<AdminCabinInput>(() => cabin ? toInput(cabin) : { ...emptyAdminCabin, images: [] })
@@ -62,35 +62,13 @@ function CabinForm({ cabin }: { cabin?: AdminCabin }) {
   const [dirty, setDirty] = useState(false)
   const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState<Partial<Record<PublicationField, string>>>({})
-  const [notice, setNotice] = useState<{ tone: "success" | "warning" | "error"; message: string } | null>(null)
+  const [notice, setNotice] = useState<{ tone: "success" | "warning" | "error"; message: string } | null>(created ? { tone: "success", message: "La cabaña se creó correctamente." } : null)
   const [confirmExit, setConfirmExit] = useState(false)
 
   useEffect(() => {
-    let storedNotice: { tone: "success" | "warning" | "error"; message: string } | null = null
-    try {
-      const stored = window.sessionStorage.getItem(FORM_NOTICE_KEY)
-      if (stored) {
-        const parsed: unknown = JSON.parse(stored)
-        if (
-          typeof parsed === "object" &&
-          parsed !== null &&
-          "tone" in parsed &&
-          "message" in parsed &&
-          (parsed.tone === "success" || parsed.tone === "warning" || parsed.tone === "error") &&
-          typeof parsed.message === "string"
-        ) {
-          storedNotice = { tone: parsed.tone, message: parsed.message }
-        }
-        window.sessionStorage.removeItem(FORM_NOTICE_KEY)
-      }
-    } catch {
-      window.sessionStorage.removeItem(FORM_NOTICE_KEY)
-    }
-    if (!storedNotice) return
-    const noticeToShow = storedNotice
-    const timer = window.setTimeout(() => setNotice(noticeToShow), 0)
-    return () => window.clearTimeout(timer)
-  }, [])
+    if (!created) return
+    window.history.replaceState(window.history.state, "", window.location.pathname)
+  }, [created])
 
   useEffect(() => {
     const warnBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -150,15 +128,17 @@ function CabinForm({ cabin }: { cabin?: AdminCabin }) {
     }
 
     setNotice(nextNotice)
-    if (!cabin) {
-      window.sessionStorage.setItem(FORM_NOTICE_KEY, JSON.stringify(nextNotice))
-      router.replace(`/panel/cabanas/${result.cabin.id}`)
-    }
+    if (!cabin) router.replace(`/panel/cabanas/${result.cabin.id}?created=1`)
+  }
+
+  const discardPendingUploads = async () => {
+    const ids = form.images.flatMap((image) => image.pendingUpload && image.assetId ? [image.assetId] : [])
+    if (ids.length) await discardAdminMediaAction(ids, "cabins")
   }
 
   const requestExit = () => {
     if (dirty) setConfirmExit(true)
-    else router.push("/panel/cabanas")
+    else void discardPendingUploads().finally(() => router.push("/panel/cabanas"))
   }
 
   return (
@@ -294,7 +274,7 @@ function CabinForm({ cabin }: { cabin?: AdminCabin }) {
         description="Hay cambios que todavía no se han guardado. Si sales ahora, se perderán."
         confirmLabel="Salir sin guardar"
         onCancel={() => setConfirmExit(false)}
-        onConfirm={() => router.push("/panel/cabanas")}
+        onConfirm={() => void discardPendingUploads().finally(() => router.push("/panel/cabanas"))}
       />
     </main>
   )
@@ -304,12 +284,16 @@ export function NewCabinForm() {
   return <CabinForm />
 }
 
-export function EditCabinForm({ id }: { id: string }) {
-  const { ready, findCabin } = useAdminCabins()
+export function EditCabinForm({ id, created = false }: { id: string; created?: boolean }) {
+  const { ready, error, reload, findCabin } = useAdminCabins()
   const cabin = findCabin(id)
 
   if (!ready) {
     return <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6"><p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground" role="status">Preparando la cabaña…</p></main>
+  }
+
+  if (error) {
+    return <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6"><section className="rounded-2xl border border-destructive/30 bg-destructive/10 p-6 text-center" role="alert"><p className="text-sm text-destructive">{error}</p><button type="button" onClick={() => void reload()} className="mt-5 min-h-12 rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground">Reintentar</button></section></main>
   }
 
   if (!cabin) {
@@ -324,5 +308,5 @@ export function EditCabinForm({ id }: { id: string }) {
     )
   }
 
-  return <CabinForm key={cabin.id} cabin={cabin} />
+  return <CabinForm key={cabin.id} cabin={cabin} created={created} />
 }

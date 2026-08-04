@@ -16,3 +16,9 @@ node_modules
 .next/
 .DS_Store
 *.tsbuildinfo
+playwright-report/
+test-results/
+coverage/
+*.local
+supabase/.temp/
+supabase/.branches/

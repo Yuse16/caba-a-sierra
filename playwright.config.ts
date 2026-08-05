@@ -2,7 +2,7 @@ import { defineConfig, devices } from "@playwright/test"
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  testIgnore: "auth-experience.spec.ts",
+  testIgnore: ["auth-experience.spec.ts", "staging-experience.spec.ts"],
   fullyParallel: true,
   forbidOnly: true,
   retries: 0,

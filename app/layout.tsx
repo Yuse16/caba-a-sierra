@@ -32,13 +32,13 @@ export function generateMetadata(): Metadata {
 
   return {
     metadataBase: origin ?? undefined,
-    title: 'Cabañas Sierra Norte — Cabañas en Arteaga',
+    title: 'DUPEZ | Renta de cabañas en toda la Sierra de Arteaga',
     description:
-      'Explora cabañas en la Sierra de Arteaga, Coahuila, consulta disponibilidad y encuentra opciones para tu próxima estancia.',
+      'Encuentra y reserva cabañas en la Sierra de Arteaga. Conoce opciones, disponibilidad y promociones de DUPEZ.',
     alternates: origin ? { canonical: '/' } : undefined,
     openGraph: {
-      title: 'Cabañas Sierra Norte',
-      description: 'Respira el bosque. Vive la sierra.',
+      title: 'DUPEZ | Renta de cabañas en toda la Sierra de Arteaga',
+      description: 'Encuentra y reserva cabañas en la Sierra de Arteaga. Conoce opciones, disponibilidad y promociones de DUPEZ.',
       locale: 'es_MX',
       type: 'website',
       url: origin ? '/' : undefined,
@@ -48,15 +48,15 @@ export function generateMetadata(): Metadata {
               url: '/og.png',
               width: 1200,
               height: 630,
-              alt: 'Cabañas Sierra Norte — Respira el bosque. Vive la sierra.',
+              alt: 'DUPEZ — Renta de cabañas en toda la Sierra de Arteaga',
             },
           ]
         : undefined,
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'Cabañas Sierra Norte',
-      description: 'Respira el bosque. Vive la sierra.',
+      title: 'DUPEZ | Renta de cabañas en toda la Sierra de Arteaga',
+      description: 'Encuentra y reserva cabañas en la Sierra de Arteaga. Conoce opciones, disponibilidad y promociones de DUPEZ.',
       images: origin ? ['/og.png'] : undefined,
     },
   }

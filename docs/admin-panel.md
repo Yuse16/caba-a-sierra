@@ -55,7 +55,7 @@ Las promociones se guardan en Supabase mediante Server Actions y el sitio públi
 
 ## Protección y persistencia
 
-El panel usa autenticación PKCE de Supabase, sesión validada en el servidor, perfil administrativo activo y autorización por rol. El proxy protege `/panel`, sus subrutas y `/admin`; el layout vuelve a validar la sesión y el perfil. Cuando falta la configuración de Supabase en producción, esas rutas responden `404`. En desarrollo local sin configuración continúan accesibles con un perfil de desarrollo generado solo en el servidor.
+El panel usa autenticación PKCE de Supabase, sesión validada en el servidor, perfil administrativo activo y autorización por rol. El proxy protege `/panel`, sus subrutas y `/admin`; el layout vuelve a validar la sesión y el perfil. Cuando falta la configuración de Supabase, el acceso al panel se bloquea y se muestra un aviso de configuración; no existe un perfil administrativo local de respaldo.
 
 Los editores administran catálogo y promociones, pero no reciben el dashboard ni datos sensibles de propietarios. Los administradores cargan propietarios, contactos, consultas, reservaciones y notas reales desde Supabase. RLS, auditoría y autoría forzada complementan la autorización de las Server Actions. `noindex` se mantiene como protección adicional, no como control de acceso.
 
@@ -63,6 +63,6 @@ Antes de habilitar el panel en un entorno real deben configurarse el proyecto Su
 
 La ruta pública `/` no contiene enlaces hacia `/panel` o `/admin` ni expone parámetros de vista o versión.
 
-## Contacto temporal
+## Contacto público
 
-El teléfono y el enlace de WhatsApp públicos se leen exclusivamente desde `lib/site-config.ts`. El contacto autorizado se conserva de forma temporal hasta que el cliente confirme el número definitivo. Antes de la entrega final debe actualizarse esa única configuración y verificarse nuevamente la llamada telefónica y el enlace de WhatsApp; no debe duplicarse el número directamente en componentes.
+El correo, teléfono y enlace de WhatsApp públicos se leen exclusivamente desde `lib/site-config.ts`. Antes de cada entrega debe confirmarse esa única configuración y verificarse nuevamente la llamada telefónica, el correo y el enlace de WhatsApp; no deben duplicarse los datos directamente en componentes.

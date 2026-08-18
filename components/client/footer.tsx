@@ -1,4 +1,4 @@
-import { Clock3, MapPin, MessageCircle, Mountain, Phone } from "lucide-react"
+import { Clock3, Mail, MapPin, MessageCircle, Mountain, Phone } from "lucide-react"
 import { siteContact } from "@/lib/site-config"
 
 const navigation = [
@@ -21,16 +21,16 @@ export function Footer() {
           <div>
             <a
               href="#inicio"
-              aria-label="Cabañas Sierra Norte, volver al inicio"
+              aria-label="DUPEZ, volver al inicio"
               className="inline-flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-[#14261b]"
             >
               <span className="inline-flex size-11 items-center justify-center rounded-xl bg-white/10 text-[#f4d58b]">
                 <Mountain className="size-6" aria-hidden />
               </span>
               <span>
-                <span className="block font-serif text-xl font-semibold text-white">Cabañas</span>
-                <span className="block text-[10px] font-bold uppercase tracking-[0.22em] text-[#f4d58b]">
-                  Sierra Norte
+                <span className="block font-serif text-xl font-semibold text-white">DUPEZ</span>
+                <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.22em] text-[#f4d58b]">
+                  Renta de cabañas en toda la Sierra de Arteaga
                 </span>
               </span>
             </a>
@@ -71,6 +71,12 @@ export function Footer() {
                 </a>
               </li>
               <li className="flex items-start gap-3">
+                <Mail className="mt-0.5 size-4 shrink-0 text-[#f4d58b]" aria-hidden />
+                <a href={`mailto:${siteContact.email}`} className={linkClasses}>
+                  {siteContact.email}
+                </a>
+              </li>
+              <li className="flex items-start gap-3">
                 <MapPin className="mt-0.5 size-4 shrink-0 text-[#f4d58b]" aria-hidden />
                 <span className="text-sm leading-6 text-white/75">Arteaga, Coahuila, México</span>
               </li>
@@ -94,7 +100,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 flex flex-col gap-2 border-t border-white/12 pt-6 text-xs text-white/55 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {currentYear} Cabañas Sierra Norte. Todos los derechos reservados.</p>
+          <p>© {currentYear} DUPEZ. Todos los derechos reservados.</p>
           <p>Hecho para disfrutar la sierra con tranquilidad.</p>
         </div>
       </div>

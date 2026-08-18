@@ -88,7 +88,6 @@ const sectionMeta: Record<string, { title: string; desc: string }> = {
 export function AdminPanel({
   version,
   initialData,
-  onVersionChange,
   onManageCabins,
   onManagePromotions,
   onCreateCabin,
@@ -96,7 +95,6 @@ export function AdminPanel({
 }: {
   version: PlatformVersion
   initialData: AdminPanelInitialData
-  onVersionChange?: (version: PlatformVersion) => void
   onManageCabins?: () => void
   onManagePromotions?: () => void
   onCreateCabin?: () => void
@@ -196,7 +194,7 @@ export function AdminPanel({
       {notice && <div className="fixed bottom-4 left-1/2 z-[80] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl bg-forest-dark px-4 py-3 text-center text-sm font-medium text-primary-foreground shadow-xl" role="status">{notice}</div>}
       {/* Sidebar (desktop) */}
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r border-sidebar-border lg:block">
-        <AdminSidebar version={version} active={visibleActive} onSelect={handleSelect} onUpgrade={() => onVersionChange?.("pro")} />
+        <AdminSidebar version={version} active={visibleActive} onSelect={handleSelect} />
       </aside>
 
       {/* Drawer (mobile) */}
@@ -215,7 +213,7 @@ export function AdminPanel({
             >
               <X className="size-5" aria-hidden />
             </button>
-            <AdminSidebar version={version} active={visibleActive} onSelect={handleSelect} onUpgrade={() => onVersionChange?.("pro")} />
+            <AdminSidebar version={version} active={visibleActive} onSelect={handleSelect} />
           </div>
         </div>
       )}
@@ -328,14 +326,17 @@ function StartDashboard({
   onAdd: () => void
 }) {
   const active = cabins.filter((c) => c.status !== "no-disponible").length
+  const newRequests = initialData.requests.filter((request) => request.status === "nueva").length
+  const pendingOwners = initialData.requests.filter((request) => request.status === "pendiente-propietario").length
+  const confirmedRequests = initialData.requests.filter((request) => request.status === "disponible-confirmada").length
   return (
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="min-w-0 space-y-6">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard icon={Home} label="Cabañas asociadas" value={String(active)} sub="Disponibles para consulta" action="Ver catálogo" onAction={() => onNavigate("cabanas")} />
-          <MetricCard icon={FileText} iconClassName="bg-gold/20 text-gold-foreground" label="Solicitudes nuevas" value="8" sub="Sin responder" action="Ver solicitudes" onAction={() => onNavigate("solicitudes")} />
-          <MetricCard icon={Users} iconClassName="bg-[oklch(0.9_0.04_240)] text-[oklch(0.45_0.12_255)]" label="Pendientes de propietario" value="3" sub="Requieren contacto" action="Ver confirmaciones" onAction={() => onNavigate("confirmaciones")} />
-          <MetricCard icon={DollarSign} iconClassName="bg-primary/10 text-primary" label="Disponibilidad confirmada" value="2" sub="Solicitudes actualizadas" action="Ver seguimiento" onAction={() => onNavigate("solicitudes")} />
+          <MetricCard icon={FileText} iconClassName="bg-gold/20 text-gold-foreground" label="Solicitudes nuevas" value={String(newRequests)} sub="Sin responder" action="Ver solicitudes" onAction={() => onNavigate("solicitudes")} />
+          <MetricCard icon={Users} iconClassName="bg-[oklch(0.9_0.04_240)] text-[oklch(0.45_0.12_255)]" label="Pendientes de propietario" value={String(pendingOwners)} sub="Requieren contacto" action="Ver confirmaciones" onAction={() => onNavigate("confirmaciones")} />
+          <MetricCard icon={DollarSign} iconClassName="bg-primary/10 text-primary" label="Disponibilidad confirmada" value={String(confirmedRequests)} sub="Solicitudes actualizadas" action="Ver seguimiento" onAction={() => onNavigate("solicitudes")} />
         </div>
 
         <section className="rounded-xl border border-border bg-card p-5">

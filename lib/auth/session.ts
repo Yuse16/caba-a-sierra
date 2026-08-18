@@ -1,7 +1,7 @@
 import "server-only"
 
 import { cache } from "react"
-import { notFound, redirect } from "next/navigation"
+import { redirect } from "next/navigation"
 import { hasSupabaseConfig } from "@/lib/supabase/config"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { hasPermission, type AdminPermission, type AdminRole } from "./permissions"
@@ -14,12 +14,8 @@ export type PanelSession = {
   isLocal: boolean
 }
 
-function developmentSession(): PanelSession {
-  return { userId: "local-development", email: null, displayName: "Administrador Sierra Norte", role: "admin", isLocal: true }
-}
-
 export const getPanelSession = cache(async (): Promise<PanelSession | null> => {
-  if (!hasSupabaseConfig()) return process.env.NODE_ENV === "production" ? null : developmentSession()
+  if (!hasSupabaseConfig()) return null
 
   const supabase = await createSupabaseServerClient()
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims()
@@ -46,10 +42,7 @@ export const getPanelSession = cache(async (): Promise<PanelSession | null> => {
 
 export async function requirePanelSession() {
   const session = await getPanelSession()
-  if (!session) {
-    if (!hasSupabaseConfig() && process.env.NODE_ENV === "production") notFound()
-    redirect("/login?error=access")
-  }
+  if (!session) redirect(hasSupabaseConfig() ? "/login?error=access" : "/login?error=configuration")
   return session
 }
 

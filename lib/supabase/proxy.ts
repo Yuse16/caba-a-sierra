@@ -7,8 +7,12 @@ import { getAuthCookieOptions } from "./cookie-options"
 const panelRoute = (pathname: string) => pathname === "/panel" || pathname.startsWith("/panel/") || pathname === "/admin"
 
 function unavailableResponse(request: NextRequest) {
-  if (process.env.NODE_ENV === "production" && panelRoute(request.nextUrl.pathname)) {
-    return new NextResponse("Not Found", { status: 404, headers: { "Cache-Control": "no-store" } })
+  if (panelRoute(request.nextUrl.pathname)) {
+    const loginUrl = request.nextUrl.clone()
+    loginUrl.pathname = "/login"
+    loginUrl.search = ""
+    loginUrl.searchParams.set("error", "configuration")
+    return NextResponse.redirect(loginUrl)
   }
   return NextResponse.next({ request })
 }

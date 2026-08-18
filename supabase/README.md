@@ -1,6 +1,6 @@
 # Supabase local y migraciones
 
-Las migraciones son aditivas y no se han aplicado a ningún proyecto remoto. Los seeds contienen únicamente catálogos públicos seguros; no incluyen propietarios, clientes, reservas, usuarios ni contraseñas simuladas.
+Las migraciones son aditivas y deben aplicarse primero en un entorno desechable y después en el proyecto remoto autorizado. Los seeds contienen únicamente catálogos públicos seguros; no incluyen propietarios, clientes, reservas, usuarios ni contraseñas simuladas.
 
 ## Preparación
 

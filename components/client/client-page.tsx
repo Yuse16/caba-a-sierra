@@ -11,6 +11,7 @@ import {
   Heart,
   Headset,
   MessageCircle,
+  Mountain,
   PawPrint,
   Search,
   ShieldCheck,
@@ -205,9 +206,13 @@ export function ClientPage({ cabins, promotions }: { cabins: PublicCabin[]; prom
 
           <div className="mx-auto flex min-h-[540px] max-w-7xl items-center px-4 pb-24 pt-20 sm:min-h-[590px] sm:px-6 sm:pb-28 lg:px-8">
             <div className="max-w-2xl">
+              <p className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-sm sm:text-xs">
+                <Mountain className="size-4 text-[#f4d58b]" aria-hidden />
+                DUPEZ
+              </p>
               <p className="mb-5 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-[#f4d58b] sm:text-sm">
                 <span className="h-px w-8 bg-[#f4d58b]" aria-hidden />
-                Escápate a la Sierra de Arteaga
+                Renta de cabañas en toda la Sierra de Arteaga
               </p>
               <h1
                 id="hero-title"
@@ -307,7 +312,7 @@ export function ClientPage({ cabins, promotions }: { cabins: PublicCabin[]; prom
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-primary">
-                  <Sparkles className="size-4" aria-hidden /> Selección Sierra Norte
+                  <Sparkles className="size-4" aria-hidden /> Selección DUPEZ
                 </p>
                 <h2 id="cabins-title" className="mt-2 font-serif text-3xl font-semibold tracking-[-0.02em] text-forest-dark sm:text-4xl">
                   Cabañas para tu próxima pausa

@@ -1,6 +1,6 @@
 "use client"
 
-import { Mountain, ChevronDown, Sparkles } from "lucide-react"
+import { Mountain, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { PlatformVersion } from "@/lib/platform-types"
 import { startNav, proNav, type SectionKey } from "./nav-config"
@@ -10,12 +10,10 @@ export function AdminSidebar({
   version,
   active,
   onSelect,
-  onUpgrade,
 }: {
   version: PlatformVersion
   active: SectionKey
   onSelect: (key: SectionKey) => void
-  onUpgrade?: () => void
 }) {
   const session = usePanelSession()
   const isPro = version === "pro"
@@ -87,18 +85,6 @@ export function AdminSidebar({
           </div>
         ))}
 
-        {!isPro && (
-          <div className="mx-2 mt-4 rounded-xl border border-border bg-secondary/50 p-3">
-            <p className="text-sm font-semibold text-foreground">Versión Start</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Panel básico para administrar tus cabañas y solicitudes.
-            </p>
-            <button type="button" onClick={onUpgrade} disabled={!onUpgrade} className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">
-              <Sparkles className="size-3.5 text-gold-foreground" aria-hidden />
-              Conocer más funciones
-            </button>
-          </div>
-        )}
       </nav>
 
       {/* User */}

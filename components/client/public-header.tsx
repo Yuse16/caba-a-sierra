@@ -29,21 +29,21 @@ export function PublicHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-forest-dark/10 bg-background/95 shadow-[0_1px_0_rgba(24,55,39,0.04)] backdrop-blur-xl">
-      <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-5 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-3 px-4 sm:px-6 lg:gap-5 lg:px-8">
         <a
           href="#inicio"
-          aria-label="Cabañas Sierra Norte, ir al inicio"
+          aria-label="DUPEZ, ir al inicio"
           className={`flex min-w-0 items-center gap-3 rounded-lg ${focusClasses}`}
         >
           <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
             <Mountain className="size-5" aria-hidden />
           </span>
-          <span className="min-w-0 leading-none">
-            <span className="block font-serif text-lg font-semibold tracking-[-0.02em] text-forest-dark">
-              Cabañas
+          <span className="min-w-0">
+            <span className="block font-serif text-lg font-semibold leading-tight tracking-[-0.02em] text-forest-dark">
+              DUPEZ
             </span>
-            <span className="mt-0.5 block text-[10px] font-bold uppercase tracking-[0.22em] text-primary">
-              Sierra Norte
+            <span className="mt-0.5 block max-w-[172px] text-[8px] font-bold uppercase leading-[1.35] tracking-[0.14em] text-primary sm:max-w-[240px] sm:text-[9px] sm:tracking-[0.18em] lg:max-w-none lg:text-[10px] lg:tracking-[0.22em] lg:whitespace-nowrap">
+              Renta de cabañas en toda la Sierra de Arteaga
             </span>
           </span>
         </a>

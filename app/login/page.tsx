@@ -19,7 +19,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <p className="mt-6 text-sm font-semibold text-primary">Panel privado</p>
         <h1 className="mt-1 font-serif text-3xl font-bold text-foreground">Inicia sesión</h1>
         <p className="mt-2 text-sm text-muted-foreground">Acceso exclusivo para usuarios administrativos autorizados.</p>
-        {error && <p role="alert" className="mt-5 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error === "access" ? "Tu sesión venció o la cuenta no tiene acceso activo." : "El enlace no es válido o ya venció. Solicita uno nuevo."}</p>}
+        {error && <p role="alert" className="mt-5 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{error === "access" ? "Tu sesión venció o la cuenta no tiene acceso activo." : error === "configuration" ? "El acceso seguro no está configurado en este entorno." : "El enlace no es válido o ya venció. Solicita uno nuevo."}</p>}
         <AuthForm action={loginAction} mode="login" next={next} />
         <Link href="/recuperar-contrasena" className="mt-5 inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">¿Olvidaste tu contraseña?</Link>
       </section>

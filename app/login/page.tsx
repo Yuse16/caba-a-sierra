@@ -6,8 +6,26 @@ import { getPanelSession } from "@/lib/auth/session"
 import { safePanelRedirect } from "@/lib/auth/redirects"
 import { loginAction } from "./actions"
 import { redirect } from "next/navigation"
+import { headers } from "next/headers"
 
-export const metadata: Metadata = { title: "Acceso al panel — Cabañas Sierra Norte", robots: { index: false, follow: false } }
+export async function generateMetadata(): Promise<Metadata> {
+  const h = await headers()
+  const host = h.get("host") ?? ""
+  const isPanel = host.startsWith("panel.")
+
+  return {
+    title: isPanel ? "Panel DUPEZ — Acceso" : "Acceso al panel — Cabañas Sierra Norte",
+    robots: { index: false, follow: false },
+    ...(isPanel
+      ? {
+          manifest: "/manifest.webmanifest",
+          appleWebApp: { capable: true, statusBarStyle: "default", title: "Panel DUPEZ" },
+          icons: { icon: "/panel-icon-192.png", apple: "/panel-icon-512.png" },
+          applicationName: "Panel DUPEZ",
+        }
+      : {}),
+  }
+}
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
   const { next, error } = await searchParams

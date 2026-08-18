@@ -1,4 +1,5 @@
-/** @type {import('next').NextConfig} */
+import { withSerwist } from "@serwist/turbopack"
+
 const isDevelopment = process.env.NODE_ENV === "development"
 
 function getSupabaseConnectSources() {
@@ -97,4 +98,4 @@ const nextConfig = {
   },
 }
 
-export default nextConfig
+export default withSerwist(nextConfig)

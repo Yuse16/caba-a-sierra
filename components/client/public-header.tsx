@@ -28,7 +28,7 @@ export function PublicHeader() {
   }, [open])
 
   return (
-    <header className="sticky top-0 z-50 border-b border-forest-dark/10 bg-background/95 shadow-[0_1px_0_rgba(24,55,39,0.04)] backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-forest-dark/10 bg-background/95 shadow-[0_1px_0_rgba(24,55,39,0.04)] backdrop-blur-xl pt-[env(safe-area-inset-top)]">
       <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-3 px-4 sm:px-6 lg:gap-5 lg:px-8">
         <a
           href="#inicio"

@@ -23,3 +23,7 @@ coverage/
 *.local
 supabase/.temp/
 supabase/.branches/
+
+# Serwist
+public/sw*
+public/swe-worker*

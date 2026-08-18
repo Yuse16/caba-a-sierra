@@ -1,4 +1,5 @@
 import { Analytics } from '@vercel/analytics/next'
+import { SerwistProvider } from '@serwist/turbopack/react'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Playfair_Display } from 'next/font/google'
 import './globals.css'
@@ -32,6 +33,7 @@ export function generateMetadata(): Metadata {
 
   return {
     metadataBase: origin ?? undefined,
+    applicationName: 'DUPEZ',
     title: 'DUPEZ | Renta de cabañas en toda la Sierra de Arteaga',
     description:
       'Encuentra y reserva cabañas en la Sierra de Arteaga. Conoce opciones, disponibilidad y promociones de DUPEZ.',
@@ -59,12 +61,25 @@ export function generateMetadata(): Metadata {
       description: 'Encuentra y reserva cabañas en la Sierra de Arteaga. Conoce opciones, disponibilidad y promociones de DUPEZ.',
       images: origin ? ['/og.png'] : undefined,
     },
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'default',
+      title: 'DUPEZ',
+    },
+    icons: {
+      icon: ['/favicon.png', '/icon.svg'],
+      apple: '/apple-touch-icon.png',
+    },
+    manifest: '/manifest.webmanifest',
   }
 }
 
 export const viewport: Viewport = {
   colorScheme: 'light',
   themeColor: '#2f5741',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({
@@ -75,7 +90,9 @@ export default function RootLayout({
   return (
     <html lang="es" data-scroll-behavior="smooth" className={`${geistSans.variable} ${playfair.variable} bg-background`}>
       <body className="font-sans antialiased">
-        {children}
+        <SerwistProvider swUrl="/serwist/sw.js">
+          {children}
+        </SerwistProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

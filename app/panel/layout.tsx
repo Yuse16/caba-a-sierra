@@ -8,7 +8,7 @@ export function generateMetadata(): Metadata {
   return {
     title: "Panel DUPEZ — Administración",
     robots: { index: false, follow: false },
-    manifest: "/manifest.webmanifest?scope=panel",
+    manifest: "/manifest.webmanifest",
     appleWebApp: {
       capable: true,
       statusBarStyle: "default",

@@ -2,11 +2,12 @@ import { NextResponse } from "next/server"
 
 export function GET() {
   return NextResponse.json({
+    id: "dupez-panel",
     name: "Panel DUPEZ — Administración",
     short_name: "Panel DUPEZ",
     description: "Panel de administración para gestionar cabañas, reservaciones y clientes.",
-    start_url: "/panel",
-    scope: "/panel",
+    start_url: "/",
+    scope: "/",
     display: "standalone",
     background_color: "#f5f1e7",
     theme_color: "#2f5741",

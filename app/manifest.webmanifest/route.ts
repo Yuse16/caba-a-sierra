@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 const publicManifest = {
+  id: "dupez-public",
   name: "DUPEZ — Renta de cabañas en toda la Sierra de Arteaga",
   short_name: "DUPEZ",
   description:
@@ -19,11 +20,12 @@ const publicManifest = {
 }
 
 const panelManifest = {
+  id: "dupez-panel",
   name: "Panel DUPEZ — Administración",
   short_name: "Panel DUPEZ",
   description: "Panel de administración para gestionar cabañas, reservaciones y clientes.",
-  start_url: "/panel",
-  scope: "/panel",
+  start_url: "/",
+  scope: "/",
   display: "standalone",
   background_color: "#f5f1e7",
   theme_color: "#2f5741",
@@ -38,11 +40,10 @@ const panelManifest = {
 export const dynamic = "force-dynamic"
 
 export function GET(request: NextRequest) {
-  const scope = request.nextUrl.searchParams.get("scope")
-  const referer = request.headers.get("referer") ?? ""
-  const isPanel = scope === "panel" || referer.includes("/panel")
+  const host = request.headers.get("host") ?? ""
+  const isPanelHost = host.startsWith("panel.")
 
-  return NextResponse.json(isPanel ? panelManifest : publicManifest, {
+  return NextResponse.json(isPanelHost ? panelManifest : publicManifest, {
     headers: {
       "Content-Type": "application/manifest+json",
       "Cache-Control": "public, max-age=0, must-revalidate",

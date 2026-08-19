@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { LogOut } from "lucide-react"
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { cn } from "@/lib/utils"
 
 export function PanelLogoutButton({ className }: { className?: string }) {
@@ -12,10 +11,9 @@ export function PanelLogoutButton({ className }: { className?: string }) {
     if (busy) return
     setBusy(true)
     try {
-      const supabase = createSupabaseBrowserClient()
-      await supabase.auth.signOut({ scope: "global" })
+      await fetch("/api/auth/logout", { method: "POST" })
     } catch {
-      // continue even if signOut API fails
+      // ignore
     }
     window.location.href = "/login"
   }

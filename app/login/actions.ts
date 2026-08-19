@@ -1,5 +1,6 @@
 "use server"
 
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { hasSupabaseConfig } from "@/lib/supabase/config"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
@@ -27,7 +28,15 @@ export async function loginAction(_: AuthActionState, formData: FormData): Promi
 export async function logoutAction() {
   if (hasSupabaseConfig()) {
     const supabase = await createSupabaseServerClient()
-    await supabase.auth.signOut()
+    try {
+      await supabase.auth.signOut({ scope: "global" })
+    } catch {
+      // signOut may fail (network, etc.) — continue to clear cookies anyway
+    }
+    const store = await cookies()
+    for (const c of store.getAll()) {
+      if (c.name.startsWith("sb-")) store.delete(c.name)
+    }
   }
   redirect("/login")
 }

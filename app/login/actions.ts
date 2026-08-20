@@ -64,5 +64,17 @@ export async function updatePasswordAction(_: AuthActionState, formData: FormDat
   const supabase = await createSupabaseServerClient()
   const { error } = await supabase.auth.updateUser({ password })
   if (error) return { error: "No pudimos actualizar la contraseña. Solicita un enlace nuevo.", success: false }
-  redirect("/panel")
+
+  const { data: claims } = await supabase.auth.getClaims()
+  const userId = claims?.claims?.sub
+  if (userId) {
+    const { data: profile } = await supabase
+      .from("admin_profiles")
+      .select("user_id")
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .maybeSingle()
+    if (profile) redirect("/panel")
+  }
+  redirect("/")
 }

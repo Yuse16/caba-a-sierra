@@ -1,0 +1,10 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "caba-a-sierra.vercel.app" }],
+      "destination": "https://dupez.uk/:path*",
+      "permanent": true
+    }
+  ]
+}

@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server"
-import { requirePermission } from "@/lib/auth/session"
+import { hasSupabaseConfig } from "@/lib/supabase/config"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
-    const session = await requirePermission("catalog.write")
-    return NextResponse.json({ ok: true, userId: session.userId })
+    if (!hasSupabaseConfig()) return NextResponse.json({ ok: false, error: "no supabase config" })
+    const supabase = await createSupabaseServerClient()
+    const { data, error } = await supabase.auth.getClaims()
+    return NextResponse.json({ ok: !error, data, error: error?.message })
   } catch (error) {
-    console.error("POST /api/test-auth", error)
     return NextResponse.json({ ok: false, error: String(error) })
   }
 }

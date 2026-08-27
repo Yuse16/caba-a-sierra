@@ -5,12 +5,30 @@ import Image from "next/image"
 import { ImagePlus, LoaderCircle, RefreshCw, Trash2 } from "lucide-react"
 import { preparePromotionImage, validatePromotionImage } from "@/lib/admin-promotions/image-processing"
 import type { AdminPromotionImage } from "@/lib/admin-promotions/types"
-import { discardAdminMediaAction, uploadAdminMediaAction } from "@/app/panel/media/actions"
 import { ConfirmDialog } from "./confirm-dialog"
 
 function readableSize(size: number) {
   if (size === 0) return "Imagen incluida"
   return size < 1024 * 1024 ? `${Math.max(1, Math.round(size / 1024))} KB` : `${(size / 1024 / 1024).toFixed(1)} MB`
+}
+
+async function apiUpload(dataUrl: string, originalName: string, scope: string) {
+  const url = scope === "promotions" ? "/api/media/upload-promotion" : "/api/media/upload"
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ dataUrl, originalName, scope }),
+  })
+  return resp.json()
+}
+
+async function apiDiscard(assetIds: string[]) {
+  const resp = await fetch("/api/media/discard", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ assetIds }),
+  })
+  return resp.json()
 }
 
 export function PromotionImageField({ image, onChange, error }: { image: AdminPromotionImage | null; onChange: (image: AdminPromotionImage | null) => void; error?: string }) {
@@ -27,12 +45,12 @@ export function PromotionImageField({ image, onChange, error }: { image: AdminPr
     setProcessing(true)
     try {
       const prepared = await preparePromotionImage(file)
-      const result = await uploadAdminMediaAction({ dataUrl: prepared.url, originalName: prepared.name, scope: "promotions" })
+      const result = await apiUpload(prepared.url, prepared.name, "promotions")
       if (!result.ok) {
         setUploadError(result.message)
         return
       }
-      if (image?.pendingUpload && image.assetId) await discardAdminMediaAction([image.assetId], "promotions")
+      if (image?.pendingUpload && image.assetId) await apiDiscard([image.assetId])
       onChange({
         assetId: result.data.assetId,
         url: result.data.url,
@@ -85,7 +103,7 @@ export function PromotionImageField({ image, onChange, error }: { image: AdminPr
 
       <ConfirmDialog open={confirmDelete} title="¿Eliminar esta imagen?" description="La promoción conservará sus demás datos, pero no podrá publicarse sin una imagen." confirmLabel="Eliminar imagen" onCancel={() => setConfirmDelete(false)} onConfirm={() => {
         if (image?.pendingUpload && image.assetId) {
-          void discardAdminMediaAction([image.assetId], "promotions").then((result) => {
+          void apiDiscard([image.assetId]).then((result) => {
             if (!result.ok) setUploadError(result.message)
           })
         }

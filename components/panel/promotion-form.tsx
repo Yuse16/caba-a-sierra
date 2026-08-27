@@ -10,7 +10,6 @@ import { PublicPromotionCard } from "@/components/promotions/public-promotion-ca
 import { useAdminPromotions } from "./promotions-provider"
 import { PromotionImageField } from "./promotion-image-field"
 import { ConfirmDialog } from "./confirm-dialog"
-import { discardAdminMediaAction } from "@/app/panel/media/actions"
 
 const controlClass = "mt-1.5 min-h-12 w-full appearance-auto rounded-lg border border-border bg-background px-3 text-base text-foreground outline-none [color-scheme:light] placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20 sm:min-h-11 sm:text-sm"
 const textareaClass = `${controlClass} min-h-28 resize-y py-3`
@@ -102,7 +101,13 @@ function PromotionForm({ promotion, created = false }: { promotion?: AdminPromot
   }
 
   const discardPendingUpload = async () => {
-    if (form.image?.pendingUpload && form.image.assetId) await discardAdminMediaAction([form.image.assetId], "promotions")
+    if (form.image?.pendingUpload && form.image.assetId) {
+      await fetch("/api/media/discard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assetIds: [form.image.assetId] }),
+      })
+    }
   }
   const requestExit = () => dirty ? setConfirmExit(true) : void discardPendingUpload().finally(() => router.push("/panel/promociones"))
   const effectiveStatus = promotion ? getEffectivePromotionStatus({ ...promotion, ...form }) : form.status

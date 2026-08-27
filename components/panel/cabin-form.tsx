@@ -14,7 +14,6 @@ import {
 import { useAdminCabins } from "./cabins-provider"
 import { ConfirmDialog } from "./confirm-dialog"
 import { ImageManager } from "./image-manager"
-import { discardAdminMediaAction } from "@/app/panel/media/actions"
 
 const controlClass =
   "mt-1.5 min-h-12 w-full appearance-auto rounded-lg border border-border bg-background px-3 text-base text-foreground outline-none [color-scheme:light] placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20 sm:min-h-11 sm:text-sm"
@@ -133,7 +132,13 @@ function CabinForm({ cabin, created = false }: { cabin?: AdminCabin; created?: b
 
   const discardPendingUploads = async () => {
     const ids = form.images.flatMap((image) => image.pendingUpload && image.assetId ? [image.assetId] : [])
-    if (ids.length) await discardAdminMediaAction(ids, "cabins")
+    if (ids.length) {
+      await fetch("/api/media/discard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assetIds: ids }),
+      })
+    }
   }
 
   const requestExit = () => {

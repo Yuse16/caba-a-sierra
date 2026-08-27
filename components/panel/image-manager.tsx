@@ -9,7 +9,6 @@ import {
   validateImageFiles,
 } from "@/lib/admin-cabins/image-processing"
 import type { AdminCabinImage } from "@/lib/admin-cabins/types"
-import { discardAdminMediaAction, uploadAdminMediaAction } from "@/app/panel/media/actions"
 import { ConfirmDialog } from "./confirm-dialog"
 
 function readableSize(size: number) {
@@ -44,7 +43,12 @@ export function ImageManager({
         result.valid.map((file, index) => prepareCabinImage(file, images.length === 0 && index === 0)),
       )
       const uploaded: Array<{ image: AdminCabinImage } | { message: string }> = await Promise.all(prepared.map(async (image) => {
-        const upload = await uploadAdminMediaAction({ dataUrl: image.url, originalName: image.name, scope: "cabins" })
+        const resp = await fetch("/api/media/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dataUrl: image.url, originalName: image.name, scope: "cabins" }),
+        })
+        const upload = await resp.json()
         if (!upload.ok) return { message: `${image.name}: ${upload.message}` }
         return {
           image: {
@@ -88,7 +92,12 @@ export function ImageManager({
   const removePendingImage = () => {
     if (!pendingDelete) return
     if (pendingDelete.pendingUpload && pendingDelete.assetId) {
-      void discardAdminMediaAction([pendingDelete.assetId], "cabins").then((result) => {
+      void fetch("/api/media/discard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assetIds: [pendingDelete.assetId] }),
+      }).then(async (resp) => {
+        const result = await resp.json()
         if (!result.ok) setUploadErrors((current) => [...current, result.message])
       })
     }

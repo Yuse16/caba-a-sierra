@@ -1,11 +1,11 @@
 import type { AdminPromotionImage } from "./types"
 
-export const MAX_PROMOTION_IMAGE_SIZE = 5 * 1024 * 1024
+export const MAX_PROMOTION_IMAGE_SIZE = 10 * 1024 * 1024
 export const ALLOWED_PROMOTION_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const
 
 export function validatePromotionImage(file: File) {
   if (!ALLOWED_PROMOTION_IMAGE_TYPES.includes(file.type as (typeof ALLOWED_PROMOTION_IMAGE_TYPES)[number])) return "Usa una imagen JPG, PNG o WebP."
-  if (file.size > MAX_PROMOTION_IMAGE_SIZE) return "La imagen supera el límite de 5 MB."
+  if (file.size > MAX_PROMOTION_IMAGE_SIZE) return "La imagen supera el límite de 10 MB."
   return null
 }
 

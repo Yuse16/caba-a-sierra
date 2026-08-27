@@ -63,7 +63,8 @@ export function ImageManager({
       const failed = uploaded.flatMap((item) => "message" in item ? [item.message] : [])
       if (successful.length) onChange([...images, ...successful])
       if (failed.length) setUploadErrors((current) => [...current, ...failed])
-    } catch {
+    } catch (error) {
+      console.error("Image upload failed:", error)
       setUploadErrors((current) => [...current, "No pudimos preparar una de las imágenes. Intenta con otra fotografía."])
     } finally {
       setProcessing(false)
@@ -102,7 +103,7 @@ export function ImageManager({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 id="images-title" className="text-lg font-semibold text-foreground">Fotografías</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Agrega hasta {MAX_CABIN_IMAGES} imágenes JPG, PNG o WebP de máximo 5 MB.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Agrega hasta {MAX_CABIN_IMAGES} imágenes JPG, PNG o WebP de máximo 10 MB.</p>
         </div>
         <button
           type="button"

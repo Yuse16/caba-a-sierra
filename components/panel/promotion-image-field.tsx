@@ -55,7 +55,7 @@ export function PromotionImageField({ image, onChange, error }: { image: AdminPr
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 id="promotion-image-title" className="text-lg font-semibold text-foreground">Imagen principal</h2>
-          <p className="mt-1 text-sm text-muted-foreground">JPG, PNG o WebP de máximo 5 MB. Recomendado: 1600 × 900 px.</p>
+          <p className="mt-1 text-sm text-muted-foreground">JPG, PNG o WebP de máximo 10 MB. Recomendado: 1600 × 900 px.</p>
         </div>
         <button type="button" disabled={processing} onClick={() => inputRef.current?.click()} className="inline-flex min-h-12 items-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-60">
           {processing ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : image ? <RefreshCw className="size-4" aria-hidden /> : <ImagePlus className="size-4" aria-hidden />}

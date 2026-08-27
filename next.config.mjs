@@ -67,7 +67,7 @@ function contentSecurityPolicy() {
 const nextConfig = {
   poweredByHeader: false,
   experimental: {
-    serverActions: { bodySizeLimit: "8mb" },
+    serverActions: { bodySizeLimit: "24mb" },
   },
   turbopack: {
     root: process.cwd(),

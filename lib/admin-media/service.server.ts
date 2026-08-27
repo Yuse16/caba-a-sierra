@@ -1,7 +1,6 @@
 import "server-only"
 
 import { createHash, randomUUID } from "node:crypto"
-import sharp from "sharp"
 import { hasSupabaseConfig } from "@/lib/supabase/config"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { AdminRole } from "@/lib/auth/permissions"
@@ -32,6 +31,68 @@ function extensionFor(mime: AllowedMime) {
   return "webp"
 }
 
+function readUInt16BE(buffer: Buffer, offset: number) {
+  return (buffer[offset] << 8) | buffer[offset + 1]
+}
+
+function readUInt32BE(buffer: Buffer, offset: number) {
+  return (buffer[offset] * 0x1000000) + ((buffer[offset + 1] << 16) | (buffer[offset + 2] << 8) | buffer[offset + 3])
+}
+
+function decodeDimensions(bytes: Buffer, mime: AllowedMime): { width: number; height: number } | null {
+  try {
+    if (mime === "image/jpeg") {
+      let offset = 2
+      while (offset + 9 < bytes.length) {
+        if (bytes[offset] !== 0xff) { offset += 1; continue }
+        const marker = bytes[offset + 1]
+        if (marker === 0xd8 || marker === 0xd9) { offset += 2; continue }
+        if ((marker >= 0xc0 && marker <= 0xc3) || (marker >= 0xc5 && marker <= 0xc7) || (marker >= 0xc9 && marker <= 0xcb) || (marker >= 0xcd && marker <= 0xcf)) {
+          return { height: readUInt16BE(bytes, offset + 5), width: readUInt16BE(bytes, offset + 7) }
+        }
+        const length = readUInt16BE(bytes, offset + 2)
+        if (length < 2) return null
+        offset += 2 + length
+      }
+      return null
+    }
+    if (mime === "image/png") {
+      if (bytes.length < 24) return null
+      return { width: readUInt32BE(bytes, 16), height: readUInt32BE(bytes, 20) }
+    }
+    if (mime === "image/webp") {
+      if (bytes.length < 30) return null
+      const isVp8x = bytes.toString("ascii", 12, 16) === "VP8X"
+      const isVp8l = bytes.toString("ascii", 12, 16) === "VP8L"
+      const isVp8 = bytes.toString("ascii", 12, 16) === "VP8 "
+      if (isVp8x) {
+        const width = 1 + readUInt24LE(bytes, 24)
+        const height = 1 + readUInt24LE(bytes, 27)
+        return { width, height }
+      }
+      if (isVp8l) {
+        const bits = bytes.readUInt32LE(21)
+        const width = (bits & 0x3fff) + 1
+        const height = ((bits >> 14) & 0x3fff) + 1
+        return { width, height }
+      }
+      if (isVp8) {
+        const width = bytes.readUInt16LE(26) & 0x3fff
+        const height = bytes.readUInt16LE(28) & 0x3fff
+        return { width, height }
+      }
+      return null
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+function readUInt24LE(buffer: Buffer, offset: number) {
+  return buffer[offset] | (buffer[offset + 1] << 8) | (buffer[offset + 2] << 16)
+}
+
 async function validateAndOptimize(input: AdminMediaUploadInput) {
   const match = input.dataUrl.match(dataUrlPattern)
   if (!match) throw new Error("La imagen no tiene un formato válido. Usa JPG, PNG o WebP.")
@@ -41,44 +102,19 @@ async function validateAndOptimize(input: AdminMediaUploadInput) {
   const actualMime = detectedMime(source)
   if (!actualMime || actualMime !== claimedMime) throw new Error("El contenido de la imagen no coincide con su formato.")
 
-  let metadata
-  try {
-    metadata = await sharp(source, { failOn: "error" }).metadata()
-  } catch {
-    throw new Error("No pudimos validar la imagen. Intenta con otro archivo.")
-  }
-  if (!metadata.width || !metadata.height || !["jpeg", "png", "webp"].includes(metadata.format ?? "")) {
+  const dimensions = decodeDimensions(source, actualMime)
+  if (!dimensions || dimensions.width < 1 || dimensions.height < 1) {
     throw new Error("No pudimos leer las dimensiones de la imagen.")
   }
 
-  const maxDimension = input.scope === "cabins" ? 1600 : 1800
-  let bytes = source
-  let mime = actualMime
-  try {
-    const webp = await sharp(source, { failOn: "error" })
-      .rotate()
-      .resize({ width: maxDimension, height: maxDimension, fit: "inside", withoutEnlargement: true })
-      .webp({ quality: input.scope === "cabins" ? 82 : 84 })
-      .toBuffer()
-    if (webp.length < source.length) {
-      bytes = webp
-      mime = "image/webp"
-    }
-  } catch {
-    bytes = source
-    mime = actualMime
-  }
-
-  const finalMetadata = await sharp(bytes, { failOn: "error" }).metadata()
-  if (!finalMetadata.width || !finalMetadata.height) throw new Error("No pudimos confirmar las dimensiones de la imagen.")
   return {
-    bytes,
-    mime,
-    extension: extensionFor(mime),
-    width: finalMetadata.width,
-    height: finalMetadata.height,
+    bytes: source,
+    mime: actualMime,
+    extension: extensionFor(actualMime),
+    width: dimensions.width,
+    height: dimensions.height,
     originalName: safeOriginalName(input.originalName),
-    sha256: createHash("sha256").update(bytes).digest("hex"),
+    sha256: createHash("sha256").update(source).digest("hex"),
   }
 }
 

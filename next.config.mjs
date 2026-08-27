@@ -66,6 +66,7 @@ function contentSecurityPolicy() {
 
 const nextConfig = {
   poweredByHeader: false,
+  serverExternalPackages: ["sharp"],
   experimental: {
     serverActions: { bodySizeLimit: "24mb" },
   },

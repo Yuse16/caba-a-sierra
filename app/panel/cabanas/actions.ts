@@ -1,7 +1,6 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { isRedirectError } from "next/dist/client/components/redirect-error"
 import { createAdminCabinRepository } from "@/lib/admin-cabins/repository.server"
 import { getMissingPublicationFields, type AdminCabin, type AdminCabinInput, type AdminCabinStatus } from "@/lib/admin-cabins/types"
 import { requirePermission } from "@/lib/auth/session"
@@ -9,6 +8,12 @@ import { discardAdminMedia, finalizeAdminMedia, returnAdminMediaToStaging } from
 
 export type CabinsActionResult = { ok: true; data: AdminCabin[]; message?: string } | { ok: false; message: string }
 export type CabinActionResult = { ok: true; data: AdminCabin; message: string } | { ok: false; message: string }
+
+function isFrameworkError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false
+  const digest = (error as { digest?: unknown }).digest
+  return typeof digest === "string" && digest.startsWith("NEXT_")
+}
 
 function safeMutationMessage(error: unknown, fallback: string) {
   const message = error instanceof Error ? error.message : ""
@@ -26,7 +31,7 @@ export async function loadAdminCabinsAction(): Promise<CabinsActionResult> {
     await requirePermission("catalog.read")
     return { ok: true, data: await createAdminCabinRepository().list() }
   } catch (error) {
-    if (isRedirectError(error)) throw error
+    if (isFrameworkError(error)) throw error
     console.error("loadAdminCabinsAction", error)
     return { ok: false, message: "No pudimos cargar las cabañas. Revisa tu conexión e intenta nuevamente." }
   }
@@ -54,7 +59,7 @@ export async function saveAdminCabinAction(input: AdminCabinInput, id?: string):
       message: id ? input.status === "published" ? "El contenido ya está publicado." : "Los cambios se guardaron." : "La cabaña se creó correctamente.",
     }
   } catch (error) {
-    if (isRedirectError(error)) throw error
+    if (isFrameworkError(error)) throw error
     await returnAdminMediaToStaging(finalizedIds)
     console.error("saveAdminCabinAction", error)
     return { ok: false, message: safeMutationMessage(error, "No pudimos guardar los cambios. Intenta nuevamente.") }
@@ -73,7 +78,7 @@ export async function archiveAdminCabinAction(id: string): Promise<{ ok: boolean
     refreshCabinPages()
     return { ok: true, message: "La cabaña fue archivada." }
   } catch (error) {
-    if (isRedirectError(error)) throw error
+    if (isFrameworkError(error)) throw error
     console.error("archiveAdminCabinAction", error)
     return { ok: false, message: "No pudimos archivar la cabaña o no tienes permiso para hacerlo." }
   }
@@ -100,7 +105,7 @@ export async function setAdminCabinStatusAction(id: string, status: AdminCabinSt
     refreshCabinPages()
     return { ok: true, data: saved, message: status === "published" ? "La cabaña ya está publicada." : "La cabaña quedó oculta." }
   } catch (error) {
-    if (isRedirectError(error)) throw error
+    if (isFrameworkError(error)) throw error
     console.error("setAdminCabinStatusAction", error)
     return { ok: false, message: "No pudimos cambiar el estado. Intenta nuevamente." }
   }

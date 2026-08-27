@@ -1,7 +1,6 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { unstable_rethrow } from "next/navigation"
 import { createAdminPromotionRepository } from "@/lib/admin-promotions/repository.server"
 import { getEffectivePromotionStatus } from "@/lib/admin-promotions/service"
 import type { AdminPromotion, AdminPromotionInput, AdminPromotionStatus } from "@/lib/admin-promotions/types"
@@ -28,7 +27,6 @@ export async function loadAdminPromotionsAction(): Promise<PromotionsActionResul
     await requirePermission("promotions.read")
     return { ok: true, data: await createAdminPromotionRepository().list() }
   } catch (error) {
-    unstable_rethrow(error)
     console.error("loadAdminPromotionsAction", error)
     return { ok: false, message: "No pudimos cargar las promociones. Revisa tu conexión e intenta nuevamente." }
   }
@@ -53,7 +51,6 @@ export async function saveAdminPromotionAction(input: AdminPromotionInput, id?: 
       : "La promoción se creó correctamente."
     return { ok: true, data: saved, message }
   } catch (error) {
-    unstable_rethrow(error)
     await returnAdminMediaToStaging(finalizedIds)
     console.error("saveAdminPromotionAction", error)
     return { ok: false, message: publicMessage(error, "No pudimos guardar la promoción. Intenta nuevamente.") }
@@ -75,7 +72,6 @@ export async function setAdminPromotionStatusAction(id: string, status: AdminPro
     const effective = getEffectivePromotionStatus(saved)
     return { ok: true, data: saved, message: status === "hidden" ? "La promoción fue ocultada." : effective === "scheduled" ? "La promoción quedó programada." : effective === "expired" ? "Actualiza las fechas antes de volver a mostrarla." : "La promoción ya está visible en la página." }
   } catch (error) {
-    unstable_rethrow(error)
     console.error("setAdminPromotionStatusAction", error)
     return { ok: false, message: "No pudimos cambiar la visibilidad. Intenta nuevamente." }
   }
@@ -92,7 +88,6 @@ export async function deleteAdminPromotionAction(id: string): Promise<PromotionA
     refreshPromotionPages()
     return { ok: true, message: "La promoción fue eliminada." }
   } catch (error) {
-    unstable_rethrow(error)
     console.error("deleteAdminPromotionAction", error)
     return { ok: false, message: "No pudimos eliminar la promoción o no tienes permiso para hacerlo." }
   }
@@ -105,7 +100,6 @@ export async function reorderAdminPromotionsAction(ids: string[]): Promise<Promo
     refreshPromotionPages()
     return { ok: true, data, message: "El orden de las promociones fue actualizado." }
   } catch (error) {
-    unstable_rethrow(error)
     console.error("reorderAdminPromotionsAction", error)
     return { ok: false, message: "No pudimos cambiar el orden. Intenta nuevamente." }
   }

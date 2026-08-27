@@ -1,21 +1,16 @@
 import { NextResponse } from "next/server"
-import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { getPanelSession } from "@/lib/auth/session"
+import { uploadAdminMedia } from "@/lib/admin-media/service.server"
 
-export async function POST() {
-  const out: Record<string, unknown> = {}
+export async function POST(request: Request) {
   try {
-    const supabase = await createSupabaseServerClient()
-    const { data, error } = await supabase.auth.getClaims()
-    out.getClaims = { hasData: !!data, error: error?.message ?? null }
-  } catch (e) {
-    out.getClaimsError = String(e)
-  }
-  try {
+    const input = await request.json()
     const session = await getPanelSession()
-    out.session = session ? { userId: session.userId, role: session.role } : null
+    if (!session) return NextResponse.json({ ok: false, error: "no-session" })
+    const data = await uploadAdminMedia(input, session.userId)
+    return NextResponse.json({ ok: true, data })
   } catch (e) {
-    out.sessionError = String(e)
+    console.error("DEBUG upload error:", e)
+    return NextResponse.json({ ok: false, error: String(e) })
   }
-  return NextResponse.json({ ok: true, out })
 }

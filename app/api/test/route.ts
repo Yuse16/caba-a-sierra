@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server"
-import { getPanelSession } from "@/lib/auth/session"
-import { uploadAdminMedia } from "@/lib/admin-media/service.server"
+import sharp from "sharp"
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
-    const input = await request.json()
-    const session = await getPanelSession()
-    if (!session) return NextResponse.json({ ok: false, error: "no-session" })
-    const data = await uploadAdminMedia(input, session.userId)
-    return NextResponse.json({ ok: true, data })
+    const out = await sharp(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64")).metadata()
+    return NextResponse.json({ ok: true, sharp: out.format })
   } catch (e) {
-    console.error("DEBUG upload error:", e)
     return NextResponse.json({ ok: false, error: String(e) })
   }
 }

@@ -224,7 +224,9 @@ function CabinForm({ cabin, created = false }: { cabin?: AdminCabin; created?: b
           </div>
           <button type="button" role="switch" aria-checked={form.acceptsPets} onClick={() => update("acceptsPets", !form.acceptsPets)} className="mt-5 flex min-h-12 w-full items-center justify-between rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground hover:bg-muted sm:max-w-md">
             <span>Acepta mascotas</span>
-            <span className={`relative h-7 w-12 overflow-hidden rounded-full transition-colors ${form.acceptsPets ? "bg-primary" : "bg-muted"}`} aria-hidden><span className={`absolute top-1 size-5 rounded-full bg-white shadow transition-transform ${form.acceptsPets ? "translate-x-6" : "translate-x-1"}`} /></span>
+            <span className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${form.acceptsPets ? "bg-primary" : "bg-muted"}`} aria-hidden>
+              <span className={`absolute top-1 left-1 size-5 rounded-full bg-white shadow transition-all duration-200 ${form.acceptsPets ? "left-[calc(100%-24px)]" : "left-1"}`} />
+            </span>
           </button>
         </section>
 

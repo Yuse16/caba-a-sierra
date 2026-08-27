@@ -1,7 +1,7 @@
 import type { AdminCabinImage } from "./types"
 
 export const MAX_CABIN_IMAGES = 10
-export const MAX_IMAGE_SIZE = 5 * 1024 * 1024
+export const MAX_IMAGE_SIZE = 10 * 1024 * 1024
 export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const
 
 export type ImageValidationResult = {
@@ -24,7 +24,7 @@ export function validateImageFiles(files: File[], currentCount: number): ImageVa
       continue
     }
     if (file.size > MAX_IMAGE_SIZE) {
-      errors.push(`${file.name}: la imagen supera el límite de 5 MB.`)
+      errors.push(`${file.name}: la imagen supera el límite de 10 MB.`)
       continue
     }
     valid.push(file)

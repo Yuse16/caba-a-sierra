@@ -9,7 +9,7 @@ import type { AdminMediaUpload, AdminMediaUploadInput } from "./types"
 
 const SOURCE_BUCKET = "admin-media"
 const PUBLIC_BUCKET = "public-media"
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024
 const dataUrlPattern = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/
 
 type AllowedMime = AdminMediaUpload["type"]
@@ -37,7 +37,7 @@ async function validateAndOptimize(input: AdminMediaUploadInput) {
   if (!match) throw new Error("La imagen no tiene un formato válido. Usa JPG, PNG o WebP.")
   const claimedMime = match[1] as AllowedMime
   const source = Buffer.from(match[2], "base64")
-  if (source.length === 0 || source.length > MAX_IMAGE_BYTES) throw new Error("La imagen debe pesar como máximo 5 MB.")
+  if (source.length === 0 || source.length > MAX_IMAGE_BYTES) throw new Error("La imagen debe pesar como máximo 10 MB.")
   const actualMime = detectedMime(source)
   if (!actualMime || actualMime !== claimedMime) throw new Error("El contenido de la imagen no coincide con su formato.")
 

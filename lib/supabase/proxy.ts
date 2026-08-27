@@ -34,10 +34,18 @@ export async function updateSupabaseSession(request: NextRequest) {
     },
   })
 
-  const { data } = await supabase.auth.getClaims()
+  let claimsData
+  try {
+    const result = await supabase.auth.getClaims()
+    claimsData = result.data
+  } catch (err) {
+    console.error("proxy: getClaims failed", err)
+    return NextResponse.next({ request })
+  }
+
   const pathname = request.nextUrl.pathname
 
-  if (panelRoute(pathname) && !data?.claims) {
+  if (panelRoute(pathname) && !claimsData?.claims) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = "/login"
     loginUrl.search = ""

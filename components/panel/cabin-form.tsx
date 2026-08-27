@@ -209,7 +209,7 @@ function CabinForm({ cabin, created = false }: { cabin?: AdminCabin; created?: b
               ["bathrooms", "Baños"],
             ] as const).map(([field, label]) => (
               <label key={field} id={`field-${field}`} className="text-sm font-medium text-foreground">{label}
-                <input type="number" inputMode="numeric" min={1} value={form[field]} onChange={(event) => update(field, Number(event.target.value))} className={controlClass} aria-invalid={Boolean(errors[field])} />
+                <input type="number" inputMode="numeric" min={1} value={form[field] || ""} onChange={(event) => update(field, event.target.value === "" ? 0 : Number(event.target.value))} className={controlClass} aria-invalid={Boolean(errors[field])} />
                 <FieldError message={errors[field]} />
               </label>
             ))}
@@ -224,7 +224,7 @@ function CabinForm({ cabin, created = false }: { cabin?: AdminCabin; created?: b
           </div>
           <button type="button" role="switch" aria-checked={form.acceptsPets} onClick={() => update("acceptsPets", !form.acceptsPets)} className="mt-5 flex min-h-12 w-full items-center justify-between rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground hover:bg-muted sm:max-w-md">
             <span>Acepta mascotas</span>
-            <span className={`relative h-7 w-12 rounded-full transition-colors ${form.acceptsPets ? "bg-primary" : "bg-muted"}`} aria-hidden><span className={`absolute top-1 size-5 rounded-full bg-white shadow transition-transform ${form.acceptsPets ? "translate-x-6" : "translate-x-1"}`} /></span>
+            <span className={`relative h-7 w-12 overflow-hidden rounded-full transition-colors ${form.acceptsPets ? "bg-primary" : "bg-muted"}`} aria-hidden><span className={`absolute top-1 size-5 rounded-full bg-white shadow transition-transform ${form.acceptsPets ? "translate-x-6" : "translate-x-1"}`} /></span>
           </button>
         </section>
 

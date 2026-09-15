@@ -13,6 +13,7 @@ describe("DTO público de cabaña", () => {
   it("omite toda información privada del propietario", () => {
     const dto = toPublicCabin(privateCabin)
     expect(dto.name).toBe("Cabaña")
+    expect(dto.images).toEqual([expect.objectContaining({ url: "/cabins/hero.png", isCover: true })])
     expect(Object.keys(dto)).not.toContain("ownerName")
     expect(JSON.stringify(dto)).not.toContain("Nombre privado")
     expect(JSON.stringify(dto)).not.toContain("Nota privada")

@@ -7,6 +7,7 @@ import { hasSupabaseConfig } from "@/lib/supabase/config"
 import type { Tables } from "@/lib/supabase/database.types"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { createDevelopmentJsonStore } from "@/lib/development-json-store.server"
+import { buildCabinImageSyncPayload } from "./gallery-sync"
 
 type CabinRow = Tables<"cabins">
 type CabinImageRow = Tables<"cabin_images">
@@ -17,6 +18,8 @@ function cloneCabins(cabins: AdminCabin[]) {
     ...cabin,
     services: [...cabin.services],
     rules: [...cabin.rules],
+    bedDistribution: { ...cabin.bedDistribution },
+    owner: cabin.owner ? { ...cabin.owner } : null,
     images: cabin.images.map((image) => ({ ...image })),
   }))
 }
@@ -70,9 +73,19 @@ class DevelopmentAdminCabinRepository implements AdminCabinRepository {
   async archive(id: string, actorId: string) {
     void actorId
     const items = await developmentStore.read()
-    if (!items.some((cabin) => cabin.id === id)) return false
-    await developmentStore.write(items.filter((cabin) => cabin.id !== id))
+    if (!items.some((cabin) => cabin.id === id && !cabin.archivedAt)) return false
+    await developmentStore.write(items.map((cabin) => cabin.id === id ? { ...cabin, archivedAt: new Date().toISOString(), status: "draft" } : cabin))
     return true
+  }
+
+  async restore(id: string, actorId: string) {
+    void actorId
+    const items = await developmentStore.read()
+    const current = items.find((cabin) => cabin.id === id && cabin.archivedAt)
+    if (!current) return null
+    const restored = { ...current, archivedAt: null, status: "draft" as const, updatedAt: new Date().toISOString() }
+    await developmentStore.write(items.map((cabin) => cabin.id === id ? restored : cabin))
+    return cloneCabins([restored])[0]
   }
 }
 
@@ -86,6 +99,7 @@ function assertNoError(error: { message: string } | null, operation: string) {
 }
 
 function imageUrl(asset: MediaAssetRow, storedUrl: string | null, supabaseUrl: string) {
+  if (asset.canonical_public_url) return asset.canonical_public_url
   if (storedUrl) return storedUrl
   if (!asset.public_bucket || !asset.public_path) return ""
   return `${supabaseUrl}/storage/v1/object/public/${encodeURIComponent(asset.public_bucket)}/${asset.public_path.split("/").map(encodeURIComponent).join("/")}`
@@ -94,29 +108,38 @@ function imageUrl(asset: MediaAssetRow, storedUrl: string | null, supabaseUrl: s
 class SupabaseAdminCabinRepository implements AdminCabinRepository {
   async list() {
     const supabase = await createSupabaseServerClient()
-    const { data: cabins, error: cabinsError } = await supabase.from("cabins").select("*").is("deleted_at", null).order("display_order").order("created_at")
+    const { data: cabins, error: cabinsError } = await supabase.from("cabins").select("*").order("display_order").order("created_at")
     assertNoError(cabinsError, "No se pudieron cargar las cabañas")
     if (!cabins?.length) return []
 
     const cabinIds = cabins.map((cabin) => cabin.id)
-    const [imagesResult, joinsResult] = await Promise.all([
+    const [imagesResult, joinsResult, assignmentsResult] = await Promise.all([
       supabase.from("cabin_images").select("*").in("cabin_id", cabinIds).is("deleted_at", null).order("position"),
       supabase.from("cabin_services").select("cabin_id, service_id").in("cabin_id", cabinIds),
+      supabase.from("cabin_owner_assignments").select("cabin_id, owner_id").in("cabin_id", cabinIds).eq("is_primary", true).eq("is_active", true),
     ])
     assertNoError(imagesResult.error, "No se pudieron cargar las imágenes")
     assertNoError(joinsResult.error, "No se pudieron cargar los servicios")
+    assertNoError(assignmentsResult.error, "No se pudieron cargar las asignaciones de propietarios")
+
+    const ownerIds = [...new Set((assignmentsResult.data ?? []).map((assignment) => assignment.owner_id))]
 
     const assetIds = [...new Set((imagesResult.data ?? []).map((image) => image.asset_id))]
     const serviceIds = [...new Set((joinsResult.data ?? []).map((join) => join.service_id))]
-    const [assetsResult, servicesResult] = await Promise.all([
+    const [assetsResult, servicesResult, ownersResult, contactsResult] = await Promise.all([
       assetIds.length ? supabase.from("media_assets").select("*").in("id", assetIds).is("deleted_at", null) : Promise.resolve({ data: [], error: null }),
       serviceIds.length ? supabase.from("services").select("id, name").in("id", serviceIds) : Promise.resolve({ data: [], error: null }),
+      ownerIds.length ? supabase.from("owners").select("id,name,preferred_contact,notes,contact_hours").in("id", ownerIds).is("deleted_at", null) : Promise.resolve({ data: [], error: null }),
+      ownerIds.length ? supabase.from("owner_contacts").select("owner_id,contact_type,display_value").in("owner_id", ownerIds).is("deleted_at", null) : Promise.resolve({ data: [], error: null }),
     ])
     assertNoError(assetsResult.error, "No se pudieron cargar los assets")
     assertNoError(servicesResult.error, "No se pudieron cargar los servicios")
+    assertNoError(ownersResult.error, "No se pudieron cargar los propietarios")
+    assertNoError(contactsResult.error, "No se pudieron cargar los contactos de propietarios")
 
     const assetById = new Map((assetsResult.data ?? []).map((asset) => [asset.id, asset]))
     const serviceById = new Map((servicesResult.data ?? []).map((service) => [service.id, service.name]))
+    const ownerById = new Map((ownersResult.data ?? []).map((owner) => [owner.id, owner]))
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") ?? ""
 
     return cabins.map((cabin) => this.toDomain(
@@ -125,6 +148,13 @@ class SupabaseAdminCabinRepository implements AdminCabinRepository {
       assetById,
       (joinsResult.data ?? []).filter((join) => join.cabin_id === cabin.id).map((join) => serviceById.get(join.service_id)).filter((name): name is string => Boolean(name)),
       supabaseUrl,
+      (() => {
+        const assignment = (assignmentsResult.data ?? []).find((item) => item.cabin_id === cabin.id)
+        const owner = assignment ? ownerById.get(assignment.owner_id) : undefined
+        if (!owner) return null
+        const contact = (type: "phone" | "whatsapp" | "email") => (contactsResult.data ?? []).find((item) => item.owner_id === owner.id && item.contact_type === type)?.display_value ?? ""
+        return { id: owner.id, name: owner.name, phone: contact("phone"), whatsapp: contact("whatsapp"), email: contact("email"), preferredContact: owner.preferred_contact, notes: owner.notes, contactHours: owner.contact_hours }
+      })(),
     ))
   }
 
@@ -132,7 +162,7 @@ class SupabaseAdminCabinRepository implements AdminCabinRepository {
     return (await this.list()).find((cabin) => cabin.id === id) ?? null
   }
 
-  private toDomain(row: CabinRow, images: CabinImageRow[], assets: Map<string, MediaAssetRow>, services: string[], supabaseUrl: string): AdminCabin {
+  private toDomain(row: CabinRow, images: CabinImageRow[], assets: Map<string, MediaAssetRow>, services: string[], supabaseUrl: string, owner: AdminCabin["owner"]): AdminCabin {
     return {
       id: row.id,
       name: row.name,
@@ -142,6 +172,7 @@ class SupabaseAdminCabinRepository implements AdminCabinRepository {
       maxGuests: row.max_guests,
       bedrooms: row.bedrooms,
       beds: row.beds,
+      bedDistribution: (row.bed_distribution && typeof row.bed_distribution === "object" && !Array.isArray(row.bed_distribution) ? row.bed_distribution : {}) as AdminCabin["bedDistribution"],
       bathrooms: row.bathrooms,
       services,
       rules: [...row.rules],
@@ -149,14 +180,22 @@ class SupabaseAdminCabinRepository implements AdminCabinRepository {
       checkOutTime: row.check_out_time,
       acceptsPets: row.accepts_pets,
       location: row.location,
+      address: row.address,
+      zone: row.zone,
+      latitude: row.latitude,
+      longitude: row.longitude,
+      mapsUrl: row.maps_url,
+      poolType: row.pool_type as AdminCabin["poolType"],
       whatsapp: row.contact_whatsapp,
+      owner,
+      archivedAt: row.deleted_at,
       status: row.publication_state === "published" ? "published" : "draft",
       images: images.flatMap((image) => {
         const asset = assets.get(image.asset_id)
         if (!asset) return []
         const url = imageUrl(asset, image.public_url, supabaseUrl)
         if (!url) return []
-        return [{ id: image.id, assetId: asset.id, url, name: asset.original_name, size: asset.byte_size, type: asset.mime_type, isCover: image.is_cover }]
+        return [{ id: image.id, assetId: asset.id, url, name: asset.original_name, size: asset.byte_size, type: asset.mime_type, isCover: image.is_cover, altText: image.alt_text }]
       }),
       createdAt: row.created_at,
       updatedAt: row.updated_at,
@@ -174,6 +213,8 @@ class SupabaseAdminCabinRepository implements AdminCabinRepository {
     const fields = {
       name: input.name.trim(), short_description: input.shortDescription.trim(), description: input.description.trim(),
       nightly_price: input.nightlyPrice, max_guests: input.maxGuests, bedrooms: input.bedrooms, beds: input.beds,
+      bed_distribution: input.bedDistribution, address: input.address.trim(), zone: input.zone.trim(),
+      latitude: input.latitude, longitude: input.longitude, maps_url: input.mapsUrl.trim(), pool_type: input.poolType,
       bathrooms: input.bathrooms, rules: input.rules.map((rule) => rule.trim()).filter(Boolean), check_in_time: input.checkInTime,
       check_out_time: input.checkOutTime, accepts_pets: input.acceptsPets, location: input.location.trim(),
       contact_whatsapp: input.whatsapp.replace(/\D/g, ""), publication_state: "draft" as const,
@@ -196,7 +237,8 @@ class SupabaseAdminCabinRepository implements AdminCabinRepository {
 
     try {
       await this.syncServices(supabase, cabinId, input.services)
-      await this.syncImages(supabase, cabinId, input.images, now)
+      await this.syncImages(supabase, cabinId, input.images)
+      await this.syncOwner(supabase, cabinId, input.owner)
       const { error: publicationError } = await supabase.from("cabins").update({
         publication_state: state,
         published_at: state === "published" ? now : null,
@@ -246,40 +288,24 @@ class SupabaseAdminCabinRepository implements AdminCabinRepository {
     }
   }
 
-  private async syncImages(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, cabinId: string, images: AdminCabinImage[], now: string) {
-    const assetIds = images.map((image) => image.assetId).filter((assetId): assetId is string => Boolean(assetId))
-    const { data: assets, error: assetsError } = assetIds.length
-      ? await supabase.from("media_assets").select("*").in("id", assetIds).eq("processing_status", "ready").is("deleted_at", null)
-      : { data: [], error: null }
-    assertNoError(assetsError, "No se pudieron validar las imágenes")
-    if ((assets ?? []).length !== new Set(assetIds).size) throw new Error("Una imagen no corresponde a un asset listo y seguro.")
+  private async syncImages(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, cabinId: string, images: AdminCabinImage[]) {
+    const payload = buildCabinImageSyncPayload(images)
+    const { data, error } = await supabase.rpc("sync_cabin_images", { target_cabin_id: cabinId, images: payload })
+    assertNoError(error, "No se pudieron sincronizar las fotografías")
+    if (!Array.isArray(data) || data.length !== payload.length || data.some((row, index) =>
+      row.asset_id !== payload[index]?.asset_id || row.is_cover !== payload[index]?.is_cover || row.position !== index + 1
+    )) {
+      throw new Error("La galería no pudo verificarse después de guardarla.")
+    }
+  }
 
-    const { data: current, error: currentError } = await supabase.from("cabin_images").select("*").eq("cabin_id", cabinId)
-    assertNoError(currentError, "No se pudieron consultar las imágenes actuales")
-    const currentByAsset = new Map((current ?? []).map((image) => [image.asset_id, image]))
-    const requestedAssetIds = new Set(assetIds)
-    const requestedCover = images.find((image) => image.isCover)?.assetId
-    if (requestedCover && (current ?? []).some((image) => image.deleted_at === null && image.is_cover && image.asset_id !== requestedCover)) {
-      const { error } = await supabase.from("cabin_images").update({ is_cover: false }).eq("cabin_id", cabinId).is("deleted_at", null).eq("is_cover", true)
-      assertNoError(error, "No se pudo actualizar la fotografía de portada")
-    }
-    const assetsById = new Map((assets ?? []).map((asset) => [asset.id, asset]))
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") ?? ""
-    for (const [position, image] of images.entries()) {
-      const asset = assetsById.get(image.assetId as string)
-      if (!asset) continue
-      const currentImage = currentByAsset.get(asset.id)
-      const values = { alt_text: image.name, is_cover: image.isCover, position: position + 1, deleted_at: null, public_url: imageUrl(asset, currentImage?.public_url ?? null, supabaseUrl) || null }
-      const result = currentImage
-        ? await supabase.from("cabin_images").update(values).eq("id", currentImage.id)
-        : await supabase.from("cabin_images").insert({ ...values, cabin_id: cabinId, asset_id: asset.id })
-      assertNoError(result.error, "No se pudo asociar una imagen")
-    }
-    const removedIds = (current ?? []).filter((image) => image.deleted_at === null && !requestedAssetIds.has(image.asset_id)).map((image) => image.id)
-    if (removedIds.length) {
-      const { error } = await supabase.from("cabin_images").update({ deleted_at: now, is_cover: false }).in("id", removedIds)
-      assertNoError(error, "No se pudieron retirar las fotografías reemplazadas")
-    }
+  private async syncOwner(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, cabinId: string, owner: AdminCabin["owner"]) {
+    const ownerPayload = owner ? {
+      id: owner.id, name: owner.name.trim(), phone: owner.phone.trim(), whatsapp: owner.whatsapp.trim(), email: owner.email.trim(),
+      preferred_contact: owner.preferredContact, notes: owner.notes.trim(), contact_hours: owner.contactHours.trim(),
+    } : null
+    const { error } = await supabase.rpc("sync_cabin_owner", { target_cabin_id: cabinId, owner_payload: ownerPayload })
+    assertNoError(error, "No se pudo sincronizar el propietario")
   }
 
   async setStatus(id: string, status: AdminCabinStatus, actorId: string) {
@@ -292,18 +318,18 @@ class SupabaseAdminCabinRepository implements AdminCabinRepository {
 
   async archive(id: string, actorId: string) {
     const supabase = await createSupabaseServerClient()
-    const now = new Date().toISOString()
-    const { data, error } = await supabase.from("cabins")
-      .update({ deleted_at: now, publication_state: "draft", published_at: null, updated_by: actorId })
-      .eq("id", id)
-      .is("deleted_at", null)
-      .select("id")
-      .maybeSingle()
+    void actorId
+    const { data, error } = await supabase.rpc("archive_cabin_with_images", { target_cabin_id: id })
     assertNoError(error, "No se pudo archivar la cabaña")
-    if (!data) return false
-    const { error: imagesError } = await supabase.from("cabin_images").update({ deleted_at: now }).eq("cabin_id", id).is("deleted_at", null)
-    assertNoError(imagesError, "La cabaña se archivó, pero no se pudieron retirar sus imágenes")
-    return true
+    return data === true
+  }
+
+  async restore(id: string, actorId: string) {
+    const supabase = await createSupabaseServerClient()
+    void actorId
+    const { data, error } = await supabase.rpc("restore_archived_cabin", { target_cabin_id: id })
+    assertNoError(error, "No se pudo restaurar la cabaña")
+    return data === true ? this.findById(id) : null
   }
 }
 

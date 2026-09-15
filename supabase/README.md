@@ -17,14 +17,16 @@ No hay valores reales versionados. Para conectar un proyecto de desarrollo o pro
 1. Copia `.env.example` a `.env.local`.
 2. En Supabase, copia la URL del proyecto en `NEXT_PUBLIC_SUPABASE_URL` y la llave `anon` en `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 3. Define `NEXT_PUBLIC_SITE_URL` con el origen exacto permitido, sin una ruta final, por ejemplo `https://app.ejemplo.com`.
-4. Aplica en orden las migraciones `202607290001` a `202607290008` y ejecuta `supabase test db` contra un entorno local desechable.
+4. Aplica en orden las migraciones `202607290001` a `202607290009` y ejecuta `supabase test db` contra un entorno local desechable.
 5. Crea cada usuario mediante Supabase Auth y agrega explícitamente su fila activa en `public.admin_profiles` con rol `editor` o `admin`.
 6. Agrega las URLs de callback del sitio a la lista permitida de Supabase Auth y prueba login, recuperación y actualización de contraseña.
-7. Conserva `SUPABASE_SERVICE_ROLE_KEY` únicamente en el gestor de secretos del servidor. No es necesaria para las acciones normales del panel; se reserva para `pnpm media:cleanup`.
+7. Conserva `SUPABASE_SERVICE_ROLE_KEY` únicamente en el gestor de secretos del servidor. Es necesaria para la carga y limpieza segura de fotografías de cabañas y para `pnpm media:cleanup`; nunca debe exponerse al navegador.
 8. Programa `pnpm media:cleanup` al menos una vez al día en un job de servidor. `MEDIA_STAGING_MAX_AGE_HOURS` es opcional y su valor predeterminado es `24`.
 9. Ejecuta `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`, `pnpm test:e2e:auth`, `pnpm test:rls`, `pnpm test:security-bundle` y `pnpm build` antes de publicar.
 
-La carga normal usa la sesión real del usuario y políticas RLS. `admin-media` conserva la copia privada de origen; `public-media` contiene el derivado público utilizado por el catálogo. Las rutas se limitan al UUID autenticado y a los ámbitos `cabins` o `promotions`.
+La carga valida primero la sesión y el permiso del usuario. `admin-media` conserva la copia privada de origen; `public-media` contiene la copia pública utilizada por el catálogo. En cabañas, únicamente el pipeline server-only puede publicar y limpiar objetos; las rutas se limitan al UUID autenticado y al ámbito `cabins`.
+
+El navegador prepara la fotografía y la envía a una ruta autenticada. El servidor carga la copia privada en `admin-media`, registra el activo como `staging` y usa credenciales server-only para escribir la copia en `public-media`, fijar su URL canónica y pasarlo a `ready`. La galería de una cabaña se reemplaza atómicamente mediante `sync_cabin_images(cabin_id, images)`: recibe de 0 a 10 assets únicos y ordenados; si hay imágenes exige exactamente una portada, y una cabaña publicada no puede quedar vacía. La operación restaura asociaciones existentes, hace borrado lógico solo de las retiradas y reinicia para ellas el periodo de gracia de limpieza. Un asset compartido nunca se marca como huérfano mientras conserve cualquier asociación activa (cabaña o promoción).
 
 ## Rollback
 
@@ -35,9 +37,10 @@ Los rollbacks son destructivos y deben ejecutarse únicamente durante una ventan
 3. Detén escrituras de la aplicación y confirma que no haya migraciones simultáneas.
 4. Registra el proyecto, ambiente y responsable que autoriza la reversión.
 
-Con las migraciones 001–008 aplicadas, el único orden soportado es el inverso exacto:
+Con las migraciones 001–009 aplicadas, el único orden soportado es el inverso exacto:
 
 ```text
+202607290009_rollback.sql
 202607290008_rollback.sql
 202607290007_rollback.sql
 202607290006_rollback.sql
@@ -47,7 +50,7 @@ Con las migraciones 001–008 aplicadas, el único orden soportado es el inverso
 202607290002_rollback.sql
 ```
 
-El rollback 002 también retira el esquema creado por 001; por eso no existe un archivo de rollback 001 independiente. No ejecutes 002 antes de 003–008: las vistas, funciones, triggers y políticas posteriores todavía dependen de esos objetos.
+El rollback 002 también retira el esquema creado por 001; por eso no existe un archivo de rollback 001 independiente. No ejecutes 002 antes de 003–009: las vistas, funciones, triggers y políticas posteriores todavía dependen de esos objetos.
 
 El rollback 002 activa `storage.allow_delete_query = 'true'` con `SET LOCAL`, limitado a su transacción, y elimina metadatos SQL únicamente de los buckets `admin-media` y `public-media`. Este mecanismo es necesario porque Supabase protege sus tablas de Storage contra borrado SQL directo. No usa `DROP ... CASCADE` ni `TRUNCATE`.
 

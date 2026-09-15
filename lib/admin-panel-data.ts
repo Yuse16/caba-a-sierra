@@ -1,6 +1,7 @@
 import type { Cabin, ClientRequest, Owner, Payment, Promotion, Reservation, CalendarBar } from "@/lib/demo-data"
 
 export type AdminPanelInitialData = {
+  currentDateLabel: string
   cabins: Cabin[]
   owners: Owner[]
   requests: ClientRequest[]

@@ -18,12 +18,17 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 })
 const cutoff = new Date(Date.now() - maxAgeHours * 60 * 60 * 1000).toISOString()
 
+const { error: claimError } = await supabase.rpc("mark_orphaned_media_assets", { cutoff })
+if (claimError) {
+  console.error("No se pudieron marcar los assets huérfanos:", claimError.message)
+  process.exit(1)
+}
+
 const { data: assets, error: listError } = await supabase
   .from("media_assets")
   .select("id, source_bucket, source_path, public_bucket, public_path")
-  .eq("processing_status", "staging")
+  .eq("processing_status", "pending_delete")
   .is("deleted_at", null)
-  .lt("updated_at", cutoff)
 
 if (listError) {
   console.error("No se pudieron consultar los assets pendientes:", listError.message)
@@ -50,7 +55,18 @@ for (const asset of assets ?? []) {
     continue
   }
 
-  await supabase.from("media_assets").update({ processing_status: "pending_delete" }).eq("id", asset.id)
+  // La transición a pending_delete impide crear asociaciones nuevas. Esta
+  // segunda lectura protege además contra una referencia que haya competido
+  // con el marcado inicial.
+  const [confirmedCabins, confirmedPromotions] = await Promise.all([
+    supabase.from("cabin_images").select("id").eq("asset_id", asset.id).is("deleted_at", null).limit(1),
+    supabase.from("promotion_images").select("id").eq("asset_id", asset.id).is("deleted_at", null).limit(1),
+  ])
+  if (confirmedCabins.error || confirmedPromotions.error || confirmedCabins.data?.length || confirmedPromotions.data?.length) {
+    preservedCount += 1
+    continue
+  }
+
   const sourceResult = await supabase.storage.from(asset.source_bucket).remove([asset.source_path])
   const publicResult = asset.public_bucket && asset.public_path
     ? await supabase.storage.from(asset.public_bucket).remove([asset.public_path])

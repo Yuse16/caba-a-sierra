@@ -1,7 +1,8 @@
 "use client"
 
+import { useRef, useState } from "react"
 import Image from "next/image"
-import { Heart, MapPin, Users, Bed, Star } from "lucide-react"
+import { Bed, ChevronLeft, ChevronRight, Heart, MapPin, Star, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { StatusBadge } from "@/components/shared/status-badge"
 import {
@@ -22,16 +23,38 @@ export function CabinCard({
   onToggleFavorite: (id: string) => void
   onViewDetails: (cabin: PublicCabin) => void
 }) {
+  const gallery = cabin.images.length ? cabin.images : [{ id: `${cabin.id}-cover`, url: cabin.image, altText: `Foto de ${cabin.name}`, position: 1, isCover: true }]
+  const coverIndex = Math.max(0, gallery.findIndex((image) => image.isCover))
+  const [activeIndex, setActiveIndex] = useState(coverIndex)
+  const touchStartX = useRef<number | null>(null)
+  const activeImage = gallery[Math.min(activeIndex, gallery.length - 1)] ?? gallery[0]
+  const moveGallery = (direction: -1 | 1) => setActiveIndex((current) => (current + direction + gallery.length) % gallery.length)
+
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-forest-dark/10 bg-card shadow-[0_8px_30px_rgba(31,60,43,0.07)] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(31,60,43,0.12)]">
-      <div className="relative aspect-[4/3] w-full">
+      <div
+        className="relative aspect-[4/3] w-full overflow-hidden"
+        onTouchStart={(event) => { touchStartX.current = event.changedTouches[0]?.clientX ?? null }}
+        onTouchEnd={(event) => {
+          if (touchStartX.current === null || gallery.length < 2) return
+          const distance = (event.changedTouches[0]?.clientX ?? touchStartX.current) - touchStartX.current
+          touchStartX.current = null
+          if (Math.abs(distance) >= 40) moveGallery(distance > 0 ? -1 : 1)
+        }}
+      >
         <Image
-          src={cabin.image || "/placeholder.svg"}
-          alt={`Foto de ${cabin.name}`}
+          key={activeImage.id}
+          src={activeImage.url || "/placeholder.svg"}
+          alt={activeImage.altText || `Foto de ${cabin.name}`}
           fill
           sizes="(max-width: 768px) 100vw, 33vw"
           className="object-cover"
         />
+        {gallery.length > 1 && <>
+          <button type="button" onClick={(event) => { event.stopPropagation(); moveGallery(-1) }} aria-label={`Fotografía anterior de ${cabin.name}`} className="absolute left-3 top-1/2 z-10 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/95 text-foreground shadow-md transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"><ChevronLeft className="size-5" aria-hidden /></button>
+          <button type="button" onClick={(event) => { event.stopPropagation(); moveGallery(1) }} aria-label={`Fotografía siguiente de ${cabin.name}`} className="absolute right-3 top-1/2 z-10 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/95 text-foreground shadow-md transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"><ChevronRight className="size-5" aria-hidden /></button>
+          <span className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/65 px-2.5 py-1 text-xs font-semibold text-white" aria-live="polite">{activeIndex + 1} / {gallery.length}</span>
+        </>}
         {/* status / badge top-left */}
         <div className="absolute left-3 right-16 top-3 flex flex-wrap items-start gap-2">
           {cabin.badge === "popular" && (

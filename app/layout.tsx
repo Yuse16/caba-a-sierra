@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { SerwistProvider } from '@serwist/turbopack/react'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Playfair_Display } from 'next/font/google'
+import { getPublicSiteSettings } from '@/lib/public-site-settings.server'
 import './globals.css'
 
 const geistSans = Geist({
@@ -28,19 +29,23 @@ function configuredProductionOrigin() {
   }
 }
 
-export function generateMetadata(): Metadata {
+export async function generateMetadata(): Promise<Metadata> {
   const origin = configuredProductionOrigin()
+  const settings = await getPublicSiteSettings()
+  const { businessName, subtitle, tagline } = settings
+  const metaDescription = tagline
+  const metaTitle = `${businessName} | ${subtitle}`
+  const ogAlt = `${businessName} — ${subtitle}`
 
   return {
     metadataBase: origin ?? undefined,
-    applicationName: 'DUPEZ',
-    title: 'DUPEZ | Renta de cabañas en toda la Sierra de Arteaga',
-    description:
-      'Encuentra y reserva cabañas en la Sierra de Arteaga. Conoce opciones, disponibilidad y promociones de DUPEZ.',
+    applicationName: businessName,
+    title: metaTitle,
+    description: metaDescription,
     alternates: origin ? { canonical: '/' } : undefined,
     openGraph: {
-      title: 'DUPEZ | Renta de cabañas en toda la Sierra de Arteaga',
-      description: 'Encuentra y reserva cabañas en la Sierra de Arteaga. Conoce opciones, disponibilidad y promociones de DUPEZ.',
+      title: metaTitle,
+      description: metaDescription,
       locale: 'es_MX',
       type: 'website',
       url: origin ? '/' : undefined,
@@ -50,21 +55,21 @@ export function generateMetadata(): Metadata {
               url: '/og.png',
               width: 1200,
               height: 630,
-              alt: 'DUPEZ — Renta de cabañas en toda la Sierra de Arteaga',
+              alt: ogAlt,
             },
           ]
         : undefined,
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'DUPEZ | Renta de cabañas en toda la Sierra de Arteaga',
-      description: 'Encuentra y reserva cabañas en la Sierra de Arteaga. Conoce opciones, disponibilidad y promociones de DUPEZ.',
+      title: metaTitle,
+      description: metaDescription,
       images: origin ? ['/og.png'] : undefined,
     },
     appleWebApp: {
       capable: true,
       statusBarStyle: 'default',
-      title: 'DUPEZ',
+      title: businessName,
     },
     icons: {
       icon: ['/favicon.png', '/icon.svg'],
@@ -95,7 +100,7 @@ export default function RootLayout({
         <SerwistProvider swUrl="/serwist/sw.js">
           {children}
         </SerwistProvider>
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        {process.env.VERCEL === '1' && <Analytics />}
       </body>
     </html>
   )

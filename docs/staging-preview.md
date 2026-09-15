@@ -38,14 +38,14 @@ En Supabase abre **Project Settings → API Keys** o el diálogo **Connect**:
 - Project URL → `NEXT_PUBLIC_SUPABASE_URL`.
 - Publishable key o llave `anon` heredada → `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 
-La llave pública puede llegar al navegador, pero no sustituye RLS. La secret key o `service_role` no es necesaria para login, CRUD ni cargas normales y no debe agregarse al Preview de Vercel.
+La llave pública puede llegar al navegador, pero no sustituye RLS. La secret key o `service_role` no se usa para login ni lecturas del panel. La galería de cabañas sí la requiere en el runtime server-only para publicar y limpiar objetos; configúrala como secreto de Vercel y nunca con prefijo `NEXT_PUBLIC_`.
 
 Copia `.env.example` a `.env.local` y completa localmente:
 
 ```dotenv
 NEXT_PUBLIC_SUPABASE_URL=<URL_STAGING>
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<LLAVE_PUBLICA_STAGING>
-SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_SERVICE_ROLE_KEY=<LLAVE_SERVICE_ROLE_STAGING_SOLO_SERVIDOR>
 NEXT_PUBLIC_SITE_URL=<URL_HTTPS_ESTABLE_DEL_PREVIEW>
 ```
 
@@ -84,11 +84,12 @@ No asignes roles mediante `user_metadata`: la autorización de esta aplicación 
 5. En **Settings → Environment Variables**, crea variables sólo para **Preview** y, cuando la interfaz lo permita, limítalas a `feature/supabase-admin-platform`:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY` (secreto, disponible únicamente en el servidor)
 6. Crea un deployment desde la referencia `feature/supabase-admin-platform` y copia su alias estable de rama.
 7. Agrega `NEXT_PUBLIC_SITE_URL` sólo a Preview y a esa rama, con el origen HTTPS exacto, sin diagonal final.
 8. Redeploya el mismo commit para que las tres variables estén disponibles durante build y runtime.
 
-No agregues `SUPABASE_SERVICE_ROLE_KEY` al proyecto Vercel en esta etapa.
+No expongas `SUPABASE_SERVICE_ROLE_KEY` al navegador ni la copies a una variable `NEXT_PUBLIC_*`.
 
 ## 6. Autorizar callbacks de staging
 
@@ -120,6 +121,6 @@ pnpm test:e2e:staging
 pnpm exec supabase test db --linked supabase/tests/rls_test.sql
 ```
 
-La suite de staging usa únicamente las cuentas admin/editor, la URL y la llave pública. Crea, publica, edita, oculta y limpia contenido de QA mediante la interfaz; no usa una secret key ni `service_role`.
+La suite de staging inicia sesión con las cuentas admin/editor y opera mediante la interfaz. La llave `service_role` permanece exclusivamente en el runtime de Vercel para las operaciones server-only de Storage; no se entrega al navegador ni se usa como identidad de la prueba.
 
 Antes de aprobar la fusión revisa manualmente el Preview en 320, 360, 375, 390, 412, 768 y 1440 px, incluyendo consola, red, cookies Secure/HttpOnly/SameSite, callbacks, imágenes, desbordamientos y persistencia en una segunda sesión.

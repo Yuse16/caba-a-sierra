@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache"
 import { createAdminCabinRepository } from "@/lib/admin-cabins/repository.server"
 import { getMissingPublicationFields, type AdminCabin, type AdminCabinInput, type AdminCabinStatus } from "@/lib/admin-cabins/types"
 import { requirePermission } from "@/lib/auth/session"
-import { discardAdminMedia, finalizeAdminMedia, returnAdminMediaToStaging } from "@/lib/admin-media/service.server"
+import { finalizeAdminMedia, returnAdminMediaToStaging } from "@/lib/admin-media/service.server"
+import { discardCabinAssets } from "@/lib/media/media-storage.server"
 
 export type CabinsActionResult = { ok: true; data: AdminCabin[]; message?: string } | { ok: false; message: string }
 export type CabinActionResult = { ok: true; data: AdminCabin; message: string } | { ok: false; message: string }
@@ -41,6 +42,7 @@ export async function saveAdminCabinAction(input: AdminCabinInput, id?: string):
   let finalizedIds: string[] = []
   try {
     const session = await requirePermission("catalog.write")
+    if (input.owner) await requirePermission("owners.read_sensitive")
     if (input.status === "published") {
       await requirePermission("catalog.publish")
       if (getMissingPublicationFields(input).length) return { ok: false, message: "Completa la información pendiente antes de publicar." }
@@ -51,7 +53,11 @@ export async function saveAdminCabinAction(input: AdminCabinInput, id?: string):
     const saved = await repository.save(input, session.userId, id)
     const currentAssetIds = new Set(saved.images.flatMap((image) => image.assetId ? [image.assetId] : []))
     const replacedAssetIds = previous?.images.flatMap((image) => image.assetId && !currentAssetIds.has(image.assetId) ? [image.assetId] : []) ?? []
-    await discardAdminMedia(replacedAssetIds)
+    try {
+      await discardCabinAssets(replacedAssetIds)
+    } catch (cleanupError) {
+      console.error("saveAdminCabinAction cleanup", cleanupError)
+    }
     refreshCabinPages()
     return {
       ok: true,
@@ -74,13 +80,26 @@ export async function archiveAdminCabinAction(id: string): Promise<{ ok: boolean
     if (!current) return { ok: false, message: "No encontramos esa cabaña." }
     const archived = await repository.archive(id, session.userId)
     if (!archived) return { ok: false, message: "No encontramos esa cabaña." }
-    await discardAdminMedia(current.images.flatMap((image) => image.assetId ? [image.assetId] : []))
     refreshCabinPages()
     return { ok: true, message: "La cabaña fue archivada." }
   } catch (error) {
     if (isFrameworkError(error)) throw error
     console.error("archiveAdminCabinAction", error)
     return { ok: false, message: "No pudimos archivar la cabaña o no tienes permiso para hacerlo." }
+  }
+}
+
+export async function restoreAdminCabinAction(id: string): Promise<CabinActionResult> {
+  try {
+    const session = await requirePermission("content.delete")
+    const restored = await createAdminCabinRepository().restore(id, session.userId)
+    if (!restored) return { ok: false, message: "No encontramos esa cabaña archivada." }
+    refreshCabinPages()
+    return { ok: true, data: restored, message: "La cabaña fue restaurada como borrador." }
+  } catch (error) {
+    if (isFrameworkError(error)) throw error
+    console.error("restoreAdminCabinAction", error)
+    return { ok: false, message: "No pudimos restaurar la cabaña o no tienes permiso para hacerlo." }
   }
 }
 
@@ -93,10 +112,12 @@ export async function setAdminCabinStatusAction(id: string, status: AdminCabinSt
     if (status === "published") {
       const input: AdminCabinInput = {
         name: current.name, shortDescription: current.shortDescription, description: current.description,
-        nightlyPrice: current.nightlyPrice, maxGuests: current.maxGuests, bedrooms: current.bedrooms, beds: current.beds,
+        nightlyPrice: current.nightlyPrice, maxGuests: current.maxGuests, bedrooms: current.bedrooms, beds: current.beds, bedDistribution: current.bedDistribution,
         bathrooms: current.bathrooms, services: current.services, rules: current.rules, checkInTime: current.checkInTime,
         checkOutTime: current.checkOutTime, acceptsPets: current.acceptsPets, location: current.location,
-        whatsapp: current.whatsapp, status: current.status, images: current.images,
+        address: current.address, zone: current.zone, latitude: current.latitude, longitude: current.longitude,
+        mapsUrl: current.mapsUrl, poolType: current.poolType, whatsapp: current.whatsapp, owner: current.owner,
+        archivedAt: current.archivedAt, status: current.status, images: current.images,
       }
       if (getMissingPublicationFields(input).length) return { ok: false, message: "Completa la información pendiente antes de publicar." }
     }

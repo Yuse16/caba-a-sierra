@@ -1,4 +1,18 @@
 export type AdminCabinStatus = "draft" | "published"
+export type CabinPoolType = "none" | "standard" | "heated"
+export type BedType = "individual" | "matrimonial" | "king" | "queen" | "litera" | "sofa-cama" | "otro"
+export type BedDistribution = Partial<Record<BedType, number>>
+
+export type AdminCabinOwner = {
+  id: string | null
+  name: string
+  phone: string
+  whatsapp: string
+  email: string
+  preferredContact: "whatsapp" | "phone" | "message" | "email"
+  notes: string
+  contactHours: string
+}
 
 export type AdminCabinImage = {
   id: string
@@ -8,6 +22,7 @@ export type AdminCabinImage = {
   size: number
   type: string
   isCover: boolean
+  altText?: string
   pendingUpload?: boolean
 }
 
@@ -20,6 +35,7 @@ export type AdminCabin = {
   maxGuests: number
   bedrooms: number
   beds: number
+  bedDistribution: BedDistribution
   bathrooms: number
   services: string[]
   rules: string[]
@@ -27,7 +43,15 @@ export type AdminCabin = {
   checkOutTime: string
   acceptsPets: boolean
   location: string
+  address: string
+  zone: string
+  latitude: number | null
+  longitude: number | null
+  mapsUrl: string
+  poolType: CabinPoolType
   whatsapp: string
+  owner: AdminCabinOwner | null
+  archivedAt: string | null
   status: AdminCabinStatus
   images: AdminCabinImage[]
   createdAt: string
@@ -44,6 +68,7 @@ export const emptyAdminCabin: AdminCabinInput = {
   maxGuests: 0,
   bedrooms: 0,
   beds: 0,
+  bedDistribution: {},
   bathrooms: 0,
   services: [],
   rules: [],
@@ -51,7 +76,15 @@ export const emptyAdminCabin: AdminCabinInput = {
   checkOutTime: "11:00",
   acceptsPets: false,
   location: "",
+  address: "",
+  zone: "",
+  latitude: null,
+  longitude: null,
+  mapsUrl: "",
+  poolType: "none",
   whatsapp: "",
+  owner: null,
+  archivedAt: null,
   status: "draft",
   images: [],
 }

@@ -13,7 +13,13 @@ const links = [
 const focusClasses =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 
-export function PublicHeader() {
+export function PublicHeader({
+  businessName,
+  subtitle,
+}: {
+  businessName: string
+  subtitle: string
+}) {
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
@@ -32,7 +38,7 @@ export function PublicHeader() {
       <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-3 px-4 sm:px-6 lg:gap-5 lg:px-8">
         <a
           href="#inicio"
-          aria-label="DUPEZ, ir al inicio"
+          aria-label={`${businessName}, ir al inicio`}
           className={`flex min-w-0 items-center gap-3 rounded-lg ${focusClasses}`}
         >
           <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
@@ -40,10 +46,10 @@ export function PublicHeader() {
           </span>
           <span className="min-w-0">
             <span className="block font-serif text-lg font-semibold leading-tight tracking-[-0.02em] text-forest-dark">
-              DUPEZ
+              {businessName}
             </span>
             <span className="mt-0.5 block max-w-[172px] text-[8px] font-bold uppercase leading-[1.35] tracking-[0.14em] text-primary sm:max-w-[240px] sm:text-[9px] sm:tracking-[0.18em] lg:max-w-none lg:text-[10px] lg:tracking-[0.22em] lg:whitespace-nowrap">
-              Renta de cabañas en toda la Sierra de Arteaga
+              {subtitle}
             </span>
           </span>
         </a>

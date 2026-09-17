@@ -25,3 +25,12 @@ export function safeAuthCallbackRedirect(value: string | null | undefined) {
     return "/panel"
   }
 }
+
+export const isPanelRoute = (pathname: string) => pathname === "/panel" || pathname.startsWith("/panel/") || pathname === "/admin"
+
+export function configurationLoginUrl(pathname: string): string | null {
+  if (!isPanelRoute(pathname)) return null
+  const url = new URL("/login", "https://local.invalid")
+  url.searchParams.set("error", "configuration")
+  return `${url.pathname}?${url.searchParams.toString()}`
+}

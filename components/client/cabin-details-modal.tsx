@@ -47,9 +47,11 @@ export function CabinDetailsModal({
   const touchStartX = useRef<number | null>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   const idempotencyKeyRef = useRef<string | null>(null)
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     if (!cabin) return
+    previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose()
       if (event.key === "ArrowLeft" && cabin.images.length > 1) {
@@ -71,6 +73,7 @@ export function CabinDetailsModal({
     return () => {
       document.removeEventListener("keydown", onKey)
       document.body.style.overflow = ""
+      previouslyFocusedRef.current?.focus()
     }
   }, [cabin, onClose])
 
@@ -252,7 +255,7 @@ export function CabinDetailsModal({
                 <label className="text-xs font-medium text-muted-foreground">Teléfono<input name="phone" type="tel" inputMode="tel" autoComplete="tel" required placeholder="Tu número con lada" className={formControlClass} /></label>
                 <label className="text-xs font-medium text-muted-foreground">Entrada<span className="relative mt-1 flex"><CalendarDays className="pointer-events-none absolute left-3 top-3.5 size-4 text-primary sm:top-3" aria-hidden /><input name="checkIn" type="date" required value={checkIn} max={checkOut || undefined} onChange={(event) => { setCheckIn(event.target.value); setDateError(null) }} className={dateControlClass} /></span></label>
                 <label className="text-xs font-medium text-muted-foreground">Salida<span className="relative mt-1 flex"><CalendarDays className="pointer-events-none absolute left-3 top-3.5 size-4 text-primary sm:top-3" aria-hidden /><input name="checkOut" type="date" required value={checkOut} min={checkIn || undefined} onChange={(event) => { setCheckOut(event.target.value); setDateError(null) }} className={dateControlClass} /></span></label>
-                <label className="text-xs font-medium text-muted-foreground">Huéspedes<input name="guests" type="number" inputMode="numeric" min={1} defaultValue={bookingDefaults.guests} required className={formControlClass} /></label>
+                <label className="text-xs font-medium text-muted-foreground">Huéspedes<input name="guests" type="number" inputMode="numeric" min={1} max={cabin.maxGuests} defaultValue={bookingDefaults.guests} required className={formControlClass} /></label>
                 <label className="text-xs font-medium text-muted-foreground sm:col-span-2">Comentarios<textarea name="comments" rows={3} placeholder="Necesidades especiales o preguntas" className="mt-1 min-h-24 w-full resize-y rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none [color-scheme:light] placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20" /></label>
                 {submitError && <p role="alert" className="rounded-lg border border-destructive/25 bg-destructive/10 p-3 text-sm text-destructive sm:col-span-2">{submitError}</p>}
                 {dateError && <p role="alert" className="rounded-lg border border-destructive/25 bg-destructive/10 p-3 text-sm text-destructive sm:col-span-2">{dateError}</p>}

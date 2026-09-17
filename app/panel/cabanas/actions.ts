@@ -3,9 +3,15 @@
 import { revalidatePath } from "next/cache"
 import { createAdminCabinRepository } from "@/lib/admin-cabins/repository.server"
 import { getMissingPublicationFields, type AdminCabin, type AdminCabinInput, type AdminCabinStatus } from "@/lib/admin-cabins/types"
-import { requirePermission } from "@/lib/auth/session"
+import { requirePermission, type PanelSession } from "@/lib/auth/session"
+import { hasPermission } from "@/lib/auth/permissions"
 import { finalizeAdminMedia, returnAdminMediaToStaging } from "@/lib/admin-media/service.server"
 import { discardCabinAssets } from "@/lib/media/media-storage.server"
+
+function redactOwnerFor(role: PanelSession["role"]) {
+  const allowed = hasPermission(role, "owners.read_sensitive")
+  return (cabin: AdminCabin): AdminCabin => allowed ? cabin : { ...cabin, owner: null }
+}
 
 export type CabinsActionResult = { ok: true; data: AdminCabin[]; message?: string } | { ok: false; message: string }
 export type CabinActionResult = { ok: true; data: AdminCabin; message: string } | { ok: false; message: string }
@@ -29,8 +35,9 @@ function refreshCabinPages() {
 
 export async function loadAdminCabinsAction(): Promise<CabinsActionResult> {
   try {
-    await requirePermission("catalog.read")
-    return { ok: true, data: await createAdminCabinRepository().list() }
+    const session = await requirePermission("catalog.read")
+    const redact = redactOwnerFor(session.role)
+    return { ok: true, data: (await createAdminCabinRepository().list()).map(redact) }
   } catch (error) {
     if (isFrameworkError(error)) throw error
     console.error("loadAdminCabinsAction", error)
@@ -51,6 +58,7 @@ export async function saveAdminCabinAction(input: AdminCabinInput, id?: string):
     const previous = id ? await repository.findById(id) : null
     finalizedIds = await finalizeAdminMedia(input.images.flatMap((image) => image.assetId ? [image.assetId] : []), session.userId, session.role)
     const saved = await repository.save(input, session.userId, id)
+    const redact = redactOwnerFor(session.role)
     const currentAssetIds = new Set(saved.images.flatMap((image) => image.assetId ? [image.assetId] : []))
     const replacedAssetIds = previous?.images.flatMap((image) => image.assetId && !currentAssetIds.has(image.assetId) ? [image.assetId] : []) ?? []
     try {
@@ -61,7 +69,7 @@ export async function saveAdminCabinAction(input: AdminCabinInput, id?: string):
     refreshCabinPages()
     return {
       ok: true,
-      data: saved,
+      data: redact(saved),
       message: id ? input.status === "published" ? "El contenido ya está publicado." : "Los cambios se guardaron." : "La cabaña se creó correctamente.",
     }
   } catch (error) {
@@ -95,7 +103,7 @@ export async function restoreAdminCabinAction(id: string): Promise<CabinActionRe
     const restored = await createAdminCabinRepository().restore(id, session.userId)
     if (!restored) return { ok: false, message: "No encontramos esa cabaña archivada." }
     refreshCabinPages()
-    return { ok: true, data: restored, message: "La cabaña fue restaurada como borrador." }
+    return { ok: true, data: redactOwnerFor(session.role)(restored), message: "La cabaña fue restaurada como borrador." }
   } catch (error) {
     if (isFrameworkError(error)) throw error
     console.error("restoreAdminCabinAction", error)
@@ -124,7 +132,7 @@ export async function setAdminCabinStatusAction(id: string, status: AdminCabinSt
     const saved = await repository.setStatus(id, status, session.userId)
     if (!saved) return { ok: false, message: "No encontramos esa cabaña." }
     refreshCabinPages()
-    return { ok: true, data: saved, message: status === "published" ? "La cabaña ya está publicada." : "La cabaña quedó oculta." }
+    return { ok: true, data: redactOwnerFor(session.role)(saved), message: status === "published" ? "La cabaña ya está publicada." : "La cabaña quedó oculta." }
   } catch (error) {
     if (isFrameworkError(error)) throw error
     console.error("setAdminCabinStatusAction", error)

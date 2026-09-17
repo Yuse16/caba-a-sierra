@@ -21,7 +21,7 @@ pnpm exec supabase db push
 pnpm exec supabase migration list --linked
 ```
 
-El `dry-run` debe mostrar únicamente las migraciones `202607290001` a `202607290008`. No uses `db reset --linked`, `migration repair` ni los archivos de `supabase/rollback/` durante esta preparación.
+El `dry-run` debe mostrar únicamente las migraciones `202607290001` a `202609070020`. No uses `db reset --linked`, `migration repair` ni los archivos de `supabase/rollback/` durante esta preparación.
 
 Después ejecuta la suite transaccional RLS, que termina con `rollback`:
 
@@ -29,7 +29,7 @@ Después ejecuta la suite transaccional RLS, que termina con `rollback`:
 pnpm exec supabase test db --linked supabase/tests/rls_test.sql
 ```
 
-El resultado esperado es `Tests=91` y `Result: PASS`.
+El resultado esperado es `Tests=167` y `Result: PASS`.
 
 ## 3. Obtener variables sin exponerlas
 
@@ -123,4 +123,28 @@ pnpm exec supabase test db --linked supabase/tests/rls_test.sql
 
 La suite de staging inicia sesión con las cuentas admin/editor y opera mediante la interfaz. La llave `service_role` permanece exclusivamente en el runtime de Vercel para las operaciones server-only de Storage; no se entrega al navegador ni se usa como identidad de la prueba.
 
-Antes de aprobar la fusión revisa manualmente el Preview en 320, 360, 375, 390, 412, 768 y 1440 px, incluyendo consola, red, cookies Secure/HttpOnly/SameSite, callbacks, imágenes, desbordamientos y persistencia en una segunda sesión.
+Antes de aprobar la fusión revisa manualmente el Preview en 320, 360, 375, 390, 412, 768, 1024 y 1440 px, incluyendo consola, red, cookies Secure/HttpOnly/SameSite, callbacks, imágenes, desbordamientos y persistencia en una segunda sesión.
+
+## 8. Identidad pública DUPEZ
+
+La migración `202609070020` establece la fuente única de identidad pública:
+
+- Nombre: `DUPEZ`.
+- WhatsApp oficial: `528444556929` (`wa.me/528444556929`), teléfono `844 455 6929`, correo `cabanasdupez@gmail.com`.
+- El número antiguo de intermediario (`528442779477`) sólo apareció como comentario histórico en SQL; no existe en ningún flujo de pantalla, componente ni API.
+- La página pública lee `public.public_site_config` (vista con `security_barrier`) y contacta por WhatsApp con `wa.me/528444556929`; no usa constantes duplicadas.
+
+## 9. Proceso de revert (retorno a main)
+
+1. No ejecutes `migration repair`, `db reset --linked` ni los archivos de `supabase/rollback/` manualmente.
+2. Vercel: despliega el commit `1daad62` (estado `main` actual) como nuevo Deployment Production cuando se apruebe la fusión. El Preview de la rama queda naturalmente obsoleto al eliminarla.
+3. Supabase de staging es desechable: al terminar QA se elimina el proyecto completo. No se comparte con producción.
+4. Si un defecto bloqueante aparece en staging y ya se aplicó al proyecto remoto, la corrección se entrega como una migración nueva (nunca editando migraciones ya aplicadas); el mensaje de error y la pantalla afectada se reportan con la traza completa.
+
+## 10. Riesgos aceptados documentados
+
+- **CSP `script-src 'unsafe-inline'` en producción**: Next.js inyecta scripts inline y la infraestructura de nonces aún no se adoptó; el riesgo se mitiga con `script-src-attr 'none'`, `object-src 'none'` y `base-uri 'self'`. Se acepta y se revisará al incorporar nonces.
+- **Rollbacks parciales de migraciones aplicadas** (`011`, `017`, `018`): los archivos de `supabase/rollback/` no restauran todo contrato (011 no recrea funciones previas; 017/018 son no-idempotentes o no-op). No se editan migraciones ya aplicadas; la estrategia de revert es migración nueva hacia delante.
+- **Toast transitorio en CRM bajo carga extrema de E2E** (`customers/process-action`): es cosmético y sólo bajo estrés sintético; se deja como está.
+- **Enlace alternativo de WhatsApp `?cabana=`**: construye el deep link desde la URL pública; la página ignora el parámetro si llega directo. Se acepta: el acceso primario es el modal de la cabaña.
+- **Auditoría reversible**: los audit logs conservan al actor y no se reescriben; el borrado suave invalida cuentas QA sin tocar historial.

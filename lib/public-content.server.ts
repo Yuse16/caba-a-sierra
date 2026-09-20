@@ -17,7 +17,10 @@ export async function getPublicCabins(): Promise<PublicCabin[]> {
     .select("id,slug,name,description,location,nightly_price,old_price,min_guests,max_guests,bedrooms,beds,bed_distribution,bathrooms,cabin_type,display_order,image_url,gallery,amenities,categories,check_in_time,check_out_time,accepts_pets,rules,address,zone,latitude,longitude,maps_url,pool_type")
     .order("display_order")
 
-  if (error || !Array.isArray(data)) throw new Error("No pudimos consultar las cabañas publicadas.")
+  if (error || !Array.isArray(data)) {
+    console.error("No pudimos consultar las cabañas publicadas.", error)
+    return []
+  }
   return data.flatMap((row) => {
     if (!row.id || !row.slug || !row.name || !row.image_url) return []
     const services = row.amenities ?? []
@@ -55,7 +58,10 @@ export async function getPublicPromotions(): Promise<PublicPromotion[]> {
     .select("id,name,short_description,image_alt_text,cta_label,href,display_order,image_url")
     .order("display_order")
 
-  if (error || !Array.isArray(data)) throw new Error("No pudimos consultar las promociones publicadas.")
+  if (error || !Array.isArray(data)) {
+    console.error("No pudimos consultar las promociones publicadas.", error)
+    return []
+  }
   return data.flatMap((row) => row.id && row.name && row.image_url
     ? [{ id: row.id, name: row.name, imageUrl: row.image_url, imageAlt: row.image_alt_text ?? "", shortDescription: row.short_description ?? "", ctaLabel: row.cta_label ?? "", href: row.href ?? "" } satisfies PublicPromotion]
     : [])

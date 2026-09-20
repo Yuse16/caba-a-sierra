@@ -71,7 +71,7 @@ test("página pública, filtros y datos de reservación", async ({ page }, testI
 test("modal cierra con Escape y el panel permanece protegido sin sesión", async ({ page }) => {
   const runtimeErrors = captureRuntimeErrors(page)
   await page.goto("/")
-  await page.getByRole("button", { name: "Ver detalles" }).first().click()
+  await page.getByRole("button", { name: /^Ver detalles de / }).first().click()
   await expect(page.getByRole("dialog")).toBeVisible()
   await page.keyboard.press("Escape")
   await expect(page.getByRole("dialog")).toBeHidden()

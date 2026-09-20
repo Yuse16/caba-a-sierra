@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { CalendarCheck, Menu, Mountain, X } from "lucide-react"
+import { PwaInstallButton } from "./pwa-install-button"
 
 const links = [
   { label: "Inicio", href: "#inicio" },
@@ -66,13 +67,16 @@ export function PublicHeader({
           ))}
         </nav>
 
+        <PwaInstallButton className="ml-auto hidden min-h-11 lg:inline-flex" label="Instalar DUPEZ" />
+
         <a
           href="#cabanas"
-          className={`ml-auto hidden min-h-11 items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-forest-dark lg:ml-3 lg:inline-flex ${focusClasses}`}
+          className={`hidden min-h-11 items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-forest-dark lg:ml-3 lg:inline-flex ${focusClasses}`}
         >
           Ver cabañas
           <CalendarCheck className="size-4" aria-hidden />
         </a>
+
 
         <button
           type="button"
@@ -104,6 +108,9 @@ export function PublicHeader({
                 </a>
               </li>
             ))}
+            <li className="pt-2">
+              <PwaInstallButton className="flex min-h-11 w-full" label="Instalar DUPEZ" />
+            </li>
             <li className="pt-2">
               <a
                 href="#cabanas"

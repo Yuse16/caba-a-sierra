@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const isPanel = host.startsWith("panel.")
 
   return {
-    title: isPanel ? "Panel DUPEZ — Acceso" : "Acceso al panel — Cabañas Sierra Norte",
+    title: isPanel ? "Panel DUPEZ — Acceso" : "Acceso al panel — DUPEZ",
     robots: { index: false, follow: false },
     ...(isPanel
       ? {

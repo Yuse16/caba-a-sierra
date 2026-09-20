@@ -46,6 +46,10 @@ export function PwaInstallButton({
       setInstallPrompt(prompt)
     }
 
+    const handlePromptConsumed = () => {
+      setInstallPrompt(null)
+    }
+
     const handleInstalled = () => {
       delete window.__dupezInstallPrompt
       setInstallPrompt(null)
@@ -57,11 +61,13 @@ export function PwaInstallButton({
     if (window.__dupezInstallPrompt) setInstallPrompt(window.__dupezInstallPrompt)
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
     window.addEventListener("appinstalled", handleInstalled)
+    window.addEventListener("dupez-pwa-prompt-consumed", handlePromptConsumed)
     displayMode.addEventListener?.("change", refreshInstalledState)
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
       window.removeEventListener("appinstalled", handleInstalled)
+      window.removeEventListener("dupez-pwa-prompt-consumed", handlePromptConsumed)
       displayMode.removeEventListener?.("change", refreshInstalledState)
     }
   }, [])
@@ -75,14 +81,10 @@ export function PwaInstallButton({
     }
 
     const prompt = installPrompt
-    setInstallPrompt(null)
     delete window.__dupezInstallPrompt
+    window.dispatchEvent(new Event("dupez-pwa-prompt-consumed"))
     await prompt.prompt()
-    const choice = await prompt.userChoice
-    if (choice.outcome === "dismissed") {
-      window.__dupezInstallPrompt = prompt
-      setInstallPrompt(prompt)
-    }
+    await prompt.userChoice
   }
 
   return (

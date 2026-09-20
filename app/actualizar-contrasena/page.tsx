@@ -5,7 +5,7 @@ import { updatePasswordAction } from "@/app/login/actions"
 import { hasSupabaseConfig } from "@/lib/supabase/config"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
-export const metadata: Metadata = { title: "Nueva contraseña — Cabañas Sierra Norte", robots: { index: false, follow: false } }
+export const metadata: Metadata = { title: "Nueva contraseña — DUPEZ", robots: { index: false, follow: false } }
 
 export default async function UpdatePasswordPage() {
   if (!hasSupabaseConfig()) redirect("/login?error=recovery")

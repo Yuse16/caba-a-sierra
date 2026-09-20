@@ -17,6 +17,7 @@ import type { AdminPanelInitialData } from "@/lib/admin-panel-data"
 import { formatCurrency as currency } from "@/lib/admin-presentational"
 import { AdminSidebar } from "./admin-sidebar"
 import { AdminHeader } from "./admin-header"
+import { ProfileSection } from "./profile-section"
 import { CabinsTable } from "./cabins-table"
 import { OccupancyCalendar } from "./occupancy-calendar"
 import { MetricCard } from "@/components/shared/metric-card"
@@ -315,6 +316,8 @@ export function AdminPanel({
             <PricingSection items={seasons} onAdjust={adjustSeason} />
           ) : visibleActive === "reportes" ? (
             <ReportsSection reservations={reservations} cabins={cabins} />
+          ) : visibleActive === "perfil" ? (
+            <ProfileSection />
           ) : (
             <SectionStub
               title={sectionMeta[visibleActive]?.title ?? "Sección"}

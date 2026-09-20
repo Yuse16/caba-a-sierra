@@ -11,6 +11,12 @@ interface BeforeInstallPromptEvent extends Event {
 
 type NavigatorWithStandalone = Navigator & { standalone?: boolean }
 
+declare global {
+  interface Window {
+    __dupezInstallPrompt?: BeforeInstallPromptEvent
+  }
+}
+
 export function PwaInstallButton({
   className,
   label = "Instalar app",
@@ -35,16 +41,20 @@ export function PwaInstallButton({
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault()
-      setInstallPrompt(event as BeforeInstallPromptEvent)
+      const prompt = event as BeforeInstallPromptEvent
+      window.__dupezInstallPrompt = prompt
+      setInstallPrompt(prompt)
     }
 
     const handleInstalled = () => {
+      delete window.__dupezInstallPrompt
       setInstallPrompt(null)
       setInstalled(true)
     }
 
     refreshInstalledState()
     setIsAndroid(/Android/i.test(window.navigator.userAgent))
+    if (window.__dupezInstallPrompt) setInstallPrompt(window.__dupezInstallPrompt)
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
     window.addEventListener("appinstalled", handleInstalled)
     displayMode.addEventListener?.("change", refreshInstalledState)
@@ -66,9 +76,13 @@ export function PwaInstallButton({
 
     const prompt = installPrompt
     setInstallPrompt(null)
+    delete window.__dupezInstallPrompt
     await prompt.prompt()
     const choice = await prompt.userChoice
-    if (choice.outcome === "dismissed") setInstallPrompt(prompt)
+    if (choice.outcome === "dismissed") {
+      window.__dupezInstallPrompt = prompt
+      setInstallPrompt(prompt)
+    }
   }
 
   return (

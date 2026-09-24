@@ -27,6 +27,7 @@ export function CabinCard({
   const coverIndex = Math.max(0, gallery.findIndex((image) => image.isCover))
   const [activeIndex, setActiveIndex] = useState(coverIndex)
   const touchStartX = useRef<number | null>(null)
+  const suppressImageClickUntil = useRef(0)
   const activeImage = gallery[Math.min(activeIndex, gallery.length - 1)] ?? gallery[0]
   const moveGallery = (direction: -1 | 1) => setActiveIndex((current) => (current + direction + gallery.length) % gallery.length)
 
@@ -39,24 +40,37 @@ export function CabinCard({
           if (touchStartX.current === null || gallery.length < 2) return
           const distance = (event.changedTouches[0]?.clientX ?? touchStartX.current) - touchStartX.current
           touchStartX.current = null
-          if (Math.abs(distance) >= 40) moveGallery(distance > 0 ? -1 : 1)
+          if (Math.abs(distance) >= 40) {
+            suppressImageClickUntil.current = Date.now() + 500
+            moveGallery(distance > 0 ? -1 : 1)
+          }
         }}
       >
-        <Image
-          key={activeImage.id}
-          src={activeImage.url || "/placeholder.svg"}
-          alt={activeImage.altText || `Foto de ${cabin.name}`}
-          fill
-          sizes="(max-width: 768px) 100vw, 33vw"
-          className="object-cover"
-        />
+        <button
+          type="button"
+          onClick={() => {
+            if (Date.now() < suppressImageClickUntil.current) return
+            onViewDetails(cabin)
+          }}
+          aria-label={`Ver detalles de ${cabin.name}`}
+          className="absolute inset-0 z-0 cursor-zoom-in rounded-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gold"
+        >
+          <Image
+            key={activeImage.id}
+            src={activeImage.url || "/placeholder.svg"}
+            alt={activeImage.altText || `Foto de ${cabin.name}`}
+            fill
+            sizes="(max-width: 768px) 100vw, 33vw"
+            className="object-cover"
+          />
+        </button>
         {gallery.length > 1 && <>
           <button type="button" onClick={(event) => { event.stopPropagation(); moveGallery(-1) }} aria-label={`Fotografía anterior de ${cabin.name}`} className="absolute left-3 top-1/2 z-10 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/95 text-foreground shadow-md transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"><ChevronLeft className="size-5" aria-hidden /></button>
           <button type="button" onClick={(event) => { event.stopPropagation(); moveGallery(1) }} aria-label={`Fotografía siguiente de ${cabin.name}`} className="absolute right-3 top-1/2 z-10 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/95 text-foreground shadow-md transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"><ChevronRight className="size-5" aria-hidden /></button>
           <span className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/65 px-2.5 py-1 text-xs font-semibold text-white" aria-live="polite">{activeIndex + 1} / {gallery.length}</span>
         </>}
         {/* status / badge top-left */}
-        <div className="absolute left-3 right-16 top-3 flex flex-wrap items-start gap-2">
+        <div className="absolute left-3 right-16 top-3 z-10 flex flex-wrap items-start gap-2">
           {cabin.badge === "popular" && (
             <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-primary-foreground">
               Más popular

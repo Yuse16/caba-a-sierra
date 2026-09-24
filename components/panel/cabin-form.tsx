@@ -246,14 +246,15 @@ function CabinForm({ cabin, created = false }: { cabin?: AdminCabin; created?: b
             <label className="text-sm font-medium text-foreground sm:col-span-2">Dirección
               <input value={form.address} onChange={(event) => update("address", event.target.value)} placeholder="Calle, número y referencias" autoComplete="street-address" className={controlClass} />
             </label>
-            <label className="text-sm font-medium text-foreground">Latitud
+            <label className="text-sm font-medium text-foreground">Latitud <span className="font-normal text-muted-foreground">(opcional)</span>
               <input type="number" inputMode="decimal" step="any" min={-90} max={90} value={form.latitude ?? ""} onChange={(event) => update("latitude", event.target.value === "" ? null : Number(event.target.value))} placeholder="25.450000" className={controlClass} />
             </label>
-            <label className="text-sm font-medium text-foreground">Longitud
+            <label className="text-sm font-medium text-foreground">Longitud <span className="font-normal text-muted-foreground">(opcional)</span>
               <input type="number" inputMode="decimal" step="any" min={-180} max={180} value={form.longitude ?? ""} onChange={(event) => update("longitude", event.target.value === "" ? null : Number(event.target.value))} placeholder="-100.850000" className={controlClass} />
             </label>
-            <label className="text-sm font-medium text-foreground sm:col-span-2">URL de Google Maps u OpenStreetMap
+            <label className="text-sm font-medium text-foreground sm:col-span-2">URL de Google Maps u OpenStreetMap <span className="font-normal text-muted-foreground">(opcional)</span>
               <input type="url" value={form.mapsUrl} onChange={(event) => update("mapsUrl", event.target.value)} placeholder="https://maps.google.com/..." className={controlClass} />
+              <span className="mt-1 block text-xs text-muted-foreground">Si no conoces latitud y longitud, déjalas vacías. La ubicación pública se puede guardar sin esos datos.</span>
             </label>
             <label id="field-nightlyPrice" className="text-sm font-medium text-foreground">Precio por noche
               <input type="number" inputMode="decimal" min={0} value={form.nightlyPrice || ""} onChange={(event) => update("nightlyPrice", Number(event.target.value))} placeholder="2800" className={controlClass} aria-invalid={Boolean(errors.nightlyPrice)} />
@@ -290,7 +291,7 @@ function CabinForm({ cabin, created = false }: { cabin?: AdminCabin; created?: b
             </label>
           </div>
           <div className="mt-5 rounded-xl border border-border bg-secondary/30 p-4">
-            <div className="flex items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-foreground">Distribución de camas</h3><p className="text-xs text-muted-foreground">Total calculado automáticamente: {completeInput.beds} camas</p></div></div>
+            <div className="flex items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-foreground">Distribución de camas</h3><p className="text-xs text-muted-foreground">Solo llena los tipos de cama que existan; los demás pueden quedar vacíos y cuentan como 0.</p><p className="text-xs text-muted-foreground">Total calculado automáticamente: {completeInput.beds} camas</p></div></div>
             <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{bedTypes.map(({ key, label }) => <label key={key} className="text-xs font-medium text-muted-foreground">{label}<input type="number" inputMode="numeric" min={0} step={1} value={form.bedDistribution[key] ?? ""} onChange={(event) => updateBed(key, Number.parseInt(event.target.value, 10) || 0)} className={controlClass} /></label>)}</div>
             <FieldError message={errors.beds} />
           </div>

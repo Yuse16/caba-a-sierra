@@ -82,6 +82,16 @@ export function SearchBar({
     "no-admitidas": "Sin mascotas",
   }
 
+  const bedTypeLabel: Record<string, string> = {
+    individual: "Individual",
+    matrimonial: "Matrimonial",
+    king: "King size",
+    queen: "Queen",
+    litera: "Litera",
+    "sofa-cama": "Sofá cama",
+    otro: "Otro",
+  }
+
   return (
     <div className="rounded-2xl border border-forest-dark/10 bg-card p-3 shadow-[0_18px_55px_rgba(22,52,36,0.14)] sm:p-4">
       <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-[1.35fr_0.85fr_0.85fr_0.82fr_auto] xl:items-stretch">
@@ -242,6 +252,42 @@ export function SearchBar({
               </span>
             </label>
           </FieldShell>
+
+          {options.maxBeds > 0 && (
+            <FieldShell>
+              <label>
+                <FieldLabel icon={<BedDouble className="size-3.5" aria-hidden />}>Camas mínimas</FieldLabel>
+                <span className="relative block">
+                  <select
+                    value={String(value.minBeds)}
+                    onChange={(event) => update("minBeds", Number(event.target.value))}
+                    className={selectClass}
+                  >
+                    <option value={0}>Cualquiera</option>
+                    {Array.from({ length: options.maxBeds }, (_, index) => index + 1).map((count) => (
+                      <option key={count} value={count}>Al menos {count} {count === 1 ? "cama" : "camas"}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-1 top-3 size-4 text-muted-foreground" aria-hidden />
+                </span>
+              </label>
+            </FieldShell>
+          )}
+
+          {options.bedTypes.length > 0 && (
+            <FieldShell>
+              <label>
+                <FieldLabel icon={<BedDouble className="size-3.5" aria-hidden />}>Tipo de cama</FieldLabel>
+                <span className="relative block">
+                  <select value={value.bedType} onChange={(event) => update("bedType", event.target.value)} className={selectClass}>
+                    <option value="todas">Cualquier tipo</option>
+                    {options.bedTypes.map((type) => <option key={type} value={type}>{bedTypeLabel[type] ?? type}</option>)}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-1 top-3 size-4 text-muted-foreground" aria-hidden />
+                </span>
+              </label>
+            </FieldShell>
+          )}
 
           {options.zones.length > 0 && (
             <FieldShell>

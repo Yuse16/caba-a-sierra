@@ -31,9 +31,7 @@ export function AdminSidebar({
         </span>
         <div className="leading-tight">
           <p className="text-base font-semibold text-sidebar-foreground">
-            Cabañas
-            <br />
-            Sierra Norte
+            DUPEZ
           </p>
           {isPro && <p className="text-[11px] font-medium text-primary">Panel PRO</p>}
         </div>

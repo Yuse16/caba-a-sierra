@@ -204,6 +204,8 @@ export function ClientPage({
         cabin.maxGuests >= search.guests &&
         (search.maxPrice === 0 || cabin.price <= search.maxPrice) &&
         (search.bedrooms === 0 || cabin.bedrooms === search.bedrooms) &&
+        (search.minBeds === 0 || cabin.beds >= search.minBeds) &&
+        (search.bedType === "todas" || (cabin.bedDistribution[search.bedType] ?? 0) > 0) &&
         (search.zone === "todas" || cabin.zone === search.zone) &&
         (search.pool === "todas" || cabin.poolType === search.pool) &&
         (search.pets === "todas" ||
@@ -260,7 +262,7 @@ export function ClientPage({
             loading="eager"
             fetchPriority="high"
             sizes="100vw"
-            className="-z-20 object-cover object-[center_58%]"
+            className="-z-20 scale-[1.16] object-cover object-[center_70%] sm:scale-100 sm:object-[center_58%]"
           />
           <div
             className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(17,39,27,0.92)_0%,rgba(17,39,27,0.76)_42%,rgba(17,39,27,0.28)_75%,rgba(17,39,27,0.12)_100%)]"

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Archive, Bed, Edit3, Eye, MapPin, Plus, RefreshCw, RotateCcw, Users, X } from "lucide-react"
+import { Archive, Bed, Edit3, Eye, MapPin, RefreshCw, RotateCcw, Users, X } from "lucide-react"
 import { formatCurrency as currency } from "@/lib/admin-presentational"
 import type { AdminCabin } from "@/lib/admin-cabins/types"
 import { useAdminCabins } from "./cabins-provider"
@@ -97,9 +97,6 @@ export function CabinsList() {
           <h1 className="mt-1 font-serif text-3xl font-bold text-foreground">Tus cabañas</h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">Edita la información, revisa cómo se verá y decide cuáles cabañas estarán publicadas.</p>
         </div>
-        <Link href="/panel/cabanas/nueva" className="hidden min-h-12 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:inline-flex">
-          <Plus className="size-4" aria-hidden />Nueva cabaña
-        </Link>
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2 text-sm">

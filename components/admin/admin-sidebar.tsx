@@ -9,10 +9,12 @@ import { usePanelSession } from "@/components/auth/panel-session-provider"
 export function AdminSidebar({
   version,
   active,
+  badges = {},
   onSelect,
 }: {
   version: PlatformVersion
   active: SectionKey
+  badges?: Partial<Record<SectionKey, number>>
   onSelect: (key: SectionKey) => void
 }) {
   const session = usePanelSession()
@@ -29,9 +31,7 @@ export function AdminSidebar({
         </span>
         <div className="leading-tight">
           <p className="text-base font-semibold text-sidebar-foreground">
-            Cabañas
-            <br />
-            Sierra Norte
+            DUPEZ
           </p>
           {isPro && <p className="text-[11px] font-medium text-primary">Panel PRO</p>}
         </div>
@@ -50,6 +50,7 @@ export function AdminSidebar({
               {group.items.map((item) => {
                 const Icon = item.icon
                 const isActive = active === item.key
+                const badge = badges[item.key]
                 return (
                   <li key={item.key}>
                     <button
@@ -65,7 +66,7 @@ export function AdminSidebar({
                     >
                       <Icon className="size-4 shrink-0" aria-hidden />
                       <span className="flex-1 text-left">{item.label}</span>
-                      {item.badge && (
+                      {typeof badge === "number" && badge > 0 && (
                         <span
                           className={cn(
                             "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold",
@@ -74,7 +75,7 @@ export function AdminSidebar({
                               : "bg-gold/25 text-gold-foreground",
                           )}
                         >
-                          {item.badge}
+                          {badge}
                         </span>
                       )}
                     </button>

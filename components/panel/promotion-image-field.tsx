@@ -82,13 +82,13 @@ export function PromotionImageField({ image, onChange, error }: { image: AdminPr
         <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" aria-label="Seleccionar imagen principal" onChange={(event) => void selectFile(event.target.files?.[0])} />
       </div>
 
-      <p className="mt-3 rounded-lg bg-secondary/60 px-3 py-2 text-xs text-muted-foreground">La convertimos a WebP únicamente cuando el archivo resultante pesa menos. La proporción original se conserva.</p>
+      <p className="mt-3 rounded-lg bg-secondary/60 px-3 py-2 text-xs text-muted-foreground">La vista previa usa el mismo recorte 16:9 que verá el cliente en la página pública. La convertimos a WebP únicamente cuando el archivo resultante pesa menos.</p>
       {(error || uploadError) && <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive" role="alert">{error || uploadError}</div>}
 
       {image ? (
         <article className="mt-5 overflow-hidden rounded-xl border border-border bg-background">
           <div className="relative aspect-[16/9] bg-secondary">
-            <Image src={image.url} alt="Vista previa de la promoción" fill unoptimized={image.url.startsWith("data:")} sizes="(max-width: 768px) 100vw, 800px" className="object-contain" />
+            <Image src={image.url} alt="Vista previa final de la promoción" fill unoptimized={image.url.startsWith("data:")} sizes="(max-width: 768px) 100vw, 800px" className="object-cover" />
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3 p-3">
             <div className="min-w-0"><p className="truncate text-sm font-medium text-foreground">{image.name}</p><p className="text-xs text-muted-foreground">{readableSize(image.size)} · {image.type || "imagen"}</p></div>

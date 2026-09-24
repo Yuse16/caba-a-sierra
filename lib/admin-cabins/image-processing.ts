@@ -1,7 +1,4 @@
-import type { AdminCabinImage } from "./types"
-
-export const MAX_CABIN_IMAGES = 10
-export const MAX_IMAGE_SIZE = 10 * 1024 * 1024
+export const MAX_IMAGE_SIZE = 5 * 1024 * 1024
 export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const
 
 export type ImageValidationResult = {
@@ -9,38 +6,23 @@ export type ImageValidationResult = {
   errors: string[]
 }
 
-export function validateImageFiles(files: File[], currentCount: number): ImageValidationResult {
+export function validateImageFiles(files: File[]): ImageValidationResult {
   const valid: File[] = []
   const errors: string[] = []
-  let remaining = Math.max(0, MAX_CABIN_IMAGES - currentCount)
 
   for (const file of files) {
-    if (remaining === 0) {
-      errors.push(`Puedes guardar hasta ${MAX_CABIN_IMAGES} fotografías.`)
-      break
-    }
     if (!ALLOWED_IMAGE_TYPES.includes(file.type as (typeof ALLOWED_IMAGE_TYPES)[number])) {
       errors.push(`${file.name}: usa una imagen JPG, PNG o WebP.`)
       continue
     }
     if (file.size > MAX_IMAGE_SIZE) {
-      errors.push(`${file.name}: la imagen supera el límite de 10 MB.`)
+      errors.push(`${file.name}: la imagen supera el límite de 5 MB.`)
       continue
     }
     valid.push(file)
-    remaining -= 1
   }
 
   return { valid, errors: [...new Set(errors)] }
-}
-
-function readFileAsDataUrl(file: Blob) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(String(reader.result))
-    reader.onerror = () => reject(new Error("No pudimos leer la imagen."))
-    reader.readAsDataURL(file)
-  })
 }
 
 function loadImage(file: File) {
@@ -59,7 +41,13 @@ function loadImage(file: File) {
   })
 }
 
-export async function prepareCabinImage(file: File, makeCover: boolean): Promise<AdminCabinImage> {
+function extensionFor(type: string) {
+  if (type === "image/jpeg") return "jpg"
+  if (type === "image/png") return "png"
+  return "webp"
+}
+
+export async function prepareCabinImageUpload(file: File): Promise<File> {
   let output: Blob = file
 
   try {
@@ -75,26 +63,16 @@ export async function prepareCabinImage(file: File, makeCover: boolean): Promise
       const compressed = await new Promise<Blob | null>((resolve) =>
         canvas.toBlob(resolve, "image/webp", 0.82),
       )
-      if (compressed && compressed.size < file.size) output = compressed
+      if (compressed) output = compressed
     }
   } catch {
     output = file
   }
 
-  let url: string
-  try {
-    url = await readFileAsDataUrl(output)
-  } catch {
-    url = await readFileAsDataUrl(file)
-  }
-
-  return {
-    id: `image-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`,
-    assetId: null,
-    url,
-    name: file.name,
-    size: output.size,
-    type: output.type || file.type,
-    isCover: makeCover,
-  }
+  const outputType = output.type || file.type
+  const baseName = file.name.replace(/\.[^.]+$/, "") || "imagen"
+  return new File([output], `${baseName}.${extensionFor(outputType)}`, {
+    type: outputType,
+    lastModified: file.lastModified,
+  })
 }

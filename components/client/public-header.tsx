@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { CalendarCheck, Menu, Mountain, X } from "lucide-react"
+import { PwaInstallButton } from "./pwa-install-button"
 
 const links = [
   { label: "Inicio", href: "#inicio" },
@@ -13,7 +14,13 @@ const links = [
 const focusClasses =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 
-export function PublicHeader() {
+export function PublicHeader({
+  businessName,
+  subtitle,
+}: {
+  businessName: string
+  subtitle: string
+}) {
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
@@ -32,7 +39,7 @@ export function PublicHeader() {
       <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-3 px-4 sm:px-6 lg:gap-5 lg:px-8">
         <a
           href="#inicio"
-          aria-label="DUPEZ, ir al inicio"
+          aria-label={`${businessName}, ir al inicio`}
           className={`flex min-w-0 items-center gap-3 rounded-lg ${focusClasses}`}
         >
           <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm">
@@ -40,10 +47,10 @@ export function PublicHeader() {
           </span>
           <span className="min-w-0">
             <span className="block font-serif text-lg font-semibold leading-tight tracking-[-0.02em] text-forest-dark">
-              DUPEZ
+              {businessName}
             </span>
             <span className="mt-0.5 block max-w-[172px] text-[8px] font-bold uppercase leading-[1.35] tracking-[0.14em] text-primary sm:max-w-[240px] sm:text-[9px] sm:tracking-[0.18em] lg:max-w-none lg:text-[10px] lg:tracking-[0.22em] lg:whitespace-nowrap">
-              Renta de cabañas en toda la Sierra de Arteaga
+              {subtitle}
             </span>
           </span>
         </a>
@@ -60,13 +67,16 @@ export function PublicHeader() {
           ))}
         </nav>
 
+        <PwaInstallButton className="ml-auto hidden min-h-11 lg:inline-flex" label="Instalar DUPEZ" />
+
         <a
           href="#cabanas"
-          className={`ml-auto hidden min-h-11 items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-forest-dark lg:ml-3 lg:inline-flex ${focusClasses}`}
+          className={`hidden min-h-11 items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-forest-dark lg:ml-3 lg:inline-flex ${focusClasses}`}
         >
           Ver cabañas
           <CalendarCheck className="size-4" aria-hidden />
         </a>
+
 
         <button
           type="button"
@@ -98,6 +108,9 @@ export function PublicHeader() {
                 </a>
               </li>
             ))}
+            <li className="pt-2">
+              <PwaInstallButton className="flex min-h-11 w-full" label="Instalar DUPEZ" />
+            </li>
             <li className="pt-2">
               <a
                 href="#cabanas"

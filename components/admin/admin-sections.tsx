@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { BarChart3, Check, CreditCard, FileText, MessageCircle, Phone, Plus, Save, Send, X } from "lucide-react"
+import { BarChart3, Check, CreditCard, FileText, MessageCircle, Phone, Plus, Save, X } from "lucide-react"
 import type {
   Cabin,
   CabinStatus,
@@ -16,7 +16,6 @@ import type {
 import { cabinStatusLabel as statusLabel, cabinStatusTone, formatCurrency as currency, requestStatusLabel, requestStatusTone, reservationStatusLabel } from "@/lib/admin-presentational"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { AreaLineChart } from "@/components/shared/line-chart"
-import { siteContact } from "@/lib/site-config"
 
 const panelClass = "rounded-xl border border-border bg-card p-4 sm:p-5"
 const buttonClass =
@@ -58,13 +57,7 @@ export function RequestsSection({
   onStatusChange: (id: string, status: RequestStatus) => void
 }) {
   const [selectedId, setSelectedId] = useState(items[0]?.id ?? "")
-  const [alternativeOpen, setAlternativeOpen] = useState(false)
-  const [alternativeId, setAlternativeId] = useState("")
-  const [sentAlternative, setSentAlternative] = useState<string | null>(null)
   const selected = items.find((item) => item.id === selectedId) ?? items[0]
-  const alternatives = selected
-    ? cabins.filter((cabin) => cabin.id !== selected.cabinId && cabin.maxGuests >= selected.guests && cabin.status !== "no-disponible")
-    : []
   const timeline: { status: RequestStatus; label: string }[] = [
     { status: "nueva", label: "Solicitud recibida" },
     { status: "pendiente-propietario", label: "Pendiente de consultar propietario" },
@@ -72,13 +65,24 @@ export function RequestsSection({
     { status: "disponible-confirmada", label: "Disponibilidad confirmada" },
     { status: "reservacion-confirmada", label: "Reservación confirmada" },
   ]
-  const statusOptions = Object.entries(requestStatusLabel) as [RequestStatus, string][]
+  const persistedStatusValues: RequestStatus[] = [
+    "nueva",
+    "pendiente-propietario",
+    "propietario-contactado",
+    "disponible-confirmada",
+    "no-disponible",
+    "reservacion-confirmada",
+    "cliente-no-respondio",
+  ]
+  const statusOptions = persistedStatusValues.map((status) => [status, requestStatusLabel[status]] as const)
+  const ownerWhatsApp = selected ? cabins.find((cabin) => cabin.ownerId === selected.ownerId)?.ownerWhatsApp : ""
 
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
       <section className={panelClass}>
         <SectionHeading title={title} description="Consulta al propietario, registra la respuesta y acompaña al cliente." />
         <div className="space-y-2">
+          {items.length === 0 && <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">No hay solicitudes registradas.</p>}
           {items.map((request) => (
             <button
               key={request.id}
@@ -108,20 +112,18 @@ export function RequestsSection({
           <dl className="space-y-3 text-sm">
             <div><dt className="text-xs text-muted-foreground">Cabaña</dt><dd className="font-medium">{selected.cabin}</dd></div>
             <div><dt className="text-xs text-muted-foreground">Fechas y huéspedes</dt><dd>{selected.checkIn} – {selected.checkOut}<br />{selected.guests} huéspedes</dd></div>
-            <div><dt className="text-xs text-muted-foreground">Cliente</dt><dd>{selected.email}<br />{selected.phone}</dd></div>
-            <div><dt className="text-xs text-muted-foreground">Propietario</dt><dd className="font-medium">{selected.ownerName}</dd><dd>{selected.ownerPhone}</dd></div>
-            <div><dt className="text-xs text-muted-foreground">Mensaje</dt><dd className="rounded-lg bg-secondary/60 p-3 leading-relaxed">{selected.message}</dd></div>
+            <div><dt className="text-xs text-muted-foreground">Cliente</dt><dd>{selected.email ? <>{selected.email}<br /></> : null}{selected.phone}</dd></div>
+            <div><dt className="text-xs text-muted-foreground">Propietario</dt><dd className="font-medium">{selected.ownerName || "Sin propietario asignado"}</dd>{selected.ownerPhone && <dd>{selected.ownerPhone}</dd>}</div>
+            <div><dt className="text-xs text-muted-foreground">Mensaje</dt><dd className="rounded-lg bg-secondary/60 p-3 leading-relaxed">{selected.message || "Sin comentarios adicionales"}</dd></div>
           </dl>
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <a href={`tel:${selected.ownerPhone.replace(/\s/g, "")}`} onClick={() => onStatusChange(selected.id, "propietario-contactado")} className={secondaryButtonClass}><Phone className="size-4" />Llamar propietario</a>
-            <a href={`https://wa.me/${cabins.find((cabin) => cabin.ownerId === selected.ownerId)?.ownerWhatsApp ?? siteContact.whatsappNumber}`} onClick={() => onStatusChange(selected.id, "propietario-contactado")} className={secondaryButtonClass}><MessageCircle className="size-4" />WhatsApp</a>
+            {selected.ownerPhone ? <a href={`tel:${selected.ownerPhone.replace(/\s/g, "")}`} className={secondaryButtonClass}><Phone className="size-4" />Llamar propietario</a> : <span className={`${secondaryButtonClass} cursor-not-allowed opacity-50`}>Sin teléfono</span>}
+            {ownerWhatsApp ? <a href={`https://wa.me/${ownerWhatsApp}`} className={secondaryButtonClass}><MessageCircle className="size-4" />WhatsApp</a> : <span className={`${secondaryButtonClass} cursor-not-allowed opacity-50`}>Sin WhatsApp</span>}
             <button type="button" onClick={() => onStatusChange(selected.id, "disponible-confirmada")} className={buttonClass}><Check className="size-4" />Confirmar disponible</button>
             <button type="button" onClick={() => onStatusChange(selected.id, "no-disponible")} className={secondaryButtonClass}>No disponible</button>
-            <button type="button" onClick={() => { setAlternativeId(""); setAlternativeOpen(true) }} className={`${secondaryButtonClass} col-span-2`}>Ofrecer otra cabaña</button>
             <a href={`tel:${selected.phone.replace(/[^\d+]/g, "")}`} className={secondaryButtonClass}><Phone className="size-4" />Contactar cliente</a>
             <button type="button" onClick={() => onStatusChange(selected.id, "reservacion-confirmada")} className={secondaryButtonClass}>Confirmar reservación</button>
           </div>
-          {sentAlternative && <p className="mt-3 rounded-lg bg-success/10 p-3 text-xs text-success" role="status">Alternativa simulada enviada: {sentAlternative}.</p>}
           <label className="mt-4 block text-xs font-medium text-muted-foreground">
             Estado de seguimiento
             <select
@@ -135,7 +137,6 @@ export function RequestsSection({
           {mode === "pro" && <div className="mt-5 border-t border-border pt-4"><h3 className="text-sm font-semibold">Línea de seguimiento</h3><ol className="mt-3 space-y-3">{timeline.map((item, index) => <li key={item.status} className="flex gap-3 text-xs"><span className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full ${selected.status === item.status ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>{index + 1}</span><span>{item.label}</span></li>)}</ol></div>}
         </aside>
       )}
-      {alternativeOpen && selected && <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/50 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Ofrecer otra cabaña" onClick={() => setAlternativeOpen(false)}><section className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-t-2xl bg-card p-5 shadow-xl sm:rounded-2xl" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between"><div><h2 className="text-lg font-semibold">Ofrecer otra cabaña</h2><p className="text-sm text-muted-foreground">Opciones con capacidad para {selected.guests} huéspedes.</p></div><button type="button" onClick={() => setAlternativeOpen(false)} aria-label="Cerrar" className="rounded-lg p-2 hover:bg-muted"><X className="size-5" /></button></div><div className="mt-4 space-y-2">{alternatives.map((cabin) => <label key={cabin.id} className={`flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 ${alternativeId === cabin.id ? "border-primary bg-primary/5" : "border-border"}`}><span><span className="block font-medium">{cabin.name}</span><span className="text-xs text-muted-foreground">{cabin.maxGuests} huéspedes · ${currency(cabin.price)} MXN · {statusLabel[cabin.status]}</span></span><input type="radio" name="alternative" value={cabin.id} checked={alternativeId === cabin.id} onChange={(event) => setAlternativeId(event.target.value)} /></label>)}</div><button type="button" disabled={!alternativeId} onClick={() => { const cabin = cabins.find((item) => item.id === alternativeId); if (!cabin) return; setSentAlternative(cabin.name); onStatusChange(selected.id, "alternativa-ofrecida"); setAlternativeOpen(false) }} className={`${buttonClass} mt-5 w-full disabled:cursor-not-allowed disabled:opacity-40`}><Send className="size-4" />Enviar alternativa simulada</button></section></div>}
     </div>
   )
 }
@@ -149,7 +150,7 @@ export function OwnersSection({ owners, cabins, requests, reservations }: { owne
 export function CommissionsSection({ reservations, cabins }: { reservations: Reservation[]; cabins: Cabin[] }) {
   const rows = useMemo(() => reservations.map((reservation) => { const cabin = cabins.find((item) => item.name === reservation.cabin) ?? cabins[0]; const platformFee = reservation.total * 0.05; const intermediaryFee = reservation.total * (cabin.agreedCommission / 100); return { reservation, cabin, platformFee, intermediaryFee, ownerPayout: reservation.total - platformFee - intermediaryFee } }), [reservations, cabins])
   const total = rows.reduce((sum, row) => sum + row.intermediaryFee, 0)
-  return <section className={panelClass}><SectionHeading title="Comisiones" description={`Comisión intermediaria estimada: $${currency(total)} MXN`} /><div className="overflow-x-auto"><table className="min-w-[900px] w-full text-sm"><thead className="border-b border-border text-left text-xs uppercase text-muted-foreground"><tr><th className="p-3">Reservación</th><th className="p-3">Propietario</th><th className="p-3">Total</th><th className="p-3">Plataforma 5%</th><th className="p-3">Intermediación</th><th className="p-3">Pago propietario</th></tr></thead><tbody className="divide-y divide-border">{rows.map(({ reservation, cabin, platformFee, intermediaryFee, ownerPayout }) => <tr key={reservation.id}><td className="p-3 font-medium">{reservation.id}<span className="block text-xs font-normal text-muted-foreground">{reservation.cabin}</span></td><td className="p-3">{cabin.ownerName}<span className="block text-xs text-muted-foreground">Acuerdo {cabin.agreedCommission}%</span></td><td className="p-3">${currency(reservation.total)}</td><td className="p-3">${currency(platformFee)}</td><td className="p-3 font-semibold text-primary">${currency(intermediaryFee)}</td><td className="p-3">${currency(ownerPayout)}</td></tr>)}</tbody></table></div><p className="mt-4 text-xs text-muted-foreground">Cálculos simulados. No se generan pagos, facturas ni transferencias reales.</p></section>
+  return <section className={panelClass}><SectionHeading title="Comisiones" description={`Comisión calculada desde reservaciones y acuerdos registrados: $${currency(total)} MXN`} /><div className="overflow-x-auto"><table className="min-w-[900px] w-full text-sm"><thead className="border-b border-border text-left text-xs uppercase text-muted-foreground"><tr><th className="p-3">Reservación</th><th className="p-3">Propietario</th><th className="p-3">Total</th><th className="p-3">Plataforma 5%</th><th className="p-3">Intermediación</th><th className="p-3">Pago propietario</th></tr></thead><tbody className="divide-y divide-border">{rows.map(({ reservation, cabin, platformFee, intermediaryFee, ownerPayout }) => <tr key={reservation.id}><td className="p-3 font-medium">{reservation.id}<span className="block text-xs font-normal text-muted-foreground">{reservation.cabin}</span></td><td className="p-3">{cabin.ownerName}<span className="block text-xs text-muted-foreground">Acuerdo {cabin.agreedCommission}%</span></td><td className="p-3">${currency(reservation.total)}</td><td className="p-3">${currency(platformFee)}</td><td className="p-3 font-semibold text-primary">${currency(intermediaryFee)}</td><td className="p-3">${currency(ownerPayout)}</td></tr>)}</tbody></table></div></section>
 }
 
 export function ReservationsSection({
@@ -161,7 +162,7 @@ export function ReservationsSection({
 }) {
   return (
     <section className={panelClass}>
-      <SectionHeading title="Reservaciones" description="Gestión simulada de estancias y estados." />
+      <SectionHeading title="Reservaciones" description="Reservaciones registradas y su estado actual." />
       <div className="overflow-x-auto">
         <table className="min-w-[820px] w-full text-sm">
           <thead className="border-b border-border text-left text-xs uppercase text-muted-foreground">
@@ -286,15 +287,19 @@ export function PricingSection({ items, onAdjust }: { items: Season[]; onAdjust:
   )
 }
 
-export function ReportsSection() {
+export function ReportsSection({ reservations, cabins }: { reservations: Reservation[]; cabins: Cabin[] }) {
   const [generatedAt, setGeneratedAt] = useState<string | null>(null)
+  const revenue = reservations.filter((item) => item.status !== "cancelada").reduce((total, item) => total + item.total, 0)
+  const occupiedCabins = cabins.filter((item) => item.status === "confirmada").length
+  const occupancy = cabins.length ? Math.round((occupiedCabins / cabins.length) * 100) : 0
+  const series = reservations.filter((item) => item.status !== "cancelada").map((item) => item.total)
   return (
     <div className="grid gap-5 lg:grid-cols-3">
       <section className={`${panelClass} lg:col-span-2`}>
-        <SectionHeading title="Reporte de ingresos" description="Tendencia simulada de los últimos 12 meses." action={<button type="button" onClick={() => setGeneratedAt(new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" }))} className={buttonClass}><BarChart3 className="size-4" />Generar reporte</button>} />
-        <div className="h-64"><AreaLineChart data={[32, 38, 35, 47, 51, 49, 62, 68, 72, 78, 86, 96]} height={240} /></div>
+        <SectionHeading title="Reporte de ingresos" description="Importes de reservaciones registradas no canceladas." action={<button type="button" onClick={() => setGeneratedAt(new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" }))} className={buttonClass}><BarChart3 className="size-4" />Actualizar reporte</button>} />
+        {series.length >= 2 ? <div className="h-64"><AreaLineChart data={series} height={240} /></div> : <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">Aún no hay suficientes reservaciones para mostrar una tendencia.</p>}
       </section>
-      <section className={panelClass}><FileText className="size-8 text-primary" /><h3 className="mt-3 font-semibold">Resumen operativo</h3><dl className="mt-4 space-y-3 text-sm"><div className="flex justify-between"><dt className="text-muted-foreground">Ocupación</dt><dd className="font-semibold">68%</dd></div><div className="flex justify-between"><dt className="text-muted-foreground">Reservaciones</dt><dd className="font-semibold">42</dd></div><div className="flex justify-between"><dt className="text-muted-foreground">Ingresos</dt><dd className="font-semibold">$128,450</dd></div></dl>{generatedAt && <p className="mt-5 rounded-lg bg-success/10 p-3 text-xs text-success" role="status">Reporte simulado generado a las {generatedAt}.</p>}</section>
+      <section className={panelClass}><FileText className="size-8 text-primary" /><h3 className="mt-3 font-semibold">Resumen operativo</h3><dl className="mt-4 space-y-3 text-sm"><div className="flex justify-between"><dt className="text-muted-foreground">Cabañas confirmadas</dt><dd className="font-semibold">{occupancy}%</dd></div><div className="flex justify-between"><dt className="text-muted-foreground">Reservaciones</dt><dd className="font-semibold">{reservations.length}</dd></div><div className="flex justify-between"><dt className="text-muted-foreground">Ingresos registrados</dt><dd className="font-semibold">${currency(revenue)}</dd></div></dl>{generatedAt && <p className="mt-5 rounded-lg bg-success/10 p-3 text-xs text-success" role="status">Reporte actualizado a las {generatedAt}.</p>}</section>
     </div>
   )
 }
@@ -328,7 +333,7 @@ export function CabinEditorDialog({
           <label className="text-sm font-medium sm:col-span-2">Nombre<input required value={name} onChange={(event) => setName(event.target.value)} className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3" /></label>
           <label className="text-sm font-medium sm:col-span-2">Ubicación<input required value={location} onChange={(event) => setLocation(event.target.value)} className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3" /></label>
           <label className="text-sm font-medium">Precio por noche<input required min={1} type="number" value={price} onChange={(event) => setPrice(Number(event.target.value))} className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3" /></label>
-          <label className="text-sm font-medium">Capacidad máxima<input required min={1} max={30} type="number" value={maxGuests} onChange={(event) => setMaxGuests(Number(event.target.value))} className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3" /></label>
+          <label className="text-sm font-medium">Capacidad máxima<input required min={1} step={1} type="number" value={maxGuests} onChange={(event) => setMaxGuests(Number(event.target.value))} className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3" /></label>
           <label className="text-sm font-medium sm:col-span-2">Estado de disponibilidad<select value={status} onChange={(event) => setStatus(event.target.value as CabinStatus)} className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3"><option value="por-confirmar">Disponibilidad por confirmar</option><option value="alta-demanda">Alta demanda</option><option value="propietario-contactado">Propietario contactado</option><option value="confirmada">Disponible confirmado</option><option value="no-disponible">No disponible temporalmente</option></select></label>
         </div>
         <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={onClose} className={secondaryButtonClass}>Cancelar</button><button type="submit" className={buttonClass}><Save className="size-4" />Guardar cambios</button></div>

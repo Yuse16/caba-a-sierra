@@ -1,4 +1,4 @@
-const contactNumber = "528442779477"
+const contactNumber = "528444556929"
 
 const nationalContactNumber = contactNumber.slice(2)
 const areaCode = nationalContactNumber.slice(0, 3)

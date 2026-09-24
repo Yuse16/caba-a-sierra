@@ -21,6 +21,7 @@ export const demoAdminCabins: AdminCabin[] = publicCabinSeeds.map((cabin, index)
   maxGuests: cabin.maxGuests,
   bedrooms: cabin.bedrooms,
   beds: Math.max(cabin.bedrooms, Math.ceil(cabin.maxGuests / 2)),
+  bedDistribution: { matrimonial: Math.max(cabin.bedrooms, Math.ceil(cabin.maxGuests / 2)) },
   bathrooms: cabin.bathrooms,
   services: [...cabin.amenities],
   rules: ["No fumar dentro de la cabaña", "Respetar el horario de descanso"],
@@ -28,7 +29,15 @@ export const demoAdminCabins: AdminCabin[] = publicCabinSeeds.map((cabin, index)
   checkOutTime: "11:00",
   acceptsPets: cabin.pets,
   location: "Arteaga, Coahuila",
+  address: "",
+  zone: "Arteaga",
+  latitude: null,
+  longitude: null,
+  mapsUrl: "",
+  poolType: "none",
   whatsapp: siteContact.whatsappNumber,
+  owner: null,
+  archivedAt: null,
   status: index === 4 ? "draft" : "published",
   images: [
     {

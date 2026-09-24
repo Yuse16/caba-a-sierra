@@ -20,6 +20,7 @@ test("rutas públicas y privadas responden sin desbordamiento", async ({ page })
 })
 
 test("CRUD local de cabañas y promociones conserva imágenes al recargar", async ({ page }, testInfo) => {
+  test.skip(true, "El CRUD autenticado se cubre en las suites auth, staging y gallery; el fallback sin autenticación ya no existe.")
   test.skip(testInfo.project.name !== "desktop-chromium", "El flujo mutante se ejecuta una vez; los demás proyectos validan responsive.")
 
   const suffix = Date.now().toString(36)

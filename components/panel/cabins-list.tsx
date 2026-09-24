@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Archive, Bed, Edit3, Eye, MapPin, Plus, RefreshCw, Users, X } from "lucide-react"
+import { Archive, Bed, Edit3, Eye, MapPin, RefreshCw, RotateCcw, Users, X } from "lucide-react"
 import { formatCurrency as currency } from "@/lib/admin-presentational"
 import type { AdminCabin } from "@/lib/admin-cabins/types"
 import { useAdminCabins } from "./cabins-provider"
@@ -49,11 +49,13 @@ function CabinPreview({ cabin, onClose }: { cabin: AdminCabin; onClose: () => vo
 
 export function CabinsList() {
   const session = usePanelSession()
-  const { cabins, ready, error, reload, setCabinStatus, archiveCabin } = useAdminCabins()
+  const { cabins, ready, error, reload, setCabinStatus, archiveCabin, restoreCabin } = useAdminCabins()
   const [preview, setPreview] = useState<AdminCabin | null>(null)
   const [notice, setNotice] = useState<{ tone: "success" | "error"; message: string } | null>(null)
   const [changingId, setChangingId] = useState<string | null>(null)
   const [pendingArchive, setPendingArchive] = useState<AdminCabin | null>(null)
+  const [showArchived, setShowArchived] = useState(false)
+  const visibleCabins = cabins.filter((cabin) => showArchived ? Boolean(cabin.archivedAt) : !cabin.archivedAt)
 
   const changeStatus = async (cabin: AdminCabin) => {
     setChangingId(cabin.id)
@@ -73,6 +75,14 @@ export function CabinsList() {
     window.setTimeout(() => setNotice(null), 3500)
   }
 
+  const restore = async (cabin: AdminCabin) => {
+    setChangingId(cabin.id)
+    const result = await restoreCabin(cabin.id)
+    setChangingId(null)
+    setNotice({ tone: result.ok ? "success" : "error", message: result.message })
+    window.setTimeout(() => setNotice(null), 3500)
+  }
+
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-6 pb-20 sm:px-6 sm:py-8">
       {notice && (
@@ -87,22 +97,19 @@ export function CabinsList() {
           <h1 className="mt-1 font-serif text-3xl font-bold text-foreground">Tus cabañas</h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">Edita la información, revisa cómo se verá y decide cuáles cabañas estarán publicadas.</p>
         </div>
-        <Link href="/panel/cabanas/nueva" className="hidden min-h-12 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:inline-flex">
-          <Plus className="size-4" aria-hidden />Nueva cabaña
-        </Link>
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2 text-sm">
-        <span className="rounded-full bg-secondary px-3 py-1.5 text-secondary-foreground">{cabins.length} cabañas</span>
-        <span className="rounded-full bg-success/12 px-3 py-1.5 text-success">{cabins.filter((cabin) => cabin.status === "published").length} publicadas</span>
-        <span className="rounded-full bg-muted px-3 py-1.5 text-muted-foreground">{cabins.filter((cabin) => cabin.status === "draft").length} ocultas</span>
+        <button type="button" aria-pressed={!showArchived} onClick={() => setShowArchived(false)} className={`rounded-full px-3 py-1.5 ${!showArchived ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>{cabins.filter((cabin) => !cabin.archivedAt).length} activas</button>
+        <button type="button" aria-pressed={showArchived} onClick={() => setShowArchived(true)} className={`rounded-full px-3 py-1.5 ${showArchived ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>{cabins.filter((cabin) => cabin.archivedAt).length} archivadas</button>
+        <span className="rounded-full bg-success/12 px-3 py-1.5 text-success">{cabins.filter((cabin) => !cabin.archivedAt && cabin.status === "published").length} publicadas</span>
       </div>
 
       <div className="mt-5 space-y-4">
         {!ready && <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground" role="status">Cargando cabañas…</div>}
         {ready && error && <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-5" role="alert"><p className="text-sm text-destructive">{error}</p><button type="button" onClick={() => void reload()} className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground hover:bg-muted"><RefreshCw className="size-4" aria-hidden />Reintentar</button></div>}
-        {ready && !error && cabins.length === 0 && <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center"><p className="font-semibold text-foreground">Todavía no hay cabañas</p><p className="mt-1 text-sm text-muted-foreground">Crea la primera cabaña para comenzar.</p></div>}
-        {ready && !error && cabins.map((cabin, index) => {
+        {ready && !error && visibleCabins.length === 0 && <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center"><p className="font-semibold text-foreground">{showArchived ? "No hay cabañas archivadas" : "Todavía no hay cabañas"}</p><p className="mt-1 text-sm text-muted-foreground">{showArchived ? "Las cabañas archivadas aparecerán aquí y podrán restaurarse." : "Crea la primera cabaña para comenzar."}</p></div>}
+        {ready && !error && visibleCabins.map((cabin, index) => {
           const cover = coverFor(cabin)
           const published = cabin.status === "published"
           return (
@@ -122,13 +129,13 @@ export function CabinsList() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2 md:min-w-56">
-                <Link href={`/panel/cabanas/${cabin.id}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-medium text-foreground hover:bg-muted">
+                {!cabin.archivedAt && <Link href={`/panel/cabanas/${cabin.id}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-medium text-foreground hover:bg-muted">
                   <Edit3 className="size-4" aria-hidden />Editar
-                </Link>
+                </Link>}
                 <button type="button" onClick={() => setPreview(cabin)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-medium text-foreground hover:bg-muted">
                   <Eye className="size-4" aria-hidden />Vista previa
                 </button>
-                <button
+                {!cabin.archivedAt && <button
                   type="button"
                   role="switch"
                   aria-checked={published}
@@ -141,12 +148,13 @@ export function CabinsList() {
                   <span className={`relative h-7 w-12 rounded-full transition-colors ${published ? "bg-primary" : "bg-muted"}`} aria-hidden>
                     <span className={`absolute top-1 size-5 rounded-full bg-white shadow transition-transform ${published ? "translate-x-6" : "translate-x-1"}`} />
                   </span>
-                </button>
-                {session.role === "admin" && (
+                </button>}
+                {session.role === "admin" && !cabin.archivedAt && (
                   <button type="button" disabled={changingId === cabin.id} onClick={() => setPendingArchive(cabin)} className="col-span-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-destructive/30 px-3 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-60">
                     <Archive className="size-4" aria-hidden />Archivar
                   </button>
                 )}
+                {session.role === "admin" && cabin.archivedAt && <button type="button" disabled={changingId === cabin.id} onClick={() => void restore(cabin)} className="col-span-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-primary/30 px-3 text-sm font-medium text-primary hover:bg-primary/10 disabled:opacity-60"><RotateCcw className="size-4" aria-hidden />Restaurar como borrador</button>}
               </div>
             </article>
           )

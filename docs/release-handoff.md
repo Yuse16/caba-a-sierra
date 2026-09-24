@@ -19,9 +19,15 @@ La plataforma nueva continúa en `fix/client-feedback-pwa`. Producción (`main`)
 - QR final preparado para `https://dupez.uk`.
 - Vercel Preview compilando en estado READY.
 
+### Cuentas definitivas
+- `nallelyperez831@gmail.com` — Administrador activo.
+- `osielduran@gmail.com` — Administrador activo.
+- `jorgedlpchaires@gmail.com` — Administrador de soporte activo.
+- `mail.to.jorge1@gmail.com` — Editor QA temporal; desactivar después del Gate final.
+- Correo público de la página: `cabanasdupez@gmail.com`.
+
 ### Pendiente antes del merge a main
-1. Crear las cuentas definitivas de Osiel y Perla con sus correos reales.
-2. Hacer smoke test físico en Android/iPhone:
+1. Hacer smoke test físico en Android/iPhone:
    - login;
    - crear borrador;
    - subir varias fotos;
@@ -32,14 +38,14 @@ La plataforma nueva continúa en `fix/client-feedback-pwa`. Producción (`main`)
    - WhatsApp;
    - carrusel de promociones;
    - instalación PWA.
-3. Configurar Supabase Auth para el dominio final:
+2. Configurar Supabase Auth para el dominio final:
    - Site URL: `https://dupez.uk`
    - Redirect permitido: `https://dupez.uk/auth/callback`
-4. Cambiar las variables de producción de Vercel a la base nueva.
-5. Cambiar `NEXT_PUBLIC_SITE_URL` de producción a `https://dupez.uk`.
-6. Merge final a `main`.
-7. Validar `dupez.uk`, `/login`, recuperación de contraseña y PWA en producción.
-8. Desactivar/eliminar la cuenta técnica Editor QA después del Gate final.
+3. Cambiar las variables de producción de Vercel a la base nueva.
+4. Cambiar `NEXT_PUBLIC_SITE_URL` de producción a `https://dupez.uk`.
+5. Merge final a `main`.
+6. Validar `dupez.uk`, `/login`, recuperación de contraseña y PWA en producción.
+7. Desactivar/eliminar la cuenta técnica Editor QA después del Gate final.
 
 ## Datos de staging
 

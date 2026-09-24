@@ -18,12 +18,14 @@ La plataforma nueva continúa en `fix/client-feedback-pwa`. Producción (`main`)
 - Limpieza de los datos de prueba de la reunión en staging.
 - QR final preparado para `https://dupez.uk`.
 - Vercel Preview compilando en estado READY.
+- Nallely y Osiel validaron inicio de sesión real.
+- Gate de permisos RLS verificado: ambos usuarios son `active_staff=true` e `is_admin=true`.
 
 ### Cuentas definitivas
 - `nallelyperez831@gmail.com` — Administrador activo.
 - `osielduran@gmail.com` — Administrador activo.
 - `jorgedlpchaires@gmail.com` — Administrador de soporte activo.
-- `mail.to.jorge1@gmail.com` — Editor QA temporal; desactivar después del Gate final.
+- `mail.to.jorge1@gmail.com` — Editor QA desactivado después de validar los accesos reales.
 - Correo público de la página: `cabanasdupez@gmail.com`.
 
 ### Pendiente antes del merge a main
@@ -45,7 +47,7 @@ La plataforma nueva continúa en `fix/client-feedback-pwa`. Producción (`main`)
 4. Cambiar `NEXT_PUBLIC_SITE_URL` de producción a `https://dupez.uk`.
 5. Merge final a `main`.
 6. Validar `dupez.uk`, `/login`, recuperación de contraseña y PWA en producción.
-7. Desactivar/eliminar la cuenta técnica Editor QA después del Gate final.
+7. La cuenta técnica Editor QA ya quedó desactivada; eliminarla de Auth es opcional después de producción.
 
 ## Datos de staging
 

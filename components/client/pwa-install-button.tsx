@@ -27,6 +27,7 @@ export function PwaInstallButton({
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [installed, setInstalled] = useState(false)
   const [isAndroid, setIsAndroid] = useState(false)
+  const [isIOS, setIsIOS] = useState(false)
   const [showInstructions, setShowInstructions] = useState(false)
 
   useEffect(() => {
@@ -57,7 +58,9 @@ export function PwaInstallButton({
     }
 
     refreshInstalledState()
-    setIsAndroid(/Android/i.test(window.navigator.userAgent))
+    const ua = window.navigator.userAgent
+    setIsAndroid(/Android/i.test(ua))
+    setIsIOS(/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && window.navigator.maxTouchPoints > 1))
     if (window.__dupezInstallPrompt) setInstallPrompt(window.__dupezInstallPrompt)
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
     window.addEventListener("appinstalled", handleInstalled)
@@ -72,7 +75,7 @@ export function PwaInstallButton({
     }
   }, [])
 
-  if (installed || (!installPrompt && !isAndroid)) return null
+  if (installed || (!installPrompt && !isAndroid && !isIOS)) return null
 
   const install = async () => {
     if (!installPrompt) {
@@ -98,7 +101,7 @@ export function PwaInstallButton({
         )}
       >
         <Download className="size-4" aria-hidden />
-        {installPrompt ? label : "Cómo instalar DUPEZ"}
+        {installPrompt ? label : isIOS ? "Instalar DUPEZ en iPhone" : "Cómo instalar DUPEZ"}
       </button>
 
       {showInstructions && (
@@ -114,11 +117,11 @@ export function PwaInstallButton({
           >
             <X className="size-4" aria-hidden />
           </button>
-          <p className="pr-8 text-sm font-semibold text-foreground">Instalar DUPEZ en Android</p>
+          <p className="pr-8 text-sm font-semibold text-foreground">{isIOS ? "Instalar DUPEZ en iPhone o iPad" : "Instalar DUPEZ en Android"}</p>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            En Chrome toca el menú de tres puntos y elige “Instalar aplicación” o
-            “Agregar a pantalla principal”. Si todavía no aparece, permanece unos segundos
-            en la página, tócala una vez y vuelve a abrir el menú.
+            {isIOS
+              ? "En Safari toca Compartir y después “Agregar a pantalla de inicio”. Confirma con “Agregar” y DUPEZ aparecerá como una app en tu pantalla."
+              : "En Chrome toca el menú de tres puntos y elige “Instalar aplicación” o “Agregar a pantalla principal”. Si todavía no aparece, permanece unos segundos en la página, tócala una vez y vuelve a abrir el menú."}
           </p>
         </div>
       )}

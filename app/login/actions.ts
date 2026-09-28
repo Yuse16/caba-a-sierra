@@ -58,7 +58,7 @@ export async function updatePasswordAction(_: AuthActionState, formData: FormDat
   if (!hasSupabaseConfig()) return { error: "La recuperación todavía no está configurada en este entorno.", success: false }
   const password = String(formData.get("password") ?? "")
   const confirmation = String(formData.get("confirmation") ?? "")
-  if (password.length < 12) return { error: "Usa una contraseña de al menos 12 caracteres.", success: false }
+  if (password.length < 10) return { error: "Usa una contraseña de al menos 10 caracteres.", success: false }
   if (password !== confirmation) return { error: "Las contraseñas no coinciden.", success: false }
 
   const supabase = await createSupabaseServerClient()

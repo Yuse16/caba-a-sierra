@@ -2,9 +2,21 @@
   "redirects": [
     {
       "source": "/:path*",
-      "has": [{ "type": "host", "value": "caba-a-sierra.vercel.app" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "caba-a-sierra.vercel.app"
+        }
+      ],
       "destination": "https://dupez.uk/:path*",
       "permanent": true
+    }
+  ],
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/cron/supabase-keepalive",
+      "schedule": "17 15 * * *"
     }
   ]
 }

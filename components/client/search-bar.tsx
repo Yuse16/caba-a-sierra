@@ -5,37 +5,17 @@ import {
   BedDouble,
   CalendarDays,
   ChevronDown,
-  DollarSign,
   Home,
   MapPin,
+  PawPrint,
   Search,
   SlidersHorizontal,
   Sparkles,
   Users,
+  Waves,
   X,
 } from "lucide-react"
-
-export type ClientSearchState = {
-  query: string
-  checkIn: string
-  checkOut: string
-  guests: number
-  cabinType: "todas" | "romantica" | "familiar" | "grupal" | "premium"
-  maxPrice: number
-  amenity: string
-  bedrooms: number
-}
-
-export const initialClientSearch: ClientSearchState = {
-  query: "Arteaga, Coahuila",
-  checkIn: "2026-08-14",
-  checkOut: "2026-08-16",
-  guests: 2,
-  cabinType: "todas",
-  maxPrice: 7000,
-  amenity: "todas",
-  bedrooms: 0,
-}
+import { type ClientSearchState, type SearchOptions } from "@/lib/public-search"
 
 const controlClass =
   "h-10 w-full min-w-0 rounded-lg border-0 bg-transparent px-0 text-sm font-semibold text-foreground outline-none [color-scheme:light] placeholder:text-muted-foreground focus-visible:ring-0"
@@ -64,21 +44,52 @@ function FieldShell({ children }: { children: React.ReactNode }) {
 
 export function SearchBar({
   value,
+  options,
   onChange,
   onSearch,
+  onReset,
+  dateError,
+  resultCount,
 }: {
   value: ClientSearchState
-  onChange: (next: ClientSearchState) => void
+  options: SearchOptions
+  onChange: (next: Partial<ClientSearchState>) => void
   onSearch: () => void
+  onReset: () => void
+  dateError: string | null
+  resultCount: number
 }) {
   const [advancedOpen, setAdvancedOpen] = useState(false)
 
   const update = <K extends keyof ClientSearchState>(key: K, nextValue: ClientSearchState[K]) =>
-    onChange({ ...value, [key]: nextValue })
+    onChange({ [key]: nextValue })
 
   const reset = () => {
-    onChange(initialClientSearch)
     setAdvancedOpen(false)
+    onReset()
+  }
+
+  const poolLabel: Record<ClientSearchState["pool"], string> = {
+    todas: "Cualquiera",
+    none: "Sin alberca",
+    standard: "Alberca",
+    heated: "Alberca climatizada",
+  }
+
+  const petsLabel: Record<ClientSearchState["pets"], string> = {
+    todas: "Cualquiera",
+    admitidas: "Pet friendly",
+    "no-admitidas": "Sin mascotas",
+  }
+
+  const bedTypeLabel: Record<string, string> = {
+    individual: "Individual",
+    matrimonial: "Matrimonial",
+    king: "King size",
+    queen: "Queen",
+    litera: "Litera",
+    "sofa-cama": "Sofá cama",
+    otro: "Otro",
   }
 
   return (
@@ -90,7 +101,7 @@ export function SearchBar({
             <input
               value={value.query}
               onChange={(event) => update("query", event.target.value)}
-              placeholder="Arteaga, cabaña o amenidad"
+              placeholder="Arteaga, cabaña, zona o amenidad"
               className={controlClass}
             />
           </label>
@@ -102,7 +113,7 @@ export function SearchBar({
             <input
               type="date"
               value={value.checkIn}
-              max={value.checkOut}
+              max={value.checkOut || undefined}
               onChange={(event) => update("checkIn", event.target.value)}
               className={controlClass}
             />
@@ -115,7 +126,7 @@ export function SearchBar({
             <input
               type="date"
               value={value.checkOut}
-              min={value.checkIn}
+              min={value.checkIn || undefined}
               onChange={(event) => update("checkOut", event.target.value)}
               className={controlClass}
             />
@@ -141,7 +152,7 @@ export function SearchBar({
                 <button
                   type="button"
                   aria-label="Agregar huésped"
-                  onClick={() => update("guests", Math.min(16, value.guests + 1))}
+                  onClick={() => update("guests", Math.min(options.maxGuests, value.guests + 1))}
                   className={`inline-flex size-11 items-center justify-center rounded-lg border border-border bg-card text-base font-semibold text-foreground transition-colors hover:border-primary hover:bg-secondary ${actionFocus}`}
                 >
                   +
@@ -159,6 +170,18 @@ export function SearchBar({
           <Search className="size-4" aria-hidden />
           Buscar cabañas
         </button>
+      </div>
+
+      {dateError && (
+        <p className="mt-2 rounded-lg border border-destructive/25 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive" role="alert">
+          {dateError}
+        </p>
+      )}
+
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <p className="text-xs font-medium text-muted-foreground" aria-live="polite">
+          {resultCount} {resultCount === 1 ? "cabaña" : "cabañas"} disponibles
+        </p>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border pt-3">
@@ -190,87 +213,141 @@ export function SearchBar({
       {advancedOpen && (
         <div
           id="filtros-avanzados"
-          className="mt-3 grid gap-2 rounded-xl border border-border bg-secondary/45 p-3 sm:grid-cols-2 lg:grid-cols-4"
+          className="mt-3 grid gap-2 rounded-xl border border-border bg-secondary/45 p-3 sm:grid-cols-2 lg:grid-cols-3"
         >
-          <FieldShell>
-            <label>
-              <FieldLabel icon={<Home className="size-3.5" aria-hidden />}>Tipo de cabaña</FieldLabel>
-              <span className="relative block">
-                <select
-                  value={value.cabinType}
-                  onChange={(event) =>
-                    update("cabinType", event.target.value as ClientSearchState["cabinType"])
-                  }
-                  className={selectClass}
-                >
-                  <option value="todas">Cualquiera</option>
-                  <option value="romantica">Romántica</option>
-                  <option value="familiar">Familiar</option>
-                  <option value="grupal">Para grupos</option>
-                  <option value="premium">Premium</option>
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-1 top-3 size-4 text-muted-foreground" aria-hidden />
-              </span>
-            </label>
-          </FieldShell>
+          {options.cabinTypes.length > 0 && (
+            <FieldShell>
+              <label>
+                <FieldLabel icon={<Home className="size-3.5" aria-hidden />}>Tipo de cabaña</FieldLabel>
+                <span className="relative block">
+                  <select
+                    value={value.cabinType}
+                    onChange={(event) => update("cabinType", event.target.value)}
+                    className={selectClass}
+                  >
+                    <option value="todas">Cualquiera</option>
+                    {options.cabinTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-1 top-3 size-4 text-muted-foreground" aria-hidden />
+                </span>
+              </label>
+            </FieldShell>
+          )}
 
           <FieldShell>
             <label>
-              <FieldLabel icon={<DollarSign className="size-3.5" aria-hidden />}>Precio máximo</FieldLabel>
+              <FieldLabel icon={<BedDouble className="size-3.5" aria-hidden />}>Habitaciones exactas</FieldLabel>
               <span className="relative block">
                 <select
-                  value={value.maxPrice}
-                  onChange={(event) => update("maxPrice", Number(event.target.value))}
-                  className={selectClass}
-                >
-                  <option value={3000}>$3,000 MXN</option>
-                  <option value={4500}>$4,500 MXN</option>
-                  <option value={7000}>$7,000 MXN</option>
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-1 top-3 size-4 text-muted-foreground" aria-hidden />
-              </span>
-            </label>
-          </FieldShell>
-
-          <FieldShell>
-            <label>
-              <FieldLabel icon={<Sparkles className="size-3.5" aria-hidden />}>Amenidad</FieldLabel>
-              <span className="relative block">
-                <select
-                  value={value.amenity}
-                  onChange={(event) => update("amenity", event.target.value)}
-                  className={selectClass}
-                >
-                  <option value="todas">Todas</option>
-                  <option value="Chimenea">Chimenea</option>
-                  <option value="WiFi">WiFi</option>
-                  <option value="Jacuzzi">Jacuzzi</option>
-                  <option value="Pet friendly">Pet friendly</option>
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-1 top-3 size-4 text-muted-foreground" aria-hidden />
-              </span>
-            </label>
-          </FieldShell>
-
-          <FieldShell>
-            <label>
-              <FieldLabel icon={<BedDouble className="size-3.5" aria-hidden />}>Habitaciones</FieldLabel>
-              <span className="relative block">
-                <select
-                  value={value.bedrooms}
+                  value={String(value.bedrooms)}
                   onChange={(event) => update("bedrooms", Number(event.target.value))}
                   className={selectClass}
                 >
                   <option value={0}>Cualquiera</option>
-                  <option value={1}>1 o más</option>
-                  <option value={2}>2 o más</option>
-                  <option value={3}>3 o más</option>
-                  <option value={4}>4 o más</option>
+                  {Array.from({ length: Math.max(0, options.maxBedrooms) }, (_, index) => index + 1).map((count) => (
+                    <option key={count} value={count}>{count} {count === 1 ? "habitación" : "habitaciones"}</option>
+                  ))}
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-1 top-3 size-4 text-muted-foreground" aria-hidden />
               </span>
             </label>
           </FieldShell>
+
+          {options.maxBeds > 0 && (
+            <FieldShell>
+              <label>
+                <FieldLabel icon={<BedDouble className="size-3.5" aria-hidden />}>Camas mínimas</FieldLabel>
+                <span className="relative block">
+                  <select
+                    value={String(value.minBeds)}
+                    onChange={(event) => update("minBeds", Number(event.target.value))}
+                    className={selectClass}
+                  >
+                    <option value={0}>Cualquiera</option>
+                    {Array.from({ length: options.maxBeds }, (_, index) => index + 1).map((count) => (
+                      <option key={count} value={count}>Al menos {count} {count === 1 ? "cama" : "camas"}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-1 top-3 size-4 text-muted-foreground" aria-hidden />
+                </span>
+              </label>
+            </FieldShell>
+          )}
+
+          {options.bedTypes.length > 0 && (
+            <FieldShell>
+              <label>
+                <FieldLabel icon={<BedDouble className="size-3.5" aria-hidden />}>Tipo de cama</FieldLabel>
+                <span className="relative block">
+                  <select value={value.bedType} onChange={(event) => update("bedType", event.target.value)} className={selectClass}>
+                    <option value="todas">Cualquier tipo</option>
+                    {options.bedTypes.map((type) => <option key={type} value={type}>{bedTypeLabel[type] ?? type}</option>)}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-1 top-3 size-4 text-muted-foreground" aria-hidden />
+                </span>
+              </label>
+            </FieldShell>
+          )}
+
+          {options.zones.length > 0 && (
+            <FieldShell>
+              <label>
+                <FieldLabel icon={<MapPin className="size-3.5" aria-hidden />}>Zona</FieldLabel>
+                <span className="relative block">
+                  <select value={value.zone} onChange={(event) => update("zone", event.target.value)} className={selectClass}>
+                    <option value="todas">Cualquiera</option>
+                    {options.zones.map((zone) => <option key={zone} value={zone}>{zone}</option>)}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-1 top-3 size-4 text-muted-foreground" aria-hidden />
+                </span>
+              </label>
+            </FieldShell>
+          )}
+
+          {options.poolOptions.length > 0 && (
+            <FieldShell>
+              <label>
+                <FieldLabel icon={<Waves className="size-3.5" aria-hidden />}>Alberca</FieldLabel>
+                <span className="relative block">
+                  <select value={value.pool} onChange={(event) => update("pool", event.target.value as ClientSearchState["pool"])} className={selectClass}>
+                    {(["todas", ...options.poolOptions] as Array<ClientSearchState["pool"]>).map((pool) => (
+                      <option key={pool} value={pool}>{poolLabel[pool]}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-1 top-3 size-4 text-muted-foreground" aria-hidden />
+                </span>
+              </label>
+            </FieldShell>
+          )}
+
+          <FieldShell>
+            <label>
+              <FieldLabel icon={<PawPrint className="size-3.5" aria-hidden />}>Mascotas</FieldLabel>
+              <span className="relative block">
+                <select value={value.pets} onChange={(event) => update("pets", event.target.value as ClientSearchState["pets"])} className={selectClass}>
+                  {(Object.keys(petsLabel) as Array<ClientSearchState["pets"]>).map((pets) => (
+                    <option key={pets} value={pets}>{petsLabel[pets]}</option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-1 top-3 size-4 text-muted-foreground" aria-hidden />
+              </span>
+            </label>
+          </FieldShell>
+
+          {options.amenities.length > 0 && (
+            <FieldShell>
+              <label>
+                <FieldLabel icon={<Sparkles className="size-3.5" aria-hidden />}>Amenidad</FieldLabel>
+                <span className="relative block">
+                  <select value={value.amenity} onChange={(event) => update("amenity", event.target.value)} className={selectClass}>
+                    <option value="todas">Todas</option>
+                    {options.amenities.map((amenity) => <option key={amenity} value={amenity}>{amenity}</option>)}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-1 top-3 size-4 text-muted-foreground" aria-hidden />
+                </span>
+              </label>
+            </FieldShell>
+          )}
         </div>
       )}
     </div>

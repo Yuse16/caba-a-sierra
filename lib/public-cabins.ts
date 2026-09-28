@@ -8,12 +8,21 @@ export type PublicCabinCategory =
 
 export type PublicCabinStatus = "consultar" | "alta-demanda" | "otras-fechas"
 
+export type PublicCabinImage = {
+  id: string
+  url: string
+  altText: string
+  position: number
+  isCover: boolean
+}
+
 export type PublicCabin = {
   id: string
   name: string
   slug: string
   location: string
   image: string
+  images: PublicCabinImage[]
   status: PublicCabinStatus
   price: number
   oldPrice?: number
@@ -21,7 +30,19 @@ export type PublicCabin = {
   minGuests: number
   maxGuests: number
   bedrooms: number
+  beds: number
+  bedDistribution: Record<string, number>
   bathrooms: number
+  acceptsPets: boolean
+  checkInTime: string
+  checkOutTime: string
+  rules: string[]
+  address: string
+  zone: string
+  latitude?: number
+  longitude?: number
+  mapsUrl?: string
+  poolType: "none" | "standard" | "heated"
   amenities: string[]
   categories: PublicCabinCategory[]
   rating?: number

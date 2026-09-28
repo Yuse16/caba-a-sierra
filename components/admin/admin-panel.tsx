@@ -7,7 +7,6 @@ import {
   Users,
   DollarSign,
   BookMarked,
-  TrendingUp,
   Plus,
   MessageCircle,
   X,
@@ -18,6 +17,7 @@ import type { AdminPanelInitialData } from "@/lib/admin-panel-data"
 import { formatCurrency as currency } from "@/lib/admin-presentational"
 import { AdminSidebar } from "./admin-sidebar"
 import { AdminHeader } from "./admin-header"
+import { ProfileSection } from "./profile-section"
 import { CabinsTable } from "./cabins-table"
 import { OccupancyCalendar } from "./occupancy-calendar"
 import { MetricCard } from "@/components/shared/metric-card"
@@ -34,6 +34,7 @@ import {
 } from "./side-panels"
 import type { SectionKey } from "./nav-config"
 import { proNav, startNav } from "./nav-config"
+import { updateBookingInquiryStatusAction } from "@/app/panel/solicitudes/actions"
 import {
   CabinEditorDialog,
   CommissionsSection,
@@ -50,8 +51,6 @@ import {
 } from "./admin-sections"
 
 const statusCycle: CabinStatus[] = ["por-confirmar", "propietario-contactado", "confirmada", "no-disponible"]
-const revenueSeries = [22, 28, 25, 34, 30, 42, 38, 52, 48, 63, 58, 74, 70, 88, 96]
-
 function SectionStub({ title, desc }: { title: string; desc: string }) {
   return (
     <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
@@ -63,13 +62,13 @@ function SectionStub({ title, desc }: { title: string; desc: string }) {
 
 const sectionMeta: Record<string, { title: string; desc: string }> = {
   calendario: { title: "Calendario", desc: "Vista completa de disponibilidad y reservaciones por cabaña y fecha." },
-  reservaciones: { title: "Reservaciones", desc: "Gestiona las 42 reservaciones: confirmadas, pendientes y canceladas." },
+  reservaciones: { title: "Reservaciones", desc: "Gestiona las reservaciones confirmadas, pendientes y canceladas." },
   clientes: { title: "Clientes", desc: "Directorio de clientes con historial de estancias y contacto." },
   pagos: { title: "Pagos", desc: "Cobros, pagos pendientes y reembolsos de todas las reservaciones." },
   solicitudes: { title: "Solicitudes", desc: "Solicitudes de información y cotizaciones recibidas desde la página pública." },
   propietarios: { title: "Propietarios", desc: "Directorio de dueños y condiciones de intermediación." },
   confirmaciones: { title: "Confirmaciones", desc: "Consultas pendientes de respuesta por parte de propietarios." },
-  comisiones: { title: "Comisiones", desc: "Cálculos simulados por reservación, propietario y plataforma." },
+  comisiones: { title: "Comisiones", desc: "Cálculos derivados de reservaciones y acuerdos registrados." },
   mensajes: { title: "Mensajes", desc: "Conversaciones con clientes en un solo lugar." },
   limpieza: { title: "Limpieza", desc: "Tareas de limpieza asignadas al personal por cabaña y turno." },
   mantenimiento: { title: "Mantenimiento", desc: "Órdenes de mantenimiento y su prioridad por cabaña." },
@@ -82,7 +81,7 @@ const sectionMeta: Record<string, { title: string; desc: string }> = {
   configuracion: { title: "Configuración general", desc: "Ajustes de la cuenta, notificaciones e integraciones." },
   perfil: { title: "Perfil", desc: "Información de tu cuenta de administrador." },
   ayuda: { title: "Ayuda", desc: "Guías y soporte para sacar el máximo provecho de tu panel." },
-  reportes: { title: "Reportes", desc: "Indicadores e informes simulados del desempeño del negocio." },
+  reportes: { title: "Reportes", desc: "Indicadores derivados de los registros disponibles." },
 }
 
 export function AdminPanel({
@@ -90,6 +89,8 @@ export function AdminPanel({
   initialData,
   onManageCabins,
   onManagePromotions,
+  onManageRequests,
+  onManageCustomers,
   onCreateCabin,
   onEditCabin,
 }: {
@@ -97,6 +98,8 @@ export function AdminPanel({
   initialData: AdminPanelInitialData
   onManageCabins?: () => void
   onManagePromotions?: () => void
+  onManageRequests?: () => void
+  onManageCustomers?: () => void
   onCreateCabin?: () => void
   onEditCabin?: (cabin: Cabin) => void
 }) {
@@ -141,6 +144,14 @@ export function AdminPanel({
     { label: "Por confirmar", count: counts.ocupada, percent: counts.pct(counts.ocupada), color: "var(--chart-3)" },
     { label: "No disponibles", count: counts.noDisp, percent: counts.pct(counts.noDisp), color: "var(--muted-foreground)" },
   ]
+  const navBadges = useMemo<Partial<Record<SectionKey, number>>>(() => ({
+    solicitudes: requests.filter((item) => ["nueva", "pendiente-propietario", "propietario-contactado", "disponible-confirmada"].includes(item.status)).length,
+    confirmaciones: requests.filter((item) => ["nueva", "pendiente-propietario"].includes(item.status)).length,
+    reservaciones: reservations.length,
+    pagos: payments.filter((item) => item.status === "pendiente").length,
+    limpieza: cleaning.filter((item) => item.status !== "Completada").length,
+    mantenimiento: maintenance.filter((item) => item.status !== "Completada").length,
+  }), [cleaning, maintenance, payments, requests, reservations])
 
   const handleSelect = (key: SectionKey) => {
     if (key === "cabanas" && onManageCabins) {
@@ -153,6 +164,8 @@ export function AdminPanel({
       onManagePromotions()
       return
     }
+    if (key === "solicitudes" && onManageRequests) { setDrawerOpen(false); onManageRequests(); return }
+    if (key === "clientes" && onManageCustomers) { setDrawerOpen(false); onManageCustomers(); return }
     setActive(key)
     setDrawerOpen(false)
   }
@@ -160,6 +173,16 @@ export function AdminPanel({
   const showNotice = (message: string) => {
     setNotice(message)
     window.setTimeout(() => setNotice(null), 3000)
+  }
+
+  const changeRequestStatus = async (id: string, status: RequestStatus) => {
+    const result = await updateBookingInquiryStatusAction(id, status)
+    if (!result.ok) {
+      showNotice(result.message)
+      return
+    }
+    setRequests((items) => items.map((item) => item.id === id ? { ...item, status } : item))
+    showNotice("El estado de la solicitud fue actualizado.")
   }
 
   const openAddCabin = () => onCreateCabin ? onCreateCabin() : setEditor({ open: true, cabin: null })
@@ -194,7 +217,7 @@ export function AdminPanel({
       {notice && <div className="fixed bottom-4 left-1/2 z-[80] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl bg-forest-dark px-4 py-3 text-center text-sm font-medium text-primary-foreground shadow-xl" role="status">{notice}</div>}
       {/* Sidebar (desktop) */}
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r border-sidebar-border lg:block">
-        <AdminSidebar version={version} active={visibleActive} onSelect={handleSelect} />
+        <AdminSidebar version={version} active={visibleActive} badges={navBadges} onSelect={handleSelect} />
       </aside>
 
       {/* Drawer (mobile) */}
@@ -213,7 +236,7 @@ export function AdminPanel({
             >
               <X className="size-5" aria-hidden />
             </button>
-            <AdminSidebar version={version} active={visibleActive} onSelect={handleSelect} />
+            <AdminSidebar version={version} active={visibleActive} badges={navBadges} onSelect={handleSelect} />
           </div>
         </div>
       )}
@@ -223,7 +246,7 @@ export function AdminPanel({
         <AdminHeader
           title={visibleActive === "dashboard" ? "Dashboard" : (sectionMeta[visibleActive]?.title ?? "Dashboard")}
           subtitle={visibleActive === "dashboard" ? "Resumen general de tu negocio" : "Panel administrativo"}
-          dateLabel={isPro ? "22 jul – 22 ago 2026" : "22 de julio, 2026"}
+          dateLabel={initialData.currentDateLabel}
           showUser={!isPro}
           onMenu={() => setDrawerOpen(true)}
           onDate={() => handleSelect("calendario")}
@@ -237,14 +260,14 @@ export function AdminPanel({
                 initialData={initialData}
                 cabins={cabins}
                 requests={requests}
-                onRequestStatus={(id, status) => setRequests((items) => items.map((item) => item.id === id ? { ...item, status } : item))}
+                onRequestStatus={(id, status) => void changeRequestStatus(id, status)}
                 onNavigate={handleSelect}
                 onAdd={openAddCabin}
               />
             ) : (
               <StartDashboard
-                initialData={initialData}
                 cabins={cabins}
+                requests={requests}
                 onEdit={openEditCabin}
                 onCycleStatus={cycleStatus}
                 occupancySegments={occupancySegments}
@@ -267,9 +290,9 @@ export function AdminPanel({
           ) : visibleActive === "propietarios" ? (
             <OwnersSection owners={owners} cabins={cabins} requests={requests} reservations={reservations} />
           ) : visibleActive === "solicitudes" ? (
-            <RequestsSection items={requests} cabins={cabins} mode={isPro ? "pro" : "start"} onStatusChange={(id, status: RequestStatus) => setRequests((items) => items.map((item) => item.id === id ? { ...item, status } : item))} />
+            <RequestsSection items={requests} cabins={cabins} mode={isPro ? "pro" : "start"} onStatusChange={(id, status: RequestStatus) => void changeRequestStatus(id, status)} />
           ) : visibleActive === "confirmaciones" ? (
-            <RequestsSection title="Confirmaciones con propietarios" items={requests.filter((item) => ["nueva", "pendiente-propietario", "propietario-contactado"].includes(item.status))} cabins={cabins} mode={isPro ? "pro" : "start"} onStatusChange={(id, status: RequestStatus) => setRequests((items) => items.map((item) => item.id === id ? { ...item, status } : item))} />
+            <RequestsSection title="Confirmaciones con propietarios" items={requests.filter((item) => ["nueva", "pendiente-propietario", "propietario-contactado"].includes(item.status))} cabins={cabins} mode={isPro ? "pro" : "start"} onStatusChange={(id, status: RequestStatus) => void changeRequestStatus(id, status)} />
           ) : visibleActive === "reservaciones" ? (
             <ReservationsSection items={reservations} onStatusChange={(id, status: ReservationStatus) => setReservations((items) => items.map((item) => item.id === id ? { ...item, status } : item))} />
           ) : visibleActive === "pagos" ? (
@@ -292,7 +315,9 @@ export function AdminPanel({
           ) : visibleActive === "precios" ? (
             <PricingSection items={seasons} onAdjust={adjustSeason} />
           ) : visibleActive === "reportes" ? (
-            <ReportsSection />
+            <ReportsSection reservations={reservations} cabins={cabins} />
+          ) : visibleActive === "perfil" ? (
+            <ProfileSection />
           ) : (
             <SectionStub
               title={sectionMeta[visibleActive]?.title ?? "Sección"}
@@ -309,16 +334,16 @@ export function AdminPanel({
 /* ---------------- START dashboard ---------------- */
 
 function StartDashboard({
-  initialData,
   cabins,
+  requests,
   onEdit,
   onCycleStatus,
   occupancySegments,
   onNavigate,
   onAdd,
 }: {
-  initialData: AdminPanelInitialData
   cabins: Cabin[]
+  requests: ClientRequest[]
   onEdit: (c: Cabin) => void
   onCycleStatus: (id: string) => void
   occupancySegments: { label: string; count: number; percent: string; color: string }[]
@@ -326,9 +351,9 @@ function StartDashboard({
   onAdd: () => void
 }) {
   const active = cabins.filter((c) => c.status !== "no-disponible").length
-  const newRequests = initialData.requests.filter((request) => request.status === "nueva").length
-  const pendingOwners = initialData.requests.filter((request) => request.status === "pendiente-propietario").length
-  const confirmedRequests = initialData.requests.filter((request) => request.status === "disponible-confirmada").length
+  const newRequests = requests.filter((request) => request.status === "nueva").length
+  const pendingOwners = requests.filter((request) => request.status === "pendiente-propietario").length
+  const confirmedRequests = requests.filter((request) => request.status === "disponible-confirmada").length
   return (
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="min-w-0 space-y-6">
@@ -355,8 +380,8 @@ function StartDashboard({
       </div>
 
       <div className="min-w-0 space-y-6">
-        <RecentRequestsPanel items={initialData.requests} onOpen={() => onNavigate("solicitudes")} />
-        <QuickActionsPanel onAction={(key) => key === "add" ? onAdd() : onNavigate(key)} />
+        <RecentRequestsPanel items={requests} onOpen={() => onNavigate("solicitudes")} />
+        <QuickActionsPanel requestCount={requests.length} onAction={(key) => key === "add" ? onAdd() : onNavigate(key)} />
         <OccupancyDonutPanel segments={occupancySegments} />
       </div>
     </div>
@@ -381,6 +406,21 @@ function ProDashboard({
   onAdd: () => void
 }) {
   const activeCount = cabins.filter((c) => c.status !== "no-disponible").length
+  const confirmedReservations = initialData.reservations.filter((item) => ["confirmada", "en-uso", "finalizada"].includes(item.status)).length
+  const pendingReservations = initialData.reservations.filter((item) => item.status === "pendiente").length
+  const cancelledReservations = initialData.reservations.filter((item) => item.status === "cancelada").length
+  const unattendedRequests = requests.filter((item) => item.status === "nueva").length
+  const recordedRevenue = initialData.reservations
+    .filter((item) => item.status !== "cancelada")
+    .reduce((total, item) => total + item.total, 0)
+  const estimatedCommission = initialData.reservations.reduce((total, reservation) => {
+    const cabin = cabins.find((item) => item.name === reservation.cabin)
+    return total + reservation.total * ((cabin?.agreedCommission ?? 0) / 100)
+  }, 0)
+  const confirmedCabins = cabins.filter((item) => item.status === "confirmada").length
+  const pendingCabins = cabins.filter((item) => ["por-confirmar", "alta-demanda", "propietario-contactado"].includes(item.status)).length
+  const unavailableCabins = cabins.filter((item) => item.status === "no-disponible").length
+  const reservationSeries = initialData.reservations.filter((item) => item.status !== "cancelada").map((item) => item.total)
   return (
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="min-w-0 space-y-6">
@@ -389,11 +429,11 @@ function ProDashboard({
           <MetricCard icon={FileText} label="Solicitudes nuevas" value={String(requests.filter((item) => item.status === "nueva").length)} sub="Recibidas por la plataforma" action="Ver solicitudes" onAction={() => onNavigate("solicitudes")} />
           <MetricCard icon={Users} iconClassName="bg-gold/20 text-gold-foreground" label="Propietarios pendientes" value={String(requests.filter((item) => ["nueva", "pendiente-propietario", "propietario-contactado"].includes(item.status)).length)} sub="Requieren seguimiento" action="Abrir confirmaciones" onAction={() => onNavigate("confirmaciones")} />
           <MetricCard icon={Home} iconClassName="bg-primary/10 text-primary" label="Disponibilidades confirmadas" value={String(cabins.filter((item) => item.status === "confirmada").length)} sub={`${activeCount} cabañas consultables`} action="Gestionar catálogo" onAction={() => onNavigate("cabanas")} />
-          <MetricCard icon={BookMarked} iconClassName="bg-[oklch(0.9_0.04_240)] text-[oklch(0.45_0.12_255)]" label="Reservaciones confirmadas" value="24" sub="Con respuesta del propietario" action="Ver reservaciones" onAction={() => onNavigate("reservaciones")} />
-          <MetricCard icon={MessageCircle} label="Sin seguimiento" value="4" sub="Clientes por contactar" action="Ver solicitudes" onAction={() => onNavigate("solicitudes")} />
-          <MetricCard icon={DollarSign} iconClassName="bg-gold/20 text-gold-foreground" label="Comisión estimada" value={`$${currency(18450)}`} suffix="MXN" sub="Cálculo de la demo" action="Ver comisiones" onAction={() => onNavigate("comisiones")} />
-          <MetricCard icon={BookMarked} label="Próximas llegadas" value="6" sub="Siete días siguientes" action="Ver calendario" onAction={() => onNavigate("calendario")} />
-          <MetricCard icon={Users} label="Propietarios activos" value="4" sub="Con cabañas asociadas" action="Ver directorio" onAction={() => onNavigate("propietarios")} />
+          <MetricCard icon={BookMarked} iconClassName="bg-[oklch(0.9_0.04_240)] text-[oklch(0.45_0.12_255)]" label="Reservaciones confirmadas" value={String(confirmedReservations)} sub="Registros confirmados" action="Ver reservaciones" onAction={() => onNavigate("reservaciones")} />
+          <MetricCard icon={MessageCircle} label="Sin seguimiento" value={String(unattendedRequests)} sub="Solicitudes nuevas" action="Ver solicitudes" onAction={() => onNavigate("solicitudes")} />
+          <MetricCard icon={DollarSign} iconClassName="bg-gold/20 text-gold-foreground" label="Comisión estimada" value={`$${currency(estimatedCommission)}`} suffix="MXN" sub="Según acuerdos registrados" action="Ver comisiones" onAction={() => onNavigate("comisiones")} />
+          <MetricCard icon={BookMarked} label="Próximas llegadas" value={String(initialData.upcomingArrivals.length)} sub="Siete días siguientes" action="Ver calendario" onAction={() => onNavigate("calendario")} />
+          <MetricCard icon={Users} label="Propietarios activos" value={String(initialData.owners.length)} sub="Registros vigentes" action="Ver directorio" onAction={() => onNavigate("propietarios")} />
         </div>
 
         <section className="rounded-xl border border-border bg-card p-5">
@@ -404,23 +444,23 @@ function ProDashboard({
         {/* Charts row */}
         <div className="grid gap-4 lg:grid-cols-3">
           <section className="rounded-xl border border-border bg-card p-5">
-            <h3 className="text-sm font-semibold text-foreground">Ocupación del mes</h3>
+            <h3 className="text-sm font-semibold text-foreground">Estado del catálogo</h3>
             <div className="mt-4 flex items-center gap-4">
               <DonutChart
                 size={120}
                 thickness={18}
-                centerValue="68%"
-                centerLabel="Ocupación"
+                centerValue={String(cabins.length)}
+                centerLabel="Cabañas"
                 segments={[
-                  { label: "Reservadas", value: 62, color: "var(--chart-1)" },
-                  { label: "Por confirmar", value: 30, color: "var(--chart-2)" },
-                  { label: "No disponibles", value: 8, color: "var(--chart-3)" },
+                  { label: "Confirmadas", value: confirmedCabins, color: "var(--chart-1)" },
+                  { label: "Por confirmar", value: pendingCabins, color: "var(--chart-2)" },
+                  { label: "No disponibles", value: unavailableCabins, color: "var(--chart-3)" },
                 ]}
               />
               <ul className="flex flex-col gap-2 text-xs">
-                <li className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[var(--chart-1)]" />Reservadas 68%</li>
-                <li className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[var(--chart-2)]" />Por confirmar 32%</li>
-                <li className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[var(--chart-3)]" />No disp. 10%</li>
+                <li className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[var(--chart-1)]" />Confirmadas {confirmedCabins}</li>
+                <li className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[var(--chart-2)]" />Por confirmar {pendingCabins}</li>
+                <li className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[var(--chart-3)]" />No disponibles {unavailableCabins}</li>
               </ul>
             </div>
           </section>
@@ -428,14 +468,10 @@ function ProDashboard({
           <section className="rounded-xl border border-border bg-card p-5">
             <h3 className="text-sm font-semibold text-foreground">Ingresos</h3>
             <p className="mt-1 text-2xl font-semibold text-foreground">
-              ${currency(128450)} <span className="text-xs font-normal text-muted-foreground">MXN</span>
+              ${currency(recordedRevenue)} <span className="text-xs font-normal text-muted-foreground">MXN</span>
             </p>
-            <p className="flex items-center gap-1 text-xs font-medium text-success">
-              <TrendingUp className="size-3.5" aria-hidden /> +18.6% vs. mes anterior
-            </p>
-            <div className="mt-2 h-24">
-              <AreaLineChart data={revenueSeries} height={96} />
-            </div>
+            <p className="text-xs text-muted-foreground">Reservaciones no canceladas registradas</p>
+            {reservationSeries.length >= 2 ? <div className="mt-2 h-24"><AreaLineChart data={reservationSeries} height={96} /></div> : <p className="mt-5 text-sm text-muted-foreground">Aún no hay suficientes registros para mostrar una tendencia.</p>}
           </section>
 
           <section className="rounded-xl border border-border bg-card p-5">
@@ -444,18 +480,18 @@ function ProDashboard({
               <DonutChart
                 size={120}
                 thickness={18}
-                centerValue="42"
+                centerValue={String(initialData.reservations.length)}
                 centerLabel="Total"
                 segments={[
-                  { label: "Confirmadas", value: 24, color: "var(--chart-1)" },
-                  { label: "Pendientes", value: 10, color: "var(--chart-2)" },
-                  { label: "Canceladas", value: 8, color: "var(--chart-3)" },
+                  { label: "Confirmadas", value: confirmedReservations, color: "var(--chart-1)" },
+                  { label: "Pendientes", value: pendingReservations, color: "var(--chart-2)" },
+                  { label: "Canceladas", value: cancelledReservations, color: "var(--chart-3)" },
                 ]}
               />
               <ul className="flex flex-col gap-2 text-xs">
-                <li className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[var(--chart-1)]" />Confirmadas 24</li>
-                <li className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[var(--chart-2)]" />Pendientes 10</li>
-                <li className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[var(--chart-3)]" />Canceladas 8</li>
+                <li className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[var(--chart-1)]" />Confirmadas {confirmedReservations}</li>
+                <li className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[var(--chart-2)]" />Pendientes {pendingReservations}</li>
+                <li className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[var(--chart-3)]" />Canceladas {cancelledReservations}</li>
               </ul>
             </div>
           </section>

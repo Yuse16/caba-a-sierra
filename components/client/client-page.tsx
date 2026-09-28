@@ -1,15 +1,18 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import {
   BadgeDollarSign,
   CalendarCheck,
   CheckCircle2,
   ChevronRight,
+  Clock3,
   Flame,
   Heart,
   Headset,
+  MapPin,
   MessageCircle,
   Mountain,
   PawPrint,
@@ -21,9 +24,16 @@ import {
   UsersRound,
 } from "lucide-react"
 import type { PublicCabin } from "@/lib/public-cabins"
-import { siteContact } from "@/lib/site-config"
+import type { PublicSiteSettings } from "@/lib/public-site-settings"
+import {
+  buildSearchOptions,
+  initialClientSearch,
+  searchStateToQuery,
+  dateGapIsValid,
+  type ClientSearchState,
+} from "@/lib/public-search"
 import { PublicHeader } from "./public-header"
-import { SearchBar, initialClientSearch, type ClientSearchState } from "./search-bar"
+import { SearchBar } from "./search-bar"
 import { FilterChips, type ChipKey } from "./filter-chips"
 import { CabinCard } from "./cabin-card"
 import { CabinDetailsModal } from "./cabin-details-modal"
@@ -111,8 +121,20 @@ const steps = [
 const focusClasses =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
 
-export function ClientPage({ cabins, promotions }: { cabins: PublicCabin[]; promotions: PublicPromotion[] }) {
-  const [search, setSearch] = useState<ClientSearchState>(initialClientSearch)
+export function ClientPage({
+  cabins,
+  promotions,
+  settings,
+  initialSearch,
+}: {
+  cabins: PublicCabin[]
+  promotions: PublicPromotion[]
+  settings: PublicSiteSettings
+  initialSearch: ClientSearchState
+}) {
+  const isHydrated = useSyncExternalStore(() => () => undefined, () => true, () => false)
+  const router = useRouter()
+  const [search, setSearch] = useState<ClientSearchState>(initialSearch)
   const [category, setCategory] = useState<ChipKey>("todos")
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
   const [selected, setSelected] = useState<PublicCabin | null>(null)
@@ -120,10 +142,36 @@ export function ClientPage({ cabins, promotions }: { cabins: PublicCabin[]; prom
   const [showAll, setShowAll] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
 
+  const cabinOptions = useMemo(() => buildSearchOptions(cabins), [cabins])
+
+  const availableCategories = useMemo(() => {
+    const seen = new Set<PublicCabin["categories"][number]>()
+    for (const cabin of cabins) for (const c of cabin.categories) seen.add(c)
+    return [...seen]
+  }, [cabins])
+
   const showNotice = (message: string) => {
     setNotice(message)
     window.setTimeout(() => setNotice(null), 3000)
   }
+
+  const updateSearch = (next: Partial<ClientSearchState>) => {
+    setSearch((current) => ({
+      ...current,
+      ...next,
+    }))
+  }
+
+  const skipUrlSync = useRef(true)
+  useEffect(() => {
+    if (skipUrlSync.current) {
+      skipUrlSync.current = false
+      return
+    }
+    if (!dateGapIsValid(search.checkIn, search.checkOut)) return
+    const query = searchStateToQuery(search)
+    router.replace(query ? `/?${query}` : "/", { scroll: false })
+  }, [search, router])
 
   const toggleFavorite = (id: string) =>
     setFavorites((current) => {
@@ -143,9 +191,9 @@ export function ClientPage({ cabins, promotions }: { cabins: PublicCabin[]; prom
     }
 
     const query = search.query.trim().toLocaleLowerCase("es")
-    if (query && !query.includes("arteaga")) {
+    if (query) {
       list = list.filter((cabin) =>
-        [cabin.name, cabin.location, ...cabin.amenities].some((text) =>
+        [cabin.name, cabin.location, cabin.zone, cabin.description, ...cabin.amenities].some((text) =>
           text.toLocaleLowerCase("es").includes(query),
         ),
       )
@@ -154,8 +202,15 @@ export function ClientPage({ cabins, promotions }: { cabins: PublicCabin[]; prom
     list = list.filter(
       (cabin) =>
         cabin.maxGuests >= search.guests &&
-        cabin.price <= search.maxPrice &&
-        cabin.bedrooms >= search.bedrooms,
+        (search.maxPrice === 0 || cabin.price <= search.maxPrice) &&
+        (search.bedrooms === 0 || cabin.bedrooms === search.bedrooms) &&
+        (search.minBeds === 0 || cabin.beds >= search.minBeds) &&
+        (search.bedType === "todas" || (cabin.bedDistribution[search.bedType] ?? 0) > 0) &&
+        (search.zone === "todas" || cabin.zone === search.zone) &&
+        (search.pool === "todas" || cabin.poolType === search.pool) &&
+        (search.pets === "todas" ||
+          (search.pets === "admitidas" && cabin.acceptsPets) ||
+          (search.pets === "no-admitidas" && !cabin.acceptsPets)),
     )
 
     if (search.cabinType !== "todas") {
@@ -175,9 +230,19 @@ export function ClientPage({ cabins, promotions }: { cabins: PublicCabin[]; prom
 
   const visibleCabins = showAll ? filtered : filtered.slice(0, 6)
 
+  const resetAll = () => {
+    setSearch(initialClientSearch)
+    router.replace("/", { scroll: false })
+    setCategory("todos")
+    setFavoritesOnly(false)
+    setShowAll(false)
+  }
+
+  const officeHasContent = Boolean(settings.officeAddress || settings.officeMapsUrl)
+
   return (
     <div id="inicio" className="min-h-screen bg-background text-foreground">
-      <PublicHeader />
+      <PublicHeader businessName={settings.businessName} subtitle={settings.subtitle} />
 
       {notice && (
         <div
@@ -188,16 +253,16 @@ export function ClientPage({ cabins, promotions }: { cabins: PublicCabin[]; prom
         </div>
       )}
 
-      <main>
+      <main data-hydrated={isHydrated ? "true" : "false"}>
         <section className="relative isolate overflow-hidden bg-forest-dark" aria-labelledby="hero-title">
           <Image
-            src="/cabins/hero.png"
-            alt="Cabaña de madera iluminada entre pinos y montañas al atardecer"
+            src={settings.heroImageUrl}
+            alt={`${settings.businessName} — ${settings.subtitle}`}
             fill
             loading="eager"
             fetchPriority="high"
             sizes="100vw"
-            className="-z-20 object-cover object-[center_58%]"
+            className="-z-20 scale-[1.16] object-cover object-[center_70%] sm:scale-100 sm:object-[center_58%]"
           />
           <div
             className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(17,39,27,0.92)_0%,rgba(17,39,27,0.76)_42%,rgba(17,39,27,0.28)_75%,rgba(17,39,27,0.12)_100%)]"
@@ -208,17 +273,17 @@ export function ClientPage({ cabins, promotions }: { cabins: PublicCabin[]; prom
             <div className="max-w-2xl">
               <p className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-sm sm:text-xs">
                 <Mountain className="size-4 text-[#f4d58b]" aria-hidden />
-                DUPEZ
+                {settings.businessName}
               </p>
               <p className="mb-5 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-[#f4d58b] sm:text-sm">
                 <span className="h-px w-8 bg-[#f4d58b]" aria-hidden />
-                Renta de cabañas en toda la Sierra de Arteaga
+                {settings.subtitle}
               </p>
               <h1
                 id="hero-title"
                 className="max-w-xl font-serif text-4xl font-semibold leading-[1.06] tracking-[-0.035em] text-white text-balance sm:text-5xl lg:text-6xl"
               >
-                Respira el bosque. Vive la sierra.
+                {settings.tagline}
               </h1>
               <p className="mt-5 max-w-xl text-base leading-7 text-white/90 text-pretty sm:text-lg">
                 Encuentra cabañas únicas para descansar, reconectar y crear recuerdos entre
@@ -234,7 +299,7 @@ export function ClientPage({ cabins, promotions }: { cabins: PublicCabin[]; prom
                   <Search className="size-4" aria-hidden />
                 </a>
                 <a
-                href={siteContact.whatsappUrl}
+                  href={settings.whatsappUrl}
                   target="_blank"
                   rel="noreferrer"
                   className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/60 bg-white/10 px-5 py-3 text-sm font-bold text-white backdrop-blur-sm transition-colors hover:bg-white hover:text-forest-dark ${focusClasses}`}
@@ -259,14 +324,26 @@ export function ClientPage({ cabins, promotions }: { cabins: PublicCabin[]; prom
         <section aria-label="Buscador de cabañas" className="relative z-20 mx-auto -mt-10 max-w-7xl px-4 sm:-mt-12 sm:px-6 lg:px-8">
           <SearchBar
             value={search}
-            onChange={setSearch}
+            options={cabinOptions}
+            dateError={search.checkIn && search.checkOut && !dateGapIsValid(search.checkIn, search.checkOut) ? "La fecha de salida debe ser posterior a la de entrada." : null}
+            onChange={updateSearch}
+            onReset={resetAll}
             onSearch={() => {
               setFavoritesOnly(false)
+              if (search.checkIn && search.checkOut && !dateGapIsValid(search.checkIn, search.checkOut)) {
+                showNotice("Ajusta las fechas: la salida debe ser posterior a la entrada.")
+                return
+              }
+              if (!dateGapIsValid(search.checkIn, search.checkOut)) {
+                showNotice("Selecciona la fecha de entrada y de salida para continuar.")
+                return
+              }
               showNotice(
                 `Encontramos ${filtered.length} ${filtered.length === 1 ? "opción" : "opciones"} para tu búsqueda.`,
               )
               document.querySelector("#cabanas")?.scrollIntoView({ behavior: "smooth" })
             }}
+            resultCount={filtered.length}
           />
         </section>
 
@@ -298,6 +375,7 @@ export function ClientPage({ cabins, promotions }: { cabins: PublicCabin[]; prom
             </div>
             <FilterChips
               active={category}
+              availableCategories={availableCategories}
               onChange={(nextCategory) => {
                 setCategory(nextCategory)
                 setFavoritesOnly(false)
@@ -312,7 +390,7 @@ export function ClientPage({ cabins, promotions }: { cabins: PublicCabin[]; prom
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-primary">
-                  <Sparkles className="size-4" aria-hidden /> Selección DUPEZ
+                  <Sparkles className="size-4" aria-hidden /> Selección {settings.businessName}
                 </p>
                 <h2 id="cabins-title" className="mt-2 font-serif text-3xl font-semibold tracking-[-0.02em] text-forest-dark sm:text-4xl">
                   Cabañas para tu próxima pausa
@@ -349,11 +427,7 @@ export function ClientPage({ cabins, promotions }: { cabins: PublicCabin[]; prom
                 </p>
                 <button
                   type="button"
-                  onClick={() => {
-                    setSearch(initialClientSearch)
-                    setCategory("todos")
-                    setFavoritesOnly(false)
-                  }}
+                  onClick={resetAll}
                   className={`mt-5 min-h-11 rounded-xl bg-primary px-5 py-2 text-sm font-bold text-white hover:bg-forest-dark ${focusClasses}`}
                 >
                   Restablecer búsqueda
@@ -387,6 +461,54 @@ export function ClientPage({ cabins, promotions }: { cabins: PublicCabin[]; prom
             )}
           </div>
         </section>
+
+        {officeHasContent && (
+          <section id="oficina" className="scroll-mt-24 border-y border-border bg-[#f5f1e7] py-14 sm:py-16" aria-labelledby="office-title">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <div className="mx-auto max-w-2xl text-center">
+                <p className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">
+                  <MapPin className="size-4" aria-hidden /> Nuestra oficina
+                </p>
+                <h2 id="office-title" className="mt-2 font-serif text-3xl font-semibold tracking-[-0.02em] text-forest-dark sm:text-4xl">
+                  Visítanos en {settings.generalLocation}
+                </h2>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
+                  Te atendemos personalmente para ayudarte a elegir y planear tu estancia.
+                </p>
+              </div>
+              <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap">
+                <div className="flex items-center gap-3 rounded-2xl border border-forest-dark/8 bg-white px-5 py-4 shadow-[0_8px_30px_rgba(31,60,43,0.05)]">
+                  <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <MapPin className="size-5" aria-hidden />
+                  </span>
+                  <div>
+                    {settings.officeAddress && (
+                      <p className="max-w-xs text-sm font-semibold text-foreground">{settings.officeAddress}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground">{settings.generalLocation}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 rounded-2xl border border-forest-dark/8 bg-white px-5 py-4 shadow-[0_8px_30px_rgba(31,60,43,0.05)]">
+                  <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <Clock3 className="size-5" aria-hidden />
+                  </span>
+                  <p className="max-w-xs text-sm font-semibold text-foreground">{settings.businessHours}</p>
+                </div>
+                {settings.officeMapsUrl && (
+                  <a
+                    href={settings.officeMapsUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-forest-dark ${focusClasses}`}
+                  >
+                    <MapPin className="size-4" aria-hidden />
+                    Cómo llegar
+                  </a>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="bg-[#f5f1e7] py-16 sm:py-20" aria-labelledby="trip-types-title">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -472,7 +594,7 @@ export function ClientPage({ cabins, promotions }: { cabins: PublicCabin[]; prom
               </p>
             </div>
             <a
-              href={siteContact.whatsappUrl}
+              href={settings.whatsappUrl}
               target="_blank"
               rel="noreferrer"
               className={`mt-7 inline-flex min-h-12 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-[#f0c66a] px-5 py-3 text-sm font-bold text-[#203628] transition-colors hover:bg-[#f7d98e] sm:w-auto lg:mt-0 ${focusClasses}`}
@@ -484,11 +606,17 @@ export function ClientPage({ cabins, promotions }: { cabins: PublicCabin[]; prom
         </section>
       </main>
 
-      <Footer />
+      <Footer settings={settings} />
 
       <CabinDetailsModal
         key={selected?.id ?? "sin-cabana"}
         cabin={selected}
+        bookingDefaults={{
+          checkIn: search.checkIn,
+          checkOut: search.checkOut,
+          guests: search.guests,
+        }}
+        settings={settings}
         onClose={() => setSelected(null)}
         onAction={(cabin) => showNotice(`Tu consulta para ${cabin.name} está lista para enviarse por WhatsApp.`)}
       />

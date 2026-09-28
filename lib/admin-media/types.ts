@@ -1,4 +1,4 @@
-export type AdminMediaScope = "cabins" | "promotions"
+export type AdminMediaScope = "cabins" | "promotions" | "settings"
 
 export type AdminMediaUploadInput = {
   dataUrl: string

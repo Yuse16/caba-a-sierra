@@ -6,23 +6,33 @@ import type { PublicCabinCategory } from "@/lib/public-cabins"
 
 type ChipKey = "todos" | PublicCabinCategory
 
-const chips: { key: ChipKey; label: string; icon: React.ReactNode }[] = [
-  { key: "todos", label: "Todos", icon: <LayoutGrid className="size-4" aria-hidden /> },
-  { key: "parejas", label: "Para parejas", icon: <Heart className="size-4" aria-hidden /> },
-  { key: "familiar", label: "Familiar", icon: <Users className="size-4" aria-hidden /> },
-  { key: "grupos", label: "Grupos", icon: <UsersRound className="size-4" aria-hidden /> },
-  { key: "chimenea", label: "Con chimenea", icon: <Flame className="size-4" aria-hidden /> },
-  { key: "pet-friendly", label: "Pet friendly", icon: <PawPrint className="size-4" aria-hidden /> },
-  { key: "bosque", label: "Cerca del bosque", icon: <TreePine className="size-4" aria-hidden /> },
-]
+const chipDefinition: Record<PublicCabinCategory, { label: string; icon: React.ReactNode }> = {
+  parejas: { label: "Para parejas", icon: <Heart className="size-4" aria-hidden /> },
+  familiar: { label: "Familiar", icon: <Users className="size-4" aria-hidden /> },
+  grupos: { label: "Grupos", icon: <UsersRound className="size-4" aria-hidden /> },
+  chimenea: { label: "Con chimenea", icon: <Flame className="size-4" aria-hidden /> },
+  "pet-friendly": { label: "Pet friendly", icon: <PawPrint className="size-4" aria-hidden /> },
+  bosque: { label: "Cerca del bosque", icon: <TreePine className="size-4" aria-hidden /> },
+}
 
 export function FilterChips({
   active,
+  availableCategories,
   onChange,
 }: {
   active: ChipKey
+  availableCategories: PublicCabinCategory[]
   onChange: (k: ChipKey) => void
 }) {
+  const chips: { key: ChipKey; label: string; icon: React.ReactNode }[] = [
+    { key: "todos", label: "Todos", icon: <LayoutGrid className="size-4" aria-hidden /> },
+    ...availableCategories.map((category) => ({
+      key: category as ChipKey,
+      label: chipDefinition[category].label,
+      icon: chipDefinition[category].icon,
+    })),
+  ]
+
   return (
     <div
       className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0"

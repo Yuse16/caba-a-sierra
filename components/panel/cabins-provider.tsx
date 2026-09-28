@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
-import { archiveAdminCabinAction, loadAdminCabinsAction, saveAdminCabinAction, setAdminCabinStatusAction } from "@/app/panel/cabanas/actions"
+import { archiveAdminCabinAction, loadAdminCabinsAction, restoreAdminCabinAction, saveAdminCabinAction, setAdminCabinStatusAction } from "@/app/panel/cabanas/actions"
 import type { AdminCabin, AdminCabinInput, AdminCabinStatus } from "@/lib/admin-cabins/types"
 
 type MutationResult = { ok: boolean; message: string; cabin?: AdminCabin }
@@ -15,6 +15,7 @@ type CabinsContextValue = {
   saveCabin: (input: AdminCabinInput, id?: string) => Promise<MutationResult>
   setCabinStatus: (id: string, status: AdminCabinStatus) => Promise<MutationResult>
   archiveCabin: (id: string) => Promise<MutationResult>
+  restoreCabin: (id: string) => Promise<MutationResult>
 }
 
 const CabinsContext = createContext<CabinsContextValue | null>(null)
@@ -84,7 +85,7 @@ export function CabinsProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await archiveAdminCabinAction(id)
       if (!result.ok) return result
-      setCabins((items) => items.filter((cabin) => cabin.id !== id))
+      setCabins((items) => items.map((cabin) => cabin.id === id ? { ...cabin, archivedAt: new Date().toISOString(), status: "draft" } : cabin))
       setError(null)
       return result
     } catch {
@@ -92,7 +93,19 @@ export function CabinsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const value = useMemo(() => ({ cabins, ready, error, reload, findCabin, saveCabin, setCabinStatus, archiveCabin }), [cabins, ready, error, reload, findCabin, saveCabin, setCabinStatus, archiveCabin])
+  const restoreCabin = useCallback(async (id: string): Promise<MutationResult> => {
+    try {
+      const result = await restoreAdminCabinAction(id)
+      if (!result.ok) return result
+      setCabins((items) => items.map((cabin) => cabin.id === id ? result.data : cabin))
+      setError(null)
+      return { ok: true, cabin: result.data, message: result.message }
+    } catch {
+      return { ok: false, message: "No pudimos restaurar la cabaña. Intenta nuevamente." }
+    }
+  }, [])
+
+  const value = useMemo(() => ({ cabins, ready, error, reload, findCabin, saveCabin, setCabinStatus, archiveCabin, restoreCabin }), [cabins, ready, error, reload, findCabin, saveCabin, setCabinStatus, archiveCabin, restoreCabin])
   return <CabinsContext.Provider value={value}>{children}</CabinsContext.Provider>
 }
 

@@ -27,7 +27,7 @@ function getSupabaseImagePatterns() {
 }
 
 function allowLocalSupabaseImages() {
-  if (!isDevelopment) return false
+  if (!isDevelopment && process.env.GALLERY_E2E_TARGET !== "local") return false
   try {
     const hostname = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").hostname
     return hostname === "127.0.0.1" || hostname === "localhost"

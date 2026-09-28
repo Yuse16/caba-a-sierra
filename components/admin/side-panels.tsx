@@ -76,15 +76,15 @@ export function RecentRequestsPanel({ items, onOpen }: { items: ClientRequest[];
   )
 }
 
-const quickActionsStart: { icon: typeof Home; label: string; key: SectionKey | "add"; badge?: number }[] = [
+const quickActionsStart: { icon: typeof Home; label: string; key: SectionKey | "add" }[] = [
   { icon: Home, label: "Agregar nueva cabaña", key: "add" },
-  { icon: FileText, label: "Ver todas las solicitudes", key: "solicitudes", badge: 8 },
+  { icon: FileText, label: "Ver todas las solicitudes", key: "solicitudes" },
   { icon: MessageSquare, label: "Enviar mensaje a cliente", key: "mensajes" },
   { icon: Globe, label: "Editar página principal", key: "paginas" },
   { icon: Settings, label: "Configuración general", key: "configuracion" },
 ]
 
-export function QuickActionsPanel({ onAction }: { onAction: (key: SectionKey | "add") => void }) {
+export function QuickActionsPanel({ requestCount, onAction }: { requestCount: number; onAction: (key: SectionKey | "add") => void }) {
   return (
     <PanelCard title="Acciones rápidas">
       <ul className="flex flex-col gap-2">
@@ -93,9 +93,9 @@ export function QuickActionsPanel({ onAction }: { onAction: (key: SectionKey | "
             <button type="button" onClick={() => onAction(a.key)} className="flex w-full items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-accent">
               <a.icon className="size-4 text-muted-foreground" aria-hidden />
               <span className="flex-1">{a.label}</span>
-              {a.badge ? (
+              {a.key === "solicitudes" && requestCount > 0 ? (
                 <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gold/25 px-1.5 text-xs font-semibold text-gold-foreground">
-                  {a.badge}
+                  {requestCount}
                 </span>
               ) : null}
             </button>

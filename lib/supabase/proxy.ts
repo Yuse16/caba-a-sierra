@@ -3,18 +3,16 @@ import { NextResponse, type NextRequest } from "next/server"
 import type { Database } from "./database.types"
 import { getSupabaseConfig, hasSupabaseConfig } from "./config"
 import { getAuthCookieOptions } from "./cookie-options"
-
-const panelRoute = (pathname: string) => pathname === "/panel" || pathname.startsWith("/panel/") || pathname === "/admin"
+import { configurationLoginUrl, isPanelRoute } from "@/lib/auth/redirects"
 
 function unavailableResponse(request: NextRequest) {
-  if (panelRoute(request.nextUrl.pathname)) {
-    const loginUrl = request.nextUrl.clone()
-    loginUrl.pathname = "/login"
-    loginUrl.search = ""
-    loginUrl.searchParams.set("error", "configuration")
-    return NextResponse.redirect(loginUrl)
-  }
-  return NextResponse.next({ request })
+  const target = configurationLoginUrl(request.nextUrl.pathname)
+  if (!target) return NextResponse.next({ request })
+  const loginUrl = request.nextUrl.clone()
+  const [path, rawQuery] = target.split("?")
+  loginUrl.pathname = path
+  loginUrl.search = `?${rawQuery ?? ""}`
+  return NextResponse.redirect(loginUrl)
 }
 
 export async function updateSupabaseSession(request: NextRequest) {
@@ -45,7 +43,7 @@ export async function updateSupabaseSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
 
-  if (panelRoute(pathname) && !claimsData?.claims) {
+  if (isPanelRoute(pathname) && !claimsData?.claims) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = "/login"
     loginUrl.search = ""
@@ -53,6 +51,6 @@ export async function updateSupabaseSession(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  response.headers.set("Cache-Control", panelRoute(pathname) ? "private, no-store" : response.headers.get("Cache-Control") ?? "")
+  response.headers.set("Cache-Control", isPanelRoute(pathname) ? "private, no-store" : response.headers.get("Cache-Control") ?? "")
   return response
 }

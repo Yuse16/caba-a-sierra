@@ -173,10 +173,12 @@ export type Database = {
           guests: number
           id: string
           idempotency_key: string
+          last_contact_at: string | null
           message: string
           origin: string
           status: Database["public"]["Enums"]["inquiry_status"]
           updated_at: string
+          version: number
         }
         Insert: {
           cabin_id: string
@@ -187,10 +189,12 @@ export type Database = {
           guests: number
           id?: string
           idempotency_key?: string
+          last_contact_at?: string | null
           message?: string
           origin?: string
           status?: Database["public"]["Enums"]["inquiry_status"]
           updated_at?: string
+          version?: number
         }
         Update: {
           cabin_id?: string
@@ -201,10 +205,12 @@ export type Database = {
           guests?: number
           id?: string
           idempotency_key?: string
+          last_contact_at?: string | null
           message?: string
           origin?: string
           status?: Database["public"]["Enums"]["inquiry_status"]
           updated_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -462,7 +468,9 @@ export type Database = {
       cabins: {
         Row: {
           accepts_pets: boolean
+          address: string
           bathrooms: number
+          bed_distribution: Json
           bedrooms: number
           beds: number
           cabin_type: string
@@ -477,23 +485,30 @@ export type Database = {
           display_order: number
           id: string
           legacy_id: string | null
+          latitude: number | null
           location: string
+          longitude: number | null
+          maps_url: string
           max_guests: number
           min_guests: number
           name: string
           nightly_price: number
           old_price: number | null
+          pool_type: string
           publication_state: Database["public"]["Enums"]["publication_state"]
           published_at: string | null
           rules: string[]
           short_description: string
           slug: string
+          zone: string
           updated_at: string
           updated_by: string | null
         }
         Insert: {
           accepts_pets?: boolean
+          address?: string
           bathrooms?: number
+          bed_distribution?: Json
           bedrooms?: number
           beds?: number
           cabin_type?: string
@@ -508,23 +523,30 @@ export type Database = {
           display_order?: number
           id?: string
           legacy_id?: string | null
+          latitude?: number | null
           location?: string
+          longitude?: number | null
+          maps_url?: string
           max_guests?: number
           min_guests?: number
           name: string
           nightly_price?: number
           old_price?: number | null
+          pool_type?: string
           publication_state?: Database["public"]["Enums"]["publication_state"]
           published_at?: string | null
           rules?: string[]
           short_description?: string
           slug: string
+          zone?: string
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
           accepts_pets?: boolean
+          address?: string
           bathrooms?: number
+          bed_distribution?: Json
           bedrooms?: number
           beds?: number
           cabin_type?: string
@@ -539,17 +561,22 @@ export type Database = {
           display_order?: number
           id?: string
           legacy_id?: string | null
+          latitude?: number | null
           location?: string
+          longitude?: number | null
+          maps_url?: string
           max_guests?: number
           min_guests?: number
           name?: string
           nightly_price?: number
           old_price?: number | null
+          pool_type?: string
           publication_state?: Database["public"]["Enums"]["publication_state"]
           published_at?: string | null
           rules?: string[]
           short_description?: string
           slug?: string
+          zone?: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -587,37 +614,46 @@ export type Database = {
       }
       customers: {
         Row: {
+          commercial_status: Database["public"]["Enums"]["customer_commercial_status"]
           consent_at: string | null
           created_at: string
           deleted_at: string | null
           email: string | null
           id: string
+          last_interaction_at: string | null
           name: string
           phone_display: string
           phone_e164: string
           updated_at: string
+          version: number
         }
         Insert: {
+          commercial_status?: Database["public"]["Enums"]["customer_commercial_status"]
           consent_at?: string | null
           created_at?: string
           deleted_at?: string | null
           email?: string | null
           id?: string
+          last_interaction_at?: string | null
           name: string
           phone_display: string
           phone_e164: string
           updated_at?: string
+          version?: number
         }
         Update: {
+          commercial_status?: Database["public"]["Enums"]["customer_commercial_status"]
           consent_at?: string | null
           created_at?: string
           deleted_at?: string | null
           email?: string | null
           id?: string
+          last_interaction_at?: string | null
           name?: string
           phone_display?: string
           phone_e164?: string
           updated_at?: string
+          version?: number
         }
         Relationships: []
       }
@@ -627,6 +663,7 @@ export type Database = {
           body: string
           cabin_id: string | null
           created_at: string
+          customer_id: string | null
           deleted_at: string | null
           id: string
           inquiry_id: string | null
@@ -640,6 +677,7 @@ export type Database = {
           body: string
           cabin_id?: string | null
           created_at?: string
+          customer_id?: string | null
           deleted_at?: string | null
           id?: string
           inquiry_id?: string | null
@@ -653,6 +691,7 @@ export type Database = {
           body?: string
           cabin_id?: string | null
           created_at?: string
+          customer_id?: string | null
           deleted_at?: string | null
           id?: string
           inquiry_id?: string | null
@@ -662,6 +701,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "internal_notes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "internal_notes_cabin_id_fkey"
             columns: ["cabin_id"]
@@ -713,9 +759,16 @@ export type Database = {
           },
         ]
       }
+      inquiry_events: {
+        Row: { actor_id: string | null; created_at: string; details: Json; event_type: string; from_status: Database["public"]["Enums"]["inquiry_status"] | null; id: number; inquiry_id: string; to_status: Database["public"]["Enums"]["inquiry_status"] | null }
+        Insert: { actor_id?: string | null; created_at?: string; details?: Json; event_type: string; from_status?: Database["public"]["Enums"]["inquiry_status"] | null; id?: never; inquiry_id: string; to_status?: Database["public"]["Enums"]["inquiry_status"] | null }
+        Update: { actor_id?: string | null; created_at?: string; details?: Json; event_type?: string; from_status?: Database["public"]["Enums"]["inquiry_status"] | null; id?: never; inquiry_id?: string; to_status?: Database["public"]["Enums"]["inquiry_status"] | null }
+        Relationships: [{ foreignKeyName: "inquiry_events_inquiry_id_fkey"; columns: ["inquiry_id"]; isOneToOne: false; referencedRelation: "booking_inquiries"; referencedColumns: ["id"] }]
+      }
       media_assets: {
         Row: {
           byte_size: number
+          canonical_public_url: string | null
           created_at: string
           deleted_at: string | null
           extension: string
@@ -735,6 +788,7 @@ export type Database = {
         }
         Insert: {
           byte_size: number
+          canonical_public_url?: string | null
           created_at?: string
           deleted_at?: string | null
           extension: string
@@ -754,6 +808,7 @@ export type Database = {
         }
         Update: {
           byte_size?: number
+          canonical_public_url?: string | null
           created_at?: string
           deleted_at?: string | null
           extension?: string
@@ -822,6 +877,7 @@ export type Database = {
       }
       owners: {
         Row: {
+          contact_hours: string
           created_at: string
           created_by: string | null
           deleted_at: string | null
@@ -835,6 +891,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          contact_hours?: string
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
@@ -848,6 +905,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          contact_hours?: string
           created_at?: string
           created_by?: string | null
           deleted_at?: string | null
@@ -981,15 +1039,21 @@ export type Database = {
           created_at: string
           currency: string
           general_location: string
+          hero_asset_id: string | null
           id: boolean
           logo_url: string | null
+          office_address: string
+          office_maps_url: string
           public_email: string | null
           public_phone: string
           public_policies: Json
           public_whatsapp: string
           social_links: Json
+          subtitle: string
+          tagline: string
           timezone: string
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           business_hours?: string
@@ -997,15 +1061,21 @@ export type Database = {
           created_at?: string
           currency?: string
           general_location?: string
+          hero_asset_id?: string | null
           id?: boolean
           logo_url?: string | null
+          office_address?: string
+          office_maps_url?: string
           public_email?: string | null
           public_phone?: string
           public_policies?: Json
           public_whatsapp?: string
           social_links?: Json
+          subtitle?: string
+          tagline?: string
           timezone?: string
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           business_hours?: string
@@ -1013,17 +1083,31 @@ export type Database = {
           created_at?: string
           currency?: string
           general_location?: string
+          hero_asset_id?: string | null
           id?: boolean
           logo_url?: string | null
+          office_address?: string
+          office_maps_url?: string
           public_email?: string | null
           public_phone?: string
           public_policies?: Json
           public_whatsapp?: string
           social_links?: Json
+          subtitle?: string
+          tagline?: string
           timezone?: string
           updated_at?: string
+          updated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "public_site_settings_hero_asset_fkey"
+            columns: ["hero_asset_id"]
+            isOneToOne: false
+            referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reservations: {
         Row: {
@@ -1180,24 +1264,48 @@ export type Database = {
       }
     }
     Views: {
+      admin_inquiry_search: {
+        Row: Database["public"]["Tables"]["booking_inquiries"]["Row"] & {
+          customer_name: string
+          phone_display: string
+          phone_e164: string
+          cabin_name: string
+          created_on: string
+        }
+        Relationships: []
+      }
       public_cabins: {
         Row: {
+          accepts_pets: boolean | null
+          address: string | null
           amenities: string[] | null
           bathrooms: number | null
+          bed_distribution: Json | null
           bedrooms: number | null
+          beds: number | null
           cabin_type: string | null
           categories: string[] | null
           description: string | null
           display_order: number | null
           id: string | null
+          gallery: Json | null
+          check_in_time: string | null
+          check_out_time: string | null
           image_url: string | null
           location: string | null
+          latitude: number | null
+          longitude: number | null
+          maps_url: string | null
           max_guests: number | null
           min_guests: number | null
           name: string | null
           nightly_price: number | null
           old_price: number | null
+          pool_type: string | null
+          rules: string[] | null
+          short_description: string | null
           slug: string | null
+          zone: string | null
         }
         Relationships: []
       }
@@ -1215,17 +1323,72 @@ export type Database = {
         }
         Relationships: []
       }
+      public_site_config: {
+        Row: {
+          business_hours: string | null
+          business_name: string | null
+          currency: string | null
+          general_location: string | null
+          hero_image_url: string | null
+          logo_url: string | null
+          office_address: string | null
+          office_maps_url: string | null
+          public_email: string | null
+          public_phone: string | null
+          public_whatsapp: string | null
+          subtitle: string | null
+          tagline: string | null
+          timezone: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      add_customer_note: { Args: { p_body: string; p_customer_id: string }; Returns: string }
+      add_inquiry_note: { Args: { p_body: string; p_inquiry_id: string }; Returns: string }
+      archive_cabin_with_images: {
+        Args: { target_cabin_id: string }
+        Returns: boolean
+      }
+      restore_archived_cabin: {
+        Args: { target_cabin_id: string }
+        Returns: boolean
+      }
+      sync_cabin_owner: {
+        Args: { owner_payload: Json | null; target_cabin_id: string }
+        Returns: string | null
+      }
+      create_website_booking_inquiry: {
+        Args: {
+          p_cabin_id: string
+          p_check_in: string
+          p_check_out: string
+          p_customer_name: string
+          p_guests: number
+          p_idempotency_key: string
+          p_message: string
+          p_phone_display: string
+          p_phone_e164: string
+        }
+        Returns: string
+      }
+      record_inquiry_contact_event: { Args: { p_details?: Json; p_event_type: string; p_inquiry_id: string }; Returns: number }
+      set_customer_commercial_status: { Args: { p_customer_id: string; p_expected_version: number; p_status: Database["public"]["Enums"]["customer_commercial_status"] }; Returns: number }
+      transition_booking_inquiry: { Args: { p_expected_version: number; p_inquiry_id: string; p_status: Database["public"]["Enums"]["inquiry_status"] }; Returns: number }
       reorder_promotions: {
         Args: { ordered_ids: string[] }
         Returns: undefined
+      }
+      sync_cabin_images: {
+        Args: { target_cabin_id: string; images: Json }
+        Returns: Database["public"]["Tables"]["cabin_images"]["Row"][]
       }
     }
     Enums: {
       admin_role: "admin" | "editor"
       availability_kind: "hold" | "reservation" | "blocked" | "maintenance"
       availability_status: "active" | "released"
+      customer_commercial_status: "prospect" | "customer" | "repeat" | "inactive"
       inquiry_status:
         | "new"
         | "pending"
@@ -1234,6 +1397,10 @@ export type Database = {
         | "unavailable"
         | "converted"
         | "closed"
+        | "confirmed"
+        | "no_response"
+        | "cancelled"
+        | "completed"
       media_processing_status:
         | "staging"
         | "processing"
@@ -1929,6 +2096,7 @@ export const Constants = {
       admin_role: ["admin", "editor"],
       availability_kind: ["hold", "reservation", "blocked", "maintenance"],
       availability_status: ["active", "released"],
+      customer_commercial_status: ["prospect", "customer", "repeat", "inactive"],
       inquiry_status: [
         "new",
         "pending",
@@ -1937,6 +2105,10 @@ export const Constants = {
         "unavailable",
         "converted",
         "closed",
+        "confirmed",
+        "no_response",
+        "cancelled",
+        "completed",
       ],
       media_processing_status: [
         "staging",

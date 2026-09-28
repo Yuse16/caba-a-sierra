@@ -1,5 +1,5 @@
 import { Clock3, Mail, MapPin, MessageCircle, Mountain, Phone } from "lucide-react"
-import { siteContact } from "@/lib/site-config"
+import type { PublicSiteSettings } from "@/lib/public-site-settings"
 
 const navigation = [
   { label: "Inicio", href: "#inicio" },
@@ -11,8 +11,10 @@ const navigation = [
 const linkClasses =
   "rounded-sm text-sm text-white/75 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-[#14261b]"
 
-export function Footer() {
+export function Footer({ settings }: { settings: PublicSiteSettings }) {
   const currentYear = new Date().getFullYear()
+  const businessHours = settings.businessHours
+  const hours = businessHours.includes("·") ? businessHours.split("·").map((part) => part.trim()) : [businessHours]
 
   return (
     <footer className="bg-[#14261b] text-white pb-[env(safe-area-inset-bottom)]">
@@ -21,16 +23,16 @@ export function Footer() {
           <div>
             <a
               href="#inicio"
-              aria-label="DUPEZ, volver al inicio"
+              aria-label={`${settings.businessName}, volver al inicio`}
               className="inline-flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-[#14261b]"
             >
               <span className="inline-flex size-11 items-center justify-center rounded-xl bg-white/10 text-[#f4d58b]">
                 <Mountain className="size-6" aria-hidden />
               </span>
               <span>
-                <span className="block font-serif text-xl font-semibold text-white">DUPEZ</span>
+                <span className="block font-serif text-xl font-semibold text-white">{settings.businessName}</span>
                 <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.22em] text-[#f4d58b]">
-                  Renta de cabañas en toda la Sierra de Arteaga
+                  {settings.subtitle}
                 </span>
               </span>
             </a>
@@ -60,25 +62,27 @@ export function Footer() {
             <ul className="mt-4 space-y-4">
               <li className="flex items-start gap-3">
                 <MessageCircle className="mt-0.5 size-4 shrink-0 text-[#f4d58b]" aria-hidden />
-                <a href={siteContact.whatsappUrl} target="_blank" rel="noreferrer" className={linkClasses}>
+                <a href={settings.whatsappUrl} target="_blank" rel="noreferrer" className={linkClasses}>
                   WhatsApp
                 </a>
               </li>
               <li className="flex items-start gap-3">
                 <Phone className="mt-0.5 size-4 shrink-0 text-[#f4d58b]" aria-hidden />
-                <a href={siteContact.phoneHref} className={linkClasses}>
-                  {siteContact.phoneDisplay}
+                <a href={settings.phoneHref} className={linkClasses}>
+                  {settings.phoneDisplay}
                 </a>
               </li>
-              <li className="flex items-start gap-3">
-                <Mail className="mt-0.5 size-4 shrink-0 text-[#f4d58b]" aria-hidden />
-                <a href={`mailto:${siteContact.email}`} className={linkClasses}>
-                  {siteContact.email}
-                </a>
-              </li>
+              {settings.email && (
+                <li className="flex items-start gap-3">
+                  <Mail className="mt-0.5 size-4 shrink-0 text-[#f4d58b]" aria-hidden />
+                  <a href={`mailto:${settings.email}`} className={linkClasses}>
+                    {settings.email}
+                  </a>
+                </li>
+              )}
               <li className="flex items-start gap-3">
                 <MapPin className="mt-0.5 size-4 shrink-0 text-[#f4d58b]" aria-hidden />
-                <span className="text-sm leading-6 text-white/75">Arteaga, Coahuila, México</span>
+                <span className="text-sm leading-6 text-white/75">{settings.generalLocation}</span>
               </li>
             </ul>
           </div>
@@ -88,8 +92,14 @@ export function Footer() {
             <div className="mt-4 flex items-start gap-3">
               <Clock3 className="mt-0.5 size-4 shrink-0 text-[#f4d58b]" aria-hidden />
               <div className="text-sm leading-6 text-white/75">
-                <p>Lunes a domingo</p>
-                <p className="font-semibold text-white">8:00 a 21:00 h</p>
+                {hours.length > 1 ? (
+                  <>
+                    <p>{hours[0]}</p>
+                    <p className="font-semibold text-white">{hours[1]}</p>
+                  </>
+                ) : (
+                  <p>{settings.businessHours || "Todos los días"}</p>
+                )}
               </div>
             </div>
             <p className="mt-4 text-xs leading-5 text-white/55">
@@ -100,7 +110,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 flex flex-col gap-2 border-t border-white/12 pt-6 text-xs text-white/55 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {currentYear} DUPEZ. Todos los derechos reservados.</p>
+          <p>© {currentYear} {settings.businessName}. Todos los derechos reservados.</p>
           <p>Hecho para disfrutar la sierra con tranquilidad.</p>
         </div>
       </div>

@@ -6,4 +6,5 @@ export interface AdminCabinRepository {
   save(input: AdminCabinInput, actorId: string, id?: string): Promise<AdminCabin>
   setStatus(id: string, status: AdminCabinStatus, actorId: string): Promise<AdminCabin | null>
   archive(id: string, actorId: string): Promise<boolean>
+  restore(id: string, actorId: string): Promise<AdminCabin | null>
 }

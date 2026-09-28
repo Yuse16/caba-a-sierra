@@ -1,0 +1,18 @@
+begin;
+drop function if exists public.set_customer_commercial_status(uuid,public.customer_commercial_status,bigint);
+drop function if exists public.add_customer_note(uuid,text);
+drop function if exists public.record_inquiry_contact_event(uuid,text,jsonb);
+drop function if exists public.add_inquiry_note(uuid,text);
+drop function if exists public.transition_booking_inquiry(uuid,public.inquiry_status,bigint);
+drop trigger if exists booking_inquiry_received on public.booking_inquiries;
+drop function if exists private.record_inquiry_received();
+drop table if exists public.inquiry_events;
+alter table public.internal_notes drop constraint if exists internal_notes_single_subject;
+alter table public.internal_notes drop column if exists customer_id;
+alter table public.internal_notes add constraint internal_notes_check check (num_nonnulls(owner_id,cabin_id,inquiry_id,reservation_id,promotion_id)=1);
+drop index if exists public.customers_phone_active_uidx;
+create index customers_phone_idx on public.customers(phone_e164) where deleted_at is null;
+alter table public.booking_inquiries drop column if exists version, drop column if exists last_contact_at;
+alter table public.customers drop column if exists version, drop column if exists last_interaction_at, drop column if exists commercial_status;
+drop type if exists public.customer_commercial_status;
+commit;

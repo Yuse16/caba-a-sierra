@@ -2,22 +2,32 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { AlertCircle, ArrowLeft, CheckCircle2, EyeOff, Save, Send } from "lucide-react"
+import { AlertCircle, ArrowLeft, CheckCircle2, EyeOff, Plus, Save, Send } from "lucide-react"
 import {
   emptyAdminCabin,
   getMissingPublicationFields,
   publicationFieldLabels,
   type AdminCabin,
   type AdminCabinInput,
+  type AdminCabinOwner,
+  type BedType,
   type PublicationField,
 } from "@/lib/admin-cabins/types"
 import { useAdminCabins } from "./cabins-provider"
 import { ConfirmDialog } from "./confirm-dialog"
 import { ImageManager } from "./image-manager"
+import { usePanelSession } from "@/components/auth/panel-session-provider"
+import { loadCabinOwnersAction } from "@/app/panel/propietarios/actions"
 
 const controlClass =
   "mt-1.5 min-h-12 w-full appearance-auto rounded-lg border border-border bg-background px-3 text-base text-foreground outline-none [color-scheme:light] placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20 sm:min-h-11 sm:text-sm"
 const textareaClass = `${controlClass} min-h-28 resize-y py-3`
+const bedTypes: Array<{ key: BedType; label: string }> = [
+  { key: "individual", label: "Individual" }, { key: "matrimonial", label: "Matrimonial" },
+  { key: "king", label: "King size" }, { key: "queen", label: "Queen" },
+  { key: "litera", label: "Litera" }, { key: "sofa-cama", label: "Sofá cama" }, { key: "otro", label: "Otro" },
+]
+const emptyOwner: AdminCabinOwner = { id: null, name: "", phone: "", whatsapp: "", email: "", preferredContact: "whatsapp", notes: "", contactHours: "" }
 
 function toInput(cabin: AdminCabin): AdminCabinInput {
   return {
@@ -28,6 +38,7 @@ function toInput(cabin: AdminCabin): AdminCabinInput {
     maxGuests: cabin.maxGuests,
     bedrooms: cabin.bedrooms,
     beds: cabin.beds,
+    bedDistribution: { ...cabin.bedDistribution },
     bathrooms: cabin.bathrooms,
     services: [...cabin.services],
     rules: [...cabin.rules],
@@ -35,7 +46,15 @@ function toInput(cabin: AdminCabin): AdminCabinInput {
     checkOutTime: cabin.checkOutTime,
     acceptsPets: cabin.acceptsPets,
     location: cabin.location,
+    address: cabin.address,
+    zone: cabin.zone,
+    latitude: cabin.latitude,
+    longitude: cabin.longitude,
+    mapsUrl: cabin.mapsUrl,
+    poolType: cabin.poolType,
     whatsapp: cabin.whatsapp,
+    owner: cabin.owner ? { ...cabin.owner } : null,
+    archivedAt: cabin.archivedAt,
     status: cabin.status,
     images: cabin.images.map((image) => ({ ...image })),
   }
@@ -54,6 +73,7 @@ function FieldError({ message }: { message?: string }) {
 
 function CabinForm({ cabin, created = false }: { cabin?: AdminCabin; created?: boolean }) {
   const router = useRouter()
+  const session = usePanelSession()
   const { saveCabin } = useAdminCabins()
   const [form, setForm] = useState<AdminCabinInput>(() => cabin ? toInput(cabin) : { ...emptyAdminCabin, images: [] })
   const [servicesText, setServicesText] = useState(() => cabin?.services.join("\n") ?? "")
@@ -63,6 +83,14 @@ function CabinForm({ cabin, created = false }: { cabin?: AdminCabin; created?: b
   const [errors, setErrors] = useState<Partial<Record<PublicationField, string>>>({})
   const [notice, setNotice] = useState<{ tone: "success" | "warning" | "error"; message: string } | null>(created ? { tone: "success", message: "La cabaña se creó correctamente." } : null)
   const [confirmExit, setConfirmExit] = useState(false)
+  const [owners, setOwners] = useState<AdminCabinOwner[]>([])
+
+  useEffect(() => {
+    if (session.role !== "admin") return
+    let active = true
+    void loadCabinOwnersAction().then((result) => { if (active && result.ok) setOwners(result.data) })
+    return () => { active = false }
+  }, [session.role])
 
   useEffect(() => {
     if (!created) return
@@ -81,9 +109,16 @@ function CabinForm({ cabin, created = false }: { cabin?: AdminCabin; created?: b
 
   const completeInput = useMemo<AdminCabinInput>(() => ({
     ...form,
+    beds: Object.values(form.bedDistribution).reduce((total, amount) => total + (amount ?? 0), 0),
     services: parseLines(servicesText),
     rules: parseLines(rulesText),
   }), [form, rulesText, servicesText])
+
+  const updateBed = (type: BedType, amount: number) => {
+    const bedDistribution = { ...form.bedDistribution, [type]: Math.max(0, amount) }
+    if (!bedDistribution[type]) delete bedDistribution[type]
+    update("bedDistribution", bedDistribution)
+  }
 
   const update = <Key extends keyof AdminCabinInput>(key: Key, value: AdminCabinInput[Key]) => {
     setForm((current) => ({ ...current, [key]: value }))
@@ -98,6 +133,19 @@ function CabinForm({ cabin, created = false }: { cabin?: AdminCabin; created?: b
   const persist = async (status: "draft" | "published") => {
     const input = { ...completeInput, status }
     const missing = getMissingPublicationFields(input)
+
+    if (input.owner && !input.owner.name.trim()) {
+      setNotice({ tone: "error", message: "Escribe el nombre del propietario o elimina la asignación antes de guardar." })
+      return
+    }
+    if ((input.latitude === null) !== (input.longitude === null)) {
+      setNotice({ tone: "error", message: "La ubicación necesita latitud y longitud juntas." })
+      return
+    }
+    if (input.mapsUrl && !input.mapsUrl.startsWith("https://")) {
+      setNotice({ tone: "error", message: "El enlace de mapa debe comenzar con https://." })
+      return
+    }
 
     if (status === "published" && missing.length > 0) {
       setErrors(validationErrors(missing))
@@ -188,9 +236,25 @@ function CabinForm({ cabin, created = false }: { cabin?: AdminCabin; created?: b
               <textarea value={form.description} onChange={(event) => update("description", event.target.value)} placeholder="Describe los espacios, el entorno y lo que hace especial a la cabaña" rows={5} className={textareaClass} aria-invalid={Boolean(errors.description)} />
               <FieldError message={errors.description} />
             </label>
-            <label id="field-location" className="text-sm font-medium text-foreground sm:col-span-2">Ubicación o zona
+            <label id="field-location" className="text-sm font-medium text-foreground">Nombre público de la ubicación
               <input value={form.location} onChange={(event) => update("location", event.target.value)} placeholder="Ej. Sierra de Arteaga, Coahuila" autoComplete="address-level2" className={controlClass} aria-invalid={Boolean(errors.location)} />
               <FieldError message={errors.location} />
+            </label>
+            <label className="text-sm font-medium text-foreground">Zona
+              <input value={form.zone} onChange={(event) => update("zone", event.target.value)} placeholder="Ej. San Antonio de las Alazanas" className={controlClass} />
+            </label>
+            <label className="text-sm font-medium text-foreground sm:col-span-2">Dirección
+              <input value={form.address} onChange={(event) => update("address", event.target.value)} placeholder="Calle, número y referencias" autoComplete="street-address" className={controlClass} />
+            </label>
+            <label className="text-sm font-medium text-foreground">Latitud <span className="font-normal text-muted-foreground">(opcional)</span>
+              <input type="number" inputMode="decimal" step="any" min={-90} max={90} value={form.latitude ?? ""} onChange={(event) => update("latitude", event.target.value === "" ? null : Number(event.target.value))} placeholder="25.450000" className={controlClass} />
+            </label>
+            <label className="text-sm font-medium text-foreground">Longitud <span className="font-normal text-muted-foreground">(opcional)</span>
+              <input type="number" inputMode="decimal" step="any" min={-180} max={180} value={form.longitude ?? ""} onChange={(event) => update("longitude", event.target.value === "" ? null : Number(event.target.value))} placeholder="-100.850000" className={controlClass} />
+            </label>
+            <label className="text-sm font-medium text-foreground sm:col-span-2">URL de Google Maps u OpenStreetMap <span className="font-normal text-muted-foreground">(opcional)</span>
+              <input type="url" value={form.mapsUrl} onChange={(event) => update("mapsUrl", event.target.value)} placeholder="https://maps.google.com/..." className={controlClass} />
+              <span className="mt-1 block text-xs text-muted-foreground">Si no conoces latitud y longitud, déjalas vacías. La ubicación pública se puede guardar sin esos datos.</span>
             </label>
             <label id="field-nightlyPrice" className="text-sm font-medium text-foreground">Precio por noche
               <input type="number" inputMode="decimal" min={0} value={form.nightlyPrice || ""} onChange={(event) => update("nightlyPrice", Number(event.target.value))} placeholder="2800" className={controlClass} aria-invalid={Boolean(errors.nightlyPrice)} />
@@ -210,7 +274,6 @@ function CabinForm({ cabin, created = false }: { cabin?: AdminCabin; created?: b
             {([
               ["maxGuests", "Capacidad máxima"],
               ["bedrooms", "Habitaciones"],
-              ["beds", "Camas"],
               ["bathrooms", "Baños"],
             ] as const).map(([field, label]) => (
               <label key={field} id={`field-${field}`} className="text-sm font-medium text-foreground">{label}
@@ -227,6 +290,14 @@ function CabinForm({ cabin, created = false }: { cabin?: AdminCabin; created?: b
               <FieldError message={errors.checkOutTime} />
             </label>
           </div>
+          <div className="mt-5 rounded-xl border border-border bg-secondary/30 p-4">
+            <div className="flex items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-foreground">Distribución de camas</h3><p className="text-xs text-muted-foreground">Solo llena los tipos de cama que existan; los demás pueden quedar vacíos y cuentan como 0.</p><p className="text-xs text-muted-foreground">Total calculado automáticamente: {completeInput.beds} camas</p></div></div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{bedTypes.map(({ key, label }) => <label key={key} className="text-xs font-medium text-muted-foreground">{label}<input type="number" inputMode="numeric" min={0} step={1} value={form.bedDistribution[key] ?? ""} onChange={(event) => updateBed(key, Number.parseInt(event.target.value, 10) || 0)} className={controlClass} /></label>)}</div>
+            <FieldError message={errors.beds} />
+          </div>
+          <label className="mt-5 block max-w-md text-sm font-medium text-foreground">Alberca
+            <select value={form.poolType} onChange={(event) => update("poolType", event.target.value as AdminCabinInput["poolType"])} className={controlClass}><option value="none">Sin alberca</option><option value="standard">Alberca</option><option value="heated">Alberca climatizada</option></select>
+          </label>
           <button type="button" role="switch" aria-checked={form.acceptsPets} onClick={() => update("acceptsPets", !form.acceptsPets)} className="mt-5 flex min-h-12 w-full items-center justify-between rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground hover:bg-muted sm:max-w-md">
             <span>Acepta mascotas</span>
             <span className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${form.acceptsPets ? "bg-primary" : "bg-muted"}`} aria-hidden>
@@ -253,6 +324,25 @@ function CabinForm({ cabin, created = false }: { cabin?: AdminCabin; created?: b
         <div id="field-images">
           <ImageManager images={form.images} onChange={(images) => update("images", images)} error={errors.images} />
         </div>
+
+        {session.role === "admin" && <section className="rounded-2xl border border-primary/20 bg-card p-4 sm:p-6">
+          <div><p className="text-xs font-bold uppercase tracking-wide text-primary">Solo visible en el panel</p><h2 className="mt-1 text-lg font-semibold text-foreground">Información interna</h2><p className="mt-1 text-sm text-muted-foreground">Propietario, contacto y observaciones administrativas. Estos datos no se publican.</p></div>
+          <div className="mt-5 grid gap-5 sm:grid-cols-2">
+            <label className="text-sm font-medium text-foreground sm:col-span-2">Propietario existente
+              <select value={form.owner?.id ?? ""} onChange={(event) => { const selectedOwner = owners.find((owner) => owner.id === event.target.value); update("owner", selectedOwner ? { ...selectedOwner } : null) }} className={controlClass}><option value="">Sin seleccionar</option>{owners.map((owner) => <option key={owner.id} value={owner.id ?? ""}>{owner.name}</option>)}</select>
+            </label>
+            <button type="button" onClick={() => update("owner", { ...emptyOwner })} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground hover:bg-muted sm:col-span-2 sm:w-fit"><Plus className="size-4" aria-hidden />Agregar propietario</button>
+            {form.owner && <>
+              <label className="text-sm font-medium text-foreground sm:col-span-2">Nombre<input required value={form.owner.name} onChange={(event) => update("owner", { ...form.owner!, name: event.target.value })} className={controlClass} /></label>
+              <label className="text-sm font-medium text-foreground">Teléfono<input type="tel" value={form.owner.phone} onChange={(event) => update("owner", { ...form.owner!, phone: event.target.value })} className={controlClass} /></label>
+              <label className="text-sm font-medium text-foreground">WhatsApp<input type="tel" value={form.owner.whatsapp} onChange={(event) => update("owner", { ...form.owner!, whatsapp: event.target.value })} className={controlClass} /></label>
+              <label className="text-sm font-medium text-foreground">Correo opcional<input type="email" value={form.owner.email} onChange={(event) => update("owner", { ...form.owner!, email: event.target.value })} className={controlClass} /></label>
+              <label className="text-sm font-medium text-foreground">Contacto preferido<select value={form.owner.preferredContact} onChange={(event) => update("owner", { ...form.owner!, preferredContact: event.target.value as AdminCabinOwner["preferredContact"] })} className={controlClass}><option value="whatsapp">WhatsApp</option><option value="phone">Teléfono</option><option value="email">Correo</option><option value="message">Mensaje</option></select></label>
+              <label className="text-sm font-medium text-foreground sm:col-span-2">Horario o preferencia<input value={form.owner.contactHours} onChange={(event) => update("owner", { ...form.owner!, contactHours: event.target.value })} className={controlClass} /></label>
+              <label className="text-sm font-medium text-foreground sm:col-span-2">Notas privadas<textarea value={form.owner.notes} onChange={(event) => update("owner", { ...form.owner!, notes: event.target.value })} rows={4} className={textareaClass} /></label>
+            </>}
+          </div>
+        </section>}
 
         <section className="rounded-2xl border border-border bg-card p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-foreground">Estado</h2>

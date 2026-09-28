@@ -1,22 +1,5 @@
 import "server-only"
 
-import {
-  cabins,
-  owners,
-  requests,
-  reservations,
-  payments,
-  cleaningTasks,
-  maintenanceTasks,
-  promotions,
-  seasons,
-  recentActivity,
-  pendingTasks,
-  upcomingArrivals,
-  calendarDays,
-  calendarCabins,
-  calendarBookings,
-} from "@/lib/demo-data"
 import type { AdminPanelInitialData } from "./admin-panel-data"
 import type { Cabin, ClientRequest, Owner, PreferredContactMethod, RequestStatus, Reservation, ReservationStatus } from "./demo-data"
 import { createAdminCabinRepository } from "./admin-cabins/repository.server"
@@ -26,6 +9,7 @@ import { createSupabaseServerClient } from "./supabase/server"
 
 function emptyPanelData(catalogCabins: Cabin[] = []): AdminPanelInitialData {
   return {
+    currentDateLabel: formatAdminDate(new Date().toISOString()),
     cabins: catalogCabins, owners: [], requests: [], reservations: [], payments: [], cleaningTasks: [], maintenanceTasks: [],
     promotions: [], seasons: [], recentActivity: [], pendingTasks: [], upcomingArrivals: [], calendarDays: [],
     calendarCabins: catalogCabins.map((cabin) => ({ id: cabin.id, name: cabin.name, image: cabin.image, capacity: `${cabin.maxGuests} huéspedes` })),
@@ -33,29 +17,9 @@ function emptyPanelData(catalogCabins: Cabin[] = []): AdminPanelInitialData {
   }
 }
 
-function withoutPrivateDemoData(): AdminPanelInitialData {
-  const safeCabins = cabins.slice(0, 6).map((cabin) => ({
-    ...cabin,
-    ownerId: "", ownerName: "", ownerPhone: "", ownerWhatsApp: "", ownerNotes: "", agreedCommission: 0,
-    lastAvailabilityCheck: "", preferredContactMethod: "Mensaje" as const,
-  }))
-  return emptyPanelData(safeCabins)
-}
-
-export function getDevelopmentAdminPanelData(session?: PanelSession): AdminPanelInitialData {
-  if (session?.role === "editor") return withoutPrivateDemoData()
-  return {
-    cabins: cabins.slice(0, 6), owners: [...owners], requests: [...requests], reservations: [...reservations], payments: [...payments],
-    cleaningTasks: [...cleaningTasks], maintenanceTasks: [...maintenanceTasks], promotions: [...promotions], seasons: [...seasons],
-    recentActivity: [...recentActivity], pendingTasks: [...pendingTasks], upcomingArrivals: [...upcomingArrivals],
-    calendarDays: [...calendarDays], calendarCabins: [...calendarCabins], calendarBookings,
-  }
-}
-
 export async function getAdminPanelData(session: PanelSession): Promise<AdminPanelInitialData> {
   if (!hasSupabaseConfig()) {
-    if (process.env.NODE_ENV === "production") return emptyPanelData()
-    return getDevelopmentAdminPanelData(session)
+    return emptyPanelData()
   }
 
   try {
@@ -137,7 +101,23 @@ export async function getAdminPanelData(session: PanelSession): Promise<AdminPan
       }
     })
 
-    return { ...emptyPanelData(adminCabins), owners: ownersData, requests: requestsData, reservations: reservationsData }
+    const today = new Date().toISOString().slice(0, 10)
+    const sevenDaysFromNow = new Date(`${today}T00:00:00Z`)
+    sevenDaysFromNow.setUTCDate(sevenDaysFromNow.getUTCDate() + 7)
+    const lastArrivalDate = sevenDaysFromNow.toISOString().slice(0, 10)
+    const reservationRows = reservationsResult.data ?? []
+    const upcomingArrivals = reservationRows
+      .filter((reservation) => reservation.status === "confirmed" && reservation.check_in >= today && reservation.check_in <= lastArrivalDate)
+      .map((reservation) => ({
+        id: reservation.id,
+        client: customerById.get(reservation.customer_id)?.name ?? "Cliente",
+        cabin: cabinById.get(reservation.cabin_id)?.name ?? "Cabaña",
+        dates: `${formatAdminDate(reservation.check_in)} – ${formatAdminDate(reservation.check_out)}`,
+        guests: reservation.guests,
+        status: "Confirmada",
+      }))
+
+    return { ...emptyPanelData(adminCabins), owners: ownersData, requests: requestsData, reservations: reservationsData, upcomingArrivals }
   } catch (error) {
     console.error("getAdminPanelData", error)
     return emptyPanelData()
@@ -151,10 +131,11 @@ function formatAdminDate(value: string) {
   return new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(parsed)
 }
 
-function inquiryStatus(status: "new" | "pending" | "contacted" | "available" | "unavailable" | "converted" | "closed"): RequestStatus {
+function inquiryStatus(status: "new" | "pending" | "contacted" | "available" | "unavailable" | "converted" | "closed" | "confirmed" | "no_response" | "cancelled" | "completed"): RequestStatus {
   const statuses: Record<typeof status, RequestStatus> = {
     new: "nueva", pending: "pendiente-propietario", contacted: "propietario-contactado", available: "disponible-confirmada",
-    unavailable: "no-disponible", converted: "reservacion-confirmada", closed: "cliente-no-respondio",
+    unavailable: "no-disponible", converted: "reservacion-confirmada", closed: "cliente-no-respondio", confirmed: "reservacion-confirmada",
+    no_response: "cliente-no-respondio", cancelled: "cancelada", completed: "finalizada",
   }
   return statuses[status]
 }

@@ -13,6 +13,8 @@ export function PanelRouteShell({ initialData }: { initialData: AdminPanelInitia
       initialData={initialData}
       onManageCabins={() => router.push("/panel/cabanas")}
       onManagePromotions={() => router.push("/panel/promociones")}
+      onManageRequests={() => router.push("/panel/solicitudes")}
+      onManageCustomers={() => router.push("/panel/clientes")}
       onCreateCabin={() => router.push("/panel/cabanas/nueva")}
       onEditCabin={(cabin: Cabin) => router.push(`/panel/cabanas/${cabin.id}`)}
     />

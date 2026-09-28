@@ -19,7 +19,7 @@ export function PanelCabinsLayout({ children }: { children: React.ReactNode }) {
               <Mountain className="size-5" aria-hidden />
             </span>
             <div className={cn("min-w-0 leading-tight", !editing && "hidden min-[360px]:block")}>
-              <p className="truncate text-sm font-semibold text-foreground">Sierra Norte</p>
+              <p className="truncate text-sm font-semibold text-foreground">DUPEZ</p>
               <p className="text-xs text-muted-foreground">Panel privado</p>
             </div>
           </div>

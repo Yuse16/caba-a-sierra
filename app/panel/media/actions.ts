@@ -9,7 +9,9 @@ export type AdminMediaActionResult =
   | { ok: false; message: string }
 
 function permissionFor(scope: AdminMediaScope) {
-  return scope === "cabins" ? "catalog.write" as const : "promotions.write" as const
+  if (scope === "cabins") return "catalog.write" as const
+  if (scope === "promotions") return "promotions.write" as const
+  return "settings.manage" as const
 }
 
 function isFrameworkError(error: unknown): boolean {

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react"
 import Image from "next/image"
-import { X, MapPin, Users, Bed, Bath, Star, Check, CalendarDays, Send, ChevronLeft, ChevronRight, DoorOpen, Info } from "lucide-react"
+import { X, MapPin, Users, Bed, Bath, Star, CircleCheckBig, CircleX, CalendarDays, Send, ChevronLeft, ChevronRight, DoorOpen, Info, Maximize2 } from "lucide-react"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { createBookingInquiryAction } from "@/app/actions/booking-inquiries"
 import {
@@ -44,16 +44,28 @@ export function CabinDetailsModal({
   const [whatsappUrl, setWhatsappUrl] = useState<string>(settings.whatsappUrl)
   const [dateError, setDateError] = useState<string | null>(null)
   const [galleryState, setGalleryState] = useState({ cabinId: "", index: 0 })
+  const [isImageExpanded, setIsImageExpanded] = useState(false)
+  const imageExpandedRef = useRef(false)
   const touchStartX = useRef<number | null>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   const idempotencyKeyRef = useRef<string | null>(null)
   const previouslyFocusedRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
+    imageExpandedRef.current = isImageExpanded
+  }, [isImageExpanded])
+
+  useEffect(() => {
     if (!cabin) return
     previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose()
+      if (event.key === "Escape") {
+        if (imageExpandedRef.current) {
+          setIsImageExpanded(false)
+          return
+        }
+        onClose()
+      }
       if (event.key === "ArrowLeft" && cabin.images.length > 1) {
         setGalleryState((current) => ({
           cabinId: cabin.id,
@@ -174,19 +186,30 @@ export function CabinDetailsModal({
             if (Math.abs(distance) >= 40) moveGallery(distance > 0 ? -1 : 1)
           }}
         >
-          <Image key={activeImage.id} src={activeImage.url || "/placeholder.svg"} alt={activeImage.altText} fill sizes="(max-width: 768px) 100vw, 720px" className="rounded-t-2xl object-cover" priority />
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="absolute right-3 top-3 inline-flex size-11 items-center justify-center rounded-full bg-background/95 text-foreground shadow-sm hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 sm:size-9">
+          <button
+            type="button"
+            onClick={() => setIsImageExpanded(true)}
+            aria-label={`Ampliar fotografía ${activeIndex + 1} de ${gallery.length}`}
+            className="absolute inset-0 z-0 cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gold"
+          >
+            <Image key={activeImage.id} src={activeImage.url || "/placeholder.svg"} alt={activeImage.altText} fill sizes="(max-width: 768px) 100vw, 720px" className="rounded-t-2xl object-cover" priority />
+            <span className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-black/65 px-3 py-1.5 text-xs font-semibold text-white shadow-sm">
+              <Maximize2 className="size-3.5" aria-hidden />
+              Ver foto completa
+            </span>
+          </button>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="absolute right-3 top-3 z-20 inline-flex size-11 items-center justify-center rounded-full bg-background/95 text-foreground shadow-sm hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 sm:size-9">
             <X className="size-4" aria-hidden />
           </button>
-          <div className="absolute left-3 top-3">
+          <div className="absolute left-3 top-3 z-10">
             <StatusBadge tone={publicCabinStatusTone[cabin.status]} className="border border-border bg-white text-foreground shadow-sm">
               {publicCabinStatusLabel[cabin.status]}
             </StatusBadge>
           </div>
           {gallery.length > 1 && <>
-            <button type="button" onClick={() => moveGallery(-1)} aria-label="Fotografía anterior" className="absolute left-3 top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/95 text-foreground shadow-md transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"><ChevronLeft className="size-5" aria-hidden /></button>
-            <button type="button" onClick={() => moveGallery(1)} aria-label="Fotografía siguiente" className="absolute right-3 top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/95 text-foreground shadow-md transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"><ChevronRight className="size-5" aria-hidden /></button>
-            <p className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/65 px-3 py-1 text-xs font-semibold text-white" aria-live="polite">{activeIndex + 1} / {gallery.length}</p>
+            <button type="button" onClick={() => moveGallery(-1)} aria-label="Fotografía anterior" className="absolute left-3 top-1/2 z-10 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/95 text-foreground shadow-md transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"><ChevronLeft className="size-5" aria-hidden /></button>
+            <button type="button" onClick={() => moveGallery(1)} aria-label="Fotografía siguiente" className="absolute right-3 top-1/2 z-10 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/95 text-foreground shadow-md transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"><ChevronRight className="size-5" aria-hidden /></button>
+            <p className="absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/65 px-3 py-1 text-xs font-semibold text-white" aria-live="polite">{activeIndex + 1} / {gallery.length}</p>
           </>}
         </div>
 
@@ -228,12 +251,12 @@ export function CabinDetailsModal({
             {cabin.rules.length > 0 && (
               <div>
                 <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold"><Info className="size-4 text-primary" aria-hidden />Reglas de la cabaña</h3>
-                <ul className="flex flex-wrap gap-2">{cabin.rules.map((rule) => <li key={rule} className="flex items-center gap-1 rounded-lg bg-secondary px-2.5 py-1 text-xs font-medium"><Check className="size-3.5 text-success" aria-hidden />{rule}</li>)}</ul>
+                <ul className="flex flex-wrap gap-2">{cabin.rules.map((rule) => <li key={rule} className="flex items-center gap-1 rounded-lg bg-secondary px-2.5 py-1 text-xs font-medium"><CircleX className="size-3.5 text-destructive" aria-hidden />{rule}</li>)}</ul>
               </div>
             )}
             <div>
               <h3 className="mb-2 text-sm font-semibold">Amenidades</h3>
-              <div className="flex flex-wrap gap-2">{cabin.amenities.map((amenity) => <span key={amenity} className="flex items-center gap-1 rounded-lg bg-secondary px-2.5 py-1 text-xs font-medium"><Check className="size-3.5 text-success" aria-hidden />{amenity}</span>)}</div>
+              <div className="flex flex-wrap gap-2">{cabin.amenities.map((amenity) => <span key={amenity} className="flex items-center gap-1 rounded-lg bg-secondary px-2.5 py-1 text-xs font-medium"><CircleCheckBig className="size-3.5 text-success" aria-hidden />{amenity}</span>)}</div>
             </div>
             <p className="flex items-baseline gap-1.5 border-t border-border pt-4"><span className="text-2xl font-semibold">${currency(cabin.price)}</span><span className="text-sm text-muted-foreground">MXN / noche</span></p>
           </div>
@@ -265,6 +288,74 @@ export function CabinDetailsModal({
           </form>
         </div>
       </div>
+
+      {isImageExpanded && (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/95 p-0 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Vista ampliada de ${cabin.name}`}
+          onClick={(event) => {
+            event.stopPropagation()
+            setIsImageExpanded(false)
+          }}
+          onTouchStart={(event) => {
+            touchStartX.current = event.changedTouches[0]?.clientX ?? null
+          }}
+          onTouchEnd={(event) => {
+            event.stopPropagation()
+            if (touchStartX.current === null || gallery.length < 2) return
+            const distance = (event.changedTouches[0]?.clientX ?? touchStartX.current) - touchStartX.current
+            touchStartX.current = null
+            if (Math.abs(distance) >= 40) moveGallery(distance > 0 ? -1 : 1)
+          }}
+        >
+          <div className="relative h-[100dvh] w-full sm:h-[92vh] sm:max-w-6xl" onClick={(event) => event.stopPropagation()}>
+            <Image
+              key={`expanded-${activeImage.id}`}
+              src={activeImage.url || "/placeholder.svg"}
+              alt={activeImage.altText}
+              fill
+              sizes="100vw"
+              className="object-contain"
+              priority
+            />
+
+            <button
+              type="button"
+              onClick={() => setIsImageExpanded(false)}
+              aria-label="Cerrar fotografía ampliada"
+              className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-20 inline-flex size-11 items-center justify-center rounded-full bg-white/95 text-foreground shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+            >
+              <X className="size-5" aria-hidden />
+            </button>
+
+            {gallery.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => moveGallery(-1)}
+                  aria-label="Fotografía anterior ampliada"
+                  className="absolute left-3 top-1/2 z-20 inline-flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-foreground shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                >
+                  <ChevronLeft className="size-6" aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveGallery(1)}
+                  aria-label="Fotografía siguiente ampliada"
+                  className="absolute right-3 top-1/2 z-20 inline-flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-foreground shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                >
+                  <ChevronRight className="size-6" aria-hidden />
+                </button>
+                <p className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-20 -translate-x-1/2 rounded-full bg-black/70 px-3 py-1.5 text-sm font-semibold text-white" aria-live="polite">
+                  {activeIndex + 1} / {gallery.length}
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

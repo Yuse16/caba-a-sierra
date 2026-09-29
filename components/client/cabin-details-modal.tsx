@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react"
 import Image from "next/image"
-import { X, MapPin, Users, Bed, Bath, Star, CircleCheckBig, CalendarDays, Send, ChevronLeft, ChevronRight, DoorOpen, Info, Maximize2 } from "lucide-react"
+import { X, MapPin, Users, Bed, Bath, Star, CircleCheckBig, CircleX, CalendarDays, Send, ChevronLeft, ChevronRight, DoorOpen, Info, Maximize2 } from "lucide-react"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { createBookingInquiryAction } from "@/app/actions/booking-inquiries"
 import {
@@ -251,7 +251,7 @@ export function CabinDetailsModal({
             {cabin.rules.length > 0 && (
               <div>
                 <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold"><Info className="size-4 text-primary" aria-hidden />Reglas de la cabaña</h3>
-                <ul className="flex flex-wrap gap-2">{cabin.rules.map((rule) => <li key={rule} className="flex items-center gap-1 rounded-lg bg-secondary px-2.5 py-1 text-xs font-medium"><CircleCheckBig className="size-3.5 text-success" aria-hidden />{rule}</li>)}</ul>
+                <ul className="flex flex-wrap gap-2">{cabin.rules.map((rule) => <li key={rule} className="flex items-center gap-1 rounded-lg bg-secondary px-2.5 py-1 text-xs font-medium"><CircleX className="size-3.5 text-destructive" aria-hidden />{rule}</li>)}</ul>
               </div>
             )}
             <div>

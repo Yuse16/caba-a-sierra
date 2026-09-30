@@ -1,6 +1,6 @@
 export const MAX_MEDIA_BYTES = 5 * 1024 * 1024
 export const MAX_MEDIA_PIXELS = 40_000_000
-export const MAX_MEDIA_DIMENSION = 1_600
+export const MAX_MEDIA_DIMENSION = 6_000
 
 export type SupportedImage = {
   mime: "image/jpeg" | "image/png" | "image/webp"

@@ -25,54 +25,6 @@ export function validateImageFiles(files: File[]): ImageValidationResult {
   return { valid, errors: [...new Set(errors)] }
 }
 
-function loadImage(file: File) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new window.Image()
-    const objectUrl = URL.createObjectURL(file)
-    image.onload = () => {
-      URL.revokeObjectURL(objectUrl)
-      resolve(image)
-    }
-    image.onerror = () => {
-      URL.revokeObjectURL(objectUrl)
-      reject(new Error(`${file.name}: no pudimos abrir esta imagen.`))
-    }
-    image.src = objectUrl
-  })
-}
-
-function extensionFor(type: string) {
-  if (type === "image/jpeg") return "jpg"
-  if (type === "image/png") return "png"
-  return "webp"
-}
-
 export async function prepareCabinImageUpload(file: File): Promise<File> {
-  let output: Blob = file
-
-  try {
-    const source = await loadImage(file)
-    const maxDimension = 1600
-    const scale = Math.min(1, maxDimension / Math.max(source.naturalWidth, source.naturalHeight))
-    const canvas = document.createElement("canvas")
-    canvas.width = Math.max(1, Math.round(source.naturalWidth * scale))
-    canvas.height = Math.max(1, Math.round(source.naturalHeight * scale))
-    const context = canvas.getContext("2d")
-    if (context) {
-      context.drawImage(source, 0, 0, canvas.width, canvas.height)
-      const compressed = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob(resolve, "image/webp", 0.82),
-      )
-      if (compressed) output = compressed
-    }
-  } catch {
-    output = file
-  }
-
-  const outputType = output.type || file.type
-  const baseName = file.name.replace(/\.[^.]+$/, "") || "imagen"
-  return new File([output], `${baseName}.${extensionFor(outputType)}`, {
-    type: outputType,
-    lastModified: file.lastModified,
-  })
+  return file
 }

@@ -142,7 +142,7 @@ export function ImageManager({
       </div>
 
       <p className="mt-3 rounded-lg bg-secondary/60 px-3 py-2 text-xs text-muted-foreground">
-        Ajustamos el tamaño de las fotografías automáticamente cuando ayuda a que carguen más rápido.
+        Conservamos la resolución original de las fotografías admitidas (hasta 5 MB por archivo) para que la vista ampliada tenga la mejor calidad disponible.
       </p>
 
       {(error || uploadErrors.length > 0) && (

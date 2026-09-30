@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react"
 import Image from "next/image"
-import { X, MapPin, Users, Bed, Bath, Star, CircleCheckBig, CircleX, CalendarDays, Send, ChevronLeft, ChevronRight, DoorOpen, Info, Maximize2 } from "lucide-react"
+import { X, MapPin, Users, Bed, Bath, Star, CircleCheckBig, CircleX, CalendarDays, Send, ChevronLeft, ChevronRight, DoorOpen, Info, Maximize2, Minimize2 } from "lucide-react"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { createBookingInquiryAction } from "@/app/actions/booking-inquiries"
 import {
@@ -45,6 +45,7 @@ export function CabinDetailsModal({
   const [dateError, setDateError] = useState<string | null>(null)
   const [galleryState, setGalleryState] = useState({ cabinId: "", index: 0 })
   const [isImageExpanded, setIsImageExpanded] = useState(false)
+  const [expandedFit, setExpandedFit] = useState<"cover" | "contain">("cover")
   const imageExpandedRef = useRef(false)
   const touchStartX = useRef<number | null>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -188,7 +189,7 @@ export function CabinDetailsModal({
         >
           <button
             type="button"
-            onClick={() => setIsImageExpanded(true)}
+            onClick={() => { setExpandedFit("cover"); setIsImageExpanded(true) }}
             aria-label={`Ampliar fotografía ${activeIndex + 1} de ${gallery.length}`}
             className="absolute inset-0 z-0 cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gold"
           >
@@ -310,16 +311,29 @@ export function CabinDetailsModal({
             if (Math.abs(distance) >= 40) moveGallery(distance > 0 ? -1 : 1)
           }}
         >
-          <div className="relative h-[100dvh] w-full sm:h-[92vh] sm:max-w-6xl" onClick={(event) => event.stopPropagation()}>
+          <div className="relative h-[100dvh] w-full overflow-hidden bg-black sm:h-[94vh] sm:max-w-[96vw] sm:rounded-2xl" onClick={(event) => event.stopPropagation()}>
             <Image
-              key={`expanded-${activeImage.id}`}
+              key={`expanded-${activeImage.id}-${expandedFit}`}
               src={activeImage.url || "/placeholder.svg"}
               alt={activeImage.altText}
               fill
               sizes="100vw"
-              className="object-contain"
+              className={expandedFit === "cover" ? "object-cover" : "object-contain"}
               priority
             />
+
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-black/65 to-transparent" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-24 bg-gradient-to-t from-black/65 to-transparent" />
+
+            <button
+              type="button"
+              onClick={() => setExpandedFit((current) => current === "cover" ? "contain" : "cover")}
+              className="absolute left-3 top-[max(0.75rem,env(safe-area-inset-top))] z-20 inline-flex min-h-11 items-center gap-2 rounded-full bg-black/65 px-4 text-sm font-semibold text-white shadow-lg backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+              aria-label={expandedFit === "cover" ? "Ver fotografía completa" : "Llenar pantalla con fotografía"}
+            >
+              {expandedFit === "cover" ? <Minimize2 className="size-4" aria-hidden /> : <Maximize2 className="size-4" aria-hidden />}
+              {expandedFit === "cover" ? "Ver completa" : "Llenar pantalla"}
+            </button>
 
             <button
               type="button"

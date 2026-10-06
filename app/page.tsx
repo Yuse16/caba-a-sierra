@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { ClientPage } from "@/components/client/client-page"
+import { CabinModalHistoryGuard } from "@/components/client/cabin-modal-history-guard"
 import { getPublicCabins, getPublicPromotions } from "@/lib/public-content.server"
 import { getPublicSiteSettings } from "@/lib/public-site-settings.server"
 import { searchQueryToState } from "@/lib/public-search"
@@ -22,11 +23,14 @@ export default async function Page({ searchParams }: PublicPageProps) {
     getPublicSiteSettings(),
   ])
   return (
-    <ClientPage
-      cabins={cabins}
-      promotions={promotions}
-      settings={settings}
-      initialSearch={initialSearch}
-    />
+    <>
+      <CabinModalHistoryGuard />
+      <ClientPage
+        cabins={cabins}
+        promotions={promotions}
+        settings={settings}
+        initialSearch={initialSearch}
+      />
+    </>
   )
 }

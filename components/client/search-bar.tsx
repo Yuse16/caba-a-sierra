@@ -2,8 +2,10 @@
 
 import { useState } from "react"
 import {
+  BadgeDollarSign,
   BedDouble,
   CalendarDays,
+  Check,
   ChevronDown,
   Home,
   MapPin,
@@ -42,6 +44,10 @@ function FieldShell({ children }: { children: React.ReactNode }) {
   )
 }
 
+function priceLabel(value: number) {
+  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(value)
+}
+
 export function SearchBar({
   value,
   options,
@@ -68,6 +74,16 @@ export function SearchBar({
     setAdvancedOpen(false)
     onReset()
   }
+
+  const toggleAmenity = (amenity: string) => {
+    const selected = value.amenities.includes(amenity)
+    update("amenities", selected ? value.amenities.filter((item) => item !== amenity) : [...value.amenities, amenity])
+  }
+
+  const catalogMinPrice = options.minPrice
+  const catalogMaxPrice = options.maxPrice
+  const selectedMinPrice = value.minPrice > 0 ? value.minPrice : catalogMinPrice
+  const selectedMaxPrice = value.maxPrice > 0 ? value.maxPrice : catalogMaxPrice
 
   const poolLabel: Record<ClientSearchState["pool"], string> = {
     todas: "Cualquiera",
@@ -334,19 +350,77 @@ export function SearchBar({
             </label>
           </FieldShell>
 
+          {catalogMinPrice > 0 && catalogMaxPrice > 0 && (
+            <div className="rounded-xl border border-border bg-background px-3 py-2 sm:col-span-2 lg:col-span-3">
+              <FieldLabel icon={<BadgeDollarSign className="size-3.5" aria-hidden />}>Rango de precio por noche</FieldLabel>
+              <div className="mt-2 grid grid-cols-2 gap-3">
+                <label className="text-xs font-semibold text-muted-foreground">
+                  Desde
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={catalogMinPrice}
+                    max={selectedMaxPrice || catalogMaxPrice}
+                    step={100}
+                    value={selectedMinPrice || ""}
+                    onChange={(event) => {
+                      const next = Number(event.target.value)
+                      update("minPrice", Number.isFinite(next) && next > catalogMinPrice ? Math.min(next, selectedMaxPrice || catalogMaxPrice) : 0)
+                    }}
+                    className="mt-1 h-11 w-full rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+                  />
+                </label>
+                <label className="text-xs font-semibold text-muted-foreground">
+                  Hasta
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={selectedMinPrice || catalogMinPrice}
+                    max={catalogMaxPrice}
+                    step={100}
+                    value={selectedMaxPrice || ""}
+                    onChange={(event) => {
+                      const next = Number(event.target.value)
+                      update("maxPrice", Number.isFinite(next) && next < catalogMaxPrice ? Math.max(next, selectedMinPrice || catalogMinPrice) : 0)
+                    }}
+                    className="mt-1 h-11 w-full rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+                  />
+                </label>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Rango publicado: {priceLabel(catalogMinPrice)} – {priceLabel(catalogMaxPrice)}
+              </p>
+            </div>
+          )}
+
           {options.amenities.length > 0 && (
-            <FieldShell>
-              <label>
-                <FieldLabel icon={<Sparkles className="size-3.5" aria-hidden />}>Amenidad</FieldLabel>
-                <span className="relative block">
-                  <select value={value.amenity} onChange={(event) => update("amenity", event.target.value)} className={selectClass}>
-                    <option value="todas">Todas</option>
-                    {options.amenities.map((amenity) => <option key={amenity} value={amenity}>{amenity}</option>)}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-1 top-3 size-4 text-muted-foreground" aria-hidden />
-                </span>
-              </label>
-            </FieldShell>
+            <div className="rounded-xl border border-border bg-background px-3 py-3 sm:col-span-2 lg:col-span-3">
+              <FieldLabel icon={<Sparkles className="size-3.5" aria-hidden />}>Amenidades</FieldLabel>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {options.amenities.map((amenity) => {
+                  const selected = value.amenities.includes(amenity)
+                  return (
+                    <button
+                      key={amenity}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => toggleAmenity(amenity)}
+                      className={`inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-semibold transition-colors ${actionFocus} ${
+                        selected
+                          ? "border-primary bg-primary text-white"
+                          : "border-border bg-card text-foreground hover:border-primary hover:text-primary"
+                      }`}
+                    >
+                      {selected && <Check className="size-3.5" aria-hidden />}
+                      {amenity}
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Puedes elegir varias; la cabaña debe incluir todas las seleccionadas.
+              </p>
+            </div>
           )}
         </div>
       )}

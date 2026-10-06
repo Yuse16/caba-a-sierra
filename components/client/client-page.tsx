@@ -1,8 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
 import {
   BadgeDollarSign,
   CalendarCheck,
@@ -133,7 +132,6 @@ export function ClientPage({
   initialSearch: ClientSearchState
 }) {
   const isHydrated = useSyncExternalStore(() => () => undefined, () => true, () => false)
-  const router = useRouter()
   const [search, setSearch] = useState<ClientSearchState>(initialSearch)
   const [category, setCategory] = useState<ChipKey>("todos")
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
@@ -162,16 +160,12 @@ export function ClientPage({
     }))
   }
 
-  const skipUrlSync = useRef(true)
   useEffect(() => {
-    if (skipUrlSync.current) {
-      skipUrlSync.current = false
-      return
-    }
     if (!dateGapIsValid(search.checkIn, search.checkOut)) return
     const query = searchStateToQuery(search)
-    router.replace(query ? `/?${query}` : "/", { scroll: false })
-  }, [search, router])
+    const nextUrl = query ? `/?${query}` : "/"
+    window.history.replaceState(window.history.state, "", nextUrl)
+  }, [search])
 
   const toggleFavorite = (id: string) =>
     setFavorites((current) => {
@@ -202,6 +196,7 @@ export function ClientPage({
     list = list.filter(
       (cabin) =>
         cabin.maxGuests >= search.guests &&
+        (search.minPrice === 0 || cabin.price >= search.minPrice) &&
         (search.maxPrice === 0 || cabin.price <= search.maxPrice) &&
         (search.bedrooms === 0 || cabin.bedrooms === search.bedrooms) &&
         (search.minBeds === 0 || cabin.beds >= search.minBeds) &&
@@ -217,8 +212,8 @@ export function ClientPage({
       list = list.filter((cabin) => cabin.type === search.cabinType)
     }
 
-    if (search.amenity !== "todas") {
-      list = list.filter((cabin) => cabin.amenities.includes(search.amenity))
+    if (search.amenities.length > 0) {
+      list = list.filter((cabin) => search.amenities.every((amenity) => cabin.amenities.includes(amenity)))
     }
 
     if (favoritesOnly) {
@@ -232,7 +227,7 @@ export function ClientPage({
 
   const resetAll = () => {
     setSearch(initialClientSearch)
-    router.replace("/", { scroll: false })
+    window.history.replaceState(window.history.state, "", "/")
     setCategory("todos")
     setFavoritesOnly(false)
     setShowAll(false)

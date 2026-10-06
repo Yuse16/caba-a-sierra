@@ -6,8 +6,9 @@ export type ClientSearchState = {
   checkOut: string
   guests: number
   cabinType: string
+  minPrice: number
   maxPrice: number
-  amenity: string
+  amenities: string[]
   bedrooms: number
   minBeds: number
   bedType: string
@@ -25,6 +26,7 @@ export type SearchOptions = {
   maxBedrooms: number
   maxBeds: number
   maxGuests: number
+  minPrice: number
   maxPrice: number
 }
 
@@ -34,8 +36,9 @@ export const initialClientSearch: ClientSearchState = {
   checkOut: "",
   guests: 2,
   cabinType: "todas",
+  minPrice: 0,
   maxPrice: 0,
-  amenity: "todas",
+  amenities: [],
   bedrooms: 0,
   minBeds: 0,
   bedType: "todas",
@@ -54,7 +57,7 @@ export function buildSearchOptions(entries: {
   beds?: number
   bedDistribution?: Record<string, number>
   maxGuests?: number
-  maxPrice?: number
+  price?: number
   type?: string
   amenities?: string[]
   zone?: string
@@ -68,6 +71,7 @@ export function buildSearchOptions(entries: {
   let maxBedrooms = 0
   let maxBeds = 0
   let maxGuests = 1
+  let minPrice = Number.POSITIVE_INFINITY
   let maxPrice = 0
 
   for (const entry of entries) {
@@ -81,7 +85,10 @@ export function buildSearchOptions(entries: {
     maxBedrooms = Math.max(maxBedrooms, entry.bedrooms ?? 0)
     maxBeds = Math.max(maxBeds, entry.beds ?? 0)
     maxGuests = Math.max(maxGuests, entry.maxGuests ?? 1)
-    maxPrice = Math.max(maxPrice, entry.maxPrice ?? 0)
+    if ((entry.price ?? 0) > 0) {
+      minPrice = Math.min(minPrice, entry.price ?? 0)
+      maxPrice = Math.max(maxPrice, entry.price ?? 0)
+    }
   }
 
   return {
@@ -93,6 +100,7 @@ export function buildSearchOptions(entries: {
     maxBedrooms,
     maxBeds,
     maxGuests,
+    minPrice: Number.isFinite(minPrice) ? minPrice : 0,
     maxPrice,
   }
 }
@@ -104,16 +112,16 @@ export function searchStateToQuery(search: ClientSearchState) {
   if (search.checkOut) params.set("out", search.checkOut)
   if (search.guests > 1) params.set("g", String(search.guests))
   if (search.cabinType !== "todas") params.set("tipo", search.cabinType)
-  if (search.maxPrice > 0) params.set("precio", String(search.maxPrice))
-  if (search.amenity !== "todas") params.set("amenidad", search.amenity)
+  if (search.minPrice > 0) params.set("precioMin", String(search.minPrice))
+  if (search.maxPrice > 0) params.set("precioMax", String(search.maxPrice))
+  for (const amenity of search.amenities) params.append("amenidad", amenity)
   if (search.bedrooms > 0) params.set("cuartos", String(search.bedrooms))
   if (search.minBeds > 0) params.set("camas", String(search.minBeds))
   if (search.bedType !== "todas") params.set("tipoCama", search.bedType)
   if (search.pool !== "todas") params.set("alberca", search.pool)
   if (search.pets !== "todas") params.set("mascotas", search.pets === "no-admitidas" ? "no" : "si")
   if (search.zone !== "todas") params.set("zona", search.zone)
-  const query = params.toString()
-  return query ? `?${query}` : ""
+  return params.toString()
 }
 
 function readGuests(value: string | string[] | undefined) {
@@ -132,6 +140,12 @@ function readToken(value: string | string[] | undefined) {
   return token
 }
 
+function readTokens(value: string | string[] | undefined) {
+  if (!value) return []
+  const values = Array.isArray(value) ? value : [value]
+  return [...new Set(values.flatMap((token) => token.split(",")).map((token) => token.trim()).filter(Boolean))]
+}
+
 export function searchQueryToState(params: Record<string, string | string[] | undefined>): ClientSearchState {
   const state: ClientSearchState = {
     query: readToken(params.q),
@@ -139,8 +153,9 @@ export function searchQueryToState(params: Record<string, string | string[] | un
     checkOut: readToken(params.out),
     guests: readGuests(params.g),
     cabinType: readToken(params.tipo) || "todas",
-    maxPrice: readPositive(params.precio),
-    amenity: readToken(params.amenidad) || "todas",
+    minPrice: readPositive(params.precioMin),
+    maxPrice: readPositive(params.precioMax ?? params.precio),
+    amenities: readTokens(params.amenidad),
     bedrooms: readPositive(params.cuartos),
     minBeds: readPositive(params.camas),
     bedType: readToken(params.tipoCama) || "todas",

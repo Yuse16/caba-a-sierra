@@ -7,7 +7,7 @@ import {
 } from "@/lib/public-search"
 
 describe("búsqueda pública de cabañas", () => {
-  it("deriva camas, amenidades, capacidad y rango de precios desde las cabañas publicadas", () => {
+  it("deriva camas, amenidades, capacidad, alberca y rango de precios desde las cabañas publicadas", () => {
     const options = buildSearchOptions([
       {
         bedrooms: 2,
@@ -18,7 +18,7 @@ describe("búsqueda pública de cabañas", () => {
         type: "familiar",
         amenities: ["Chimenea", "WiFi"],
         zone: "San Antonio",
-        pool: "none",
+        poolType: "none",
       },
       {
         bedrooms: 1,
@@ -29,7 +29,7 @@ describe("búsqueda pública de cabañas", () => {
         type: "romantica",
         amenities: ["WiFi", "Jacuzzi"],
         zone: "Los Lirios",
-        pool: "heated",
+        poolType: "heated",
       },
     ])
 
@@ -38,6 +38,7 @@ describe("búsqueda pública de cabañas", () => {
     expect(options.maxBedrooms).toBe(2)
     expect(options.bedTypes).toEqual(["individual", "king", "matrimonial", "sofa-cama"])
     expect(options.amenities).toEqual(["Chimenea", "Jacuzzi", "WiFi"])
+    expect(options.poolOptions).toEqual(["none", "heated"])
     expect(options.minPrice).toBe(1600)
     expect(options.maxPrice).toBe(3200)
   })

@@ -66,12 +66,16 @@ export function SearchBar({
   resultCount: number
 }) {
   const [advancedOpen, setAdvancedOpen] = useState(false)
+  const [minPriceDraft, setMinPriceDraft] = useState<string | null>(null)
+  const [maxPriceDraft, setMaxPriceDraft] = useState<string | null>(null)
 
   const update = <K extends keyof ClientSearchState>(key: K, nextValue: ClientSearchState[K]) =>
     onChange({ [key]: nextValue })
 
   const reset = () => {
     setAdvancedOpen(false)
+    setMinPriceDraft(null)
+    setMaxPriceDraft(null)
     onReset()
   }
 
@@ -362,11 +366,24 @@ export function SearchBar({
                     min={catalogMinPrice}
                     max={selectedMaxPrice || catalogMaxPrice}
                     step={100}
-                    value={selectedMinPrice || ""}
-                    onChange={(event) => {
-                      const next = Number(event.target.value)
-                      update("minPrice", Number.isFinite(next) && next > catalogMinPrice ? Math.min(next, selectedMaxPrice || catalogMaxPrice) : 0)
+                    value={minPriceDraft ?? String(selectedMinPrice)}
+                    onFocus={(event) => {
+                      setMinPriceDraft(String(selectedMinPrice))
+                      event.currentTarget.select()
                     }}
+                    onChange={(event) => {
+                      const raw = event.target.value
+                      setMinPriceDraft(raw)
+                      if (raw === "") {
+                        update("minPrice", 0)
+                        return
+                      }
+                      const next = Number(raw)
+                      if (Number.isFinite(next)) {
+                        update("minPrice", next > catalogMinPrice ? Math.min(next, selectedMaxPrice || catalogMaxPrice) : 0)
+                      }
+                    }}
+                    onBlur={() => setMinPriceDraft(null)}
                     className="mt-1 h-11 w-full rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
                   />
                 </label>
@@ -378,11 +395,24 @@ export function SearchBar({
                     min={selectedMinPrice || catalogMinPrice}
                     max={catalogMaxPrice}
                     step={100}
-                    value={selectedMaxPrice || ""}
-                    onChange={(event) => {
-                      const next = Number(event.target.value)
-                      update("maxPrice", Number.isFinite(next) && next < catalogMaxPrice ? Math.max(next, selectedMinPrice || catalogMinPrice) : 0)
+                    value={maxPriceDraft ?? String(selectedMaxPrice)}
+                    onFocus={(event) => {
+                      setMaxPriceDraft(String(selectedMaxPrice))
+                      event.currentTarget.select()
                     }}
+                    onChange={(event) => {
+                      const raw = event.target.value
+                      setMaxPriceDraft(raw)
+                      if (raw === "") {
+                        update("maxPrice", 0)
+                        return
+                      }
+                      const next = Number(raw)
+                      if (Number.isFinite(next)) {
+                        update("maxPrice", next < catalogMaxPrice ? Math.max(next, selectedMinPrice || catalogMinPrice) : 0)
+                      }
+                    }}
+                    onBlur={() => setMaxPriceDraft(null)}
                     className="mt-1 h-11 w-full rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
                   />
                 </label>

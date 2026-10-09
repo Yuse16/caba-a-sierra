@@ -61,7 +61,7 @@ export function buildSearchOptions(entries: {
   type?: string
   amenities?: string[]
   zone?: string
-  pool?: "none" | "standard" | "heated"
+  poolType?: "none" | "standard" | "heated"
 }[]): SearchOptions {
   const cabinTypes = new Set<string>()
   const amenities = new Set<string>()
@@ -81,7 +81,7 @@ export function buildSearchOptions(entries: {
       if ((amount ?? 0) > 0) bedTypes.add(bedType)
     }
     if (entry.zone) zones.add(entry.zone)
-    if (entry.pool) pools.add(entry.pool)
+    if (entry.poolType) pools.add(entry.poolType)
     maxBedrooms = Math.max(maxBedrooms, entry.bedrooms ?? 0)
     maxBeds = Math.max(maxBeds, entry.beds ?? 0)
     maxGuests = Math.max(maxGuests, entry.maxGuests ?? 1)

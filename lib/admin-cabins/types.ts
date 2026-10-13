@@ -103,6 +103,7 @@ export const publicationFieldLabels = {
   checkInTime: "Horario de entrada",
   checkOutTime: "Horario de salida",
   location: "Ubicación o zona",
+  whatsapp: "Número de WhatsApp",
   images: "Al menos una fotografía",
 } as const
 

@@ -12,6 +12,13 @@ import {
   type PublicCabin,
 } from "@/lib/public-cabins"
 
+function formatCabinTime(value: string) {
+  const [hours, minutes] = value.split(":").map(Number)
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return value
+  return new Intl.DateTimeFormat("es-MX", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "UTC" })
+    .format(new Date(Date.UTC(2000, 0, 1, hours, minutes)))
+}
+
 export function CabinCard({
   cabin,
   isFavorite,
@@ -130,6 +137,11 @@ export function CabinCard({
             <Bed className="size-3.5" aria-hidden />
             {cabin.bedrooms}
           </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 rounded-lg bg-secondary/50 px-3 py-2 text-xs">
+          <span><span className="text-muted-foreground">Entrada</span><br /><b>{formatCabinTime(cabin.checkInTime)}</b></span>
+          <span><span className="text-muted-foreground">Salida</span><br /><b>{formatCabinTime(cabin.checkOutTime)}</b></span>
         </div>
 
         <div className="flex flex-wrap gap-1.5">

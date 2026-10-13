@@ -182,3 +182,7 @@
     background-color: var(--primary);
   }
 }
+
+#field-whatsapp {
+  display: none;
+}

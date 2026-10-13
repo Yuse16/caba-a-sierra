@@ -125,7 +125,6 @@ export function getMissingPublicationFields(cabin: AdminCabinInput): Publication
   if (!cabin.checkInTime) missing.push("checkInTime")
   if (!cabin.checkOutTime) missing.push("checkOutTime")
   if (!cabin.location.trim()) missing.push("location")
-  if (!/^\d{10,15}$/.test(cabin.whatsapp.replace(/\D/g, ""))) missing.push("whatsapp")
   if (cabin.images.length === 0 || !cabin.images.some((image) => image.isCover)) missing.push("images")
 
   return missing

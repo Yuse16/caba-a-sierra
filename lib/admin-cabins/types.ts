@@ -103,7 +103,6 @@ export const publicationFieldLabels = {
   checkInTime: "Horario de entrada",
   checkOutTime: "Horario de salida",
   location: "Ubicación o zona",
-  whatsapp: "Número de WhatsApp",
   images: "Al menos una fotografía",
 } as const
 
@@ -125,7 +124,6 @@ export function getMissingPublicationFields(cabin: AdminCabinInput): Publication
   if (!cabin.checkInTime) missing.push("checkInTime")
   if (!cabin.checkOutTime) missing.push("checkOutTime")
   if (!cabin.location.trim()) missing.push("location")
-  if (!/^\d{10,15}$/.test(cabin.whatsapp.replace(/\D/g, ""))) missing.push("whatsapp")
   if (cabin.images.length === 0 || !cabin.images.some((image) => image.isCover)) missing.push("images")
 
   return missing

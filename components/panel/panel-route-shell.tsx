@@ -2,21 +2,25 @@
 
 import { useRouter } from "next/navigation"
 import { AdminPanel } from "@/components/admin/admin-panel"
+import { OwnerContactSearch } from "@/components/panel/owner-contact-search"
 import type { Cabin } from "@/lib/demo-data"
 import type { AdminPanelInitialData } from "@/lib/admin-panel-data"
 
 export function PanelRouteShell({ initialData }: { initialData: AdminPanelInitialData }) {
   const router = useRouter()
   return (
-    <AdminPanel
-      version="start"
-      initialData={initialData}
-      onManageCabins={() => router.push("/panel/cabanas")}
-      onManagePromotions={() => router.push("/panel/promociones")}
-      onManageRequests={() => router.push("/panel/solicitudes")}
-      onManageCustomers={() => router.push("/panel/clientes")}
-      onCreateCabin={() => router.push("/panel/cabanas/nueva")}
-      onEditCabin={(cabin: Cabin) => router.push(`/panel/cabanas/${cabin.id}`)}
-    />
+    <>
+      <OwnerContactSearch cabins={initialData.cabins} />
+      <AdminPanel
+        version="start"
+        initialData={initialData}
+        onManageCabins={() => router.push("/panel/cabanas")}
+        onManagePromotions={() => router.push("/panel/promociones")}
+        onManageRequests={() => router.push("/panel/solicitudes")}
+        onManageCustomers={() => router.push("/panel/clientes")}
+        onCreateCabin={() => router.push("/panel/cabanas/nueva")}
+        onEditCabin={(cabin: Cabin) => router.push(`/panel/cabanas/${cabin.id}`)}
+      />
+    </>
   )
 }

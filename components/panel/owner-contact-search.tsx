@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import { MessageCircle, Phone, Search, X } from "lucide-react"
 import type { Cabin } from "@/lib/demo-data"
 
-type OwnerContact = {
+export type OwnerContact = {
   ownerId: string
   ownerName: string
   ownerPhone: string
@@ -14,6 +14,13 @@ type OwnerContact = {
 
 function normalize(value: string) {
   return value.trim().toLocaleLowerCase("es-MX")
+}
+
+export function matchesOwnerContact(owner: OwnerContact, query: string) {
+  const normalizedQuery = normalize(query)
+  if (!normalizedQuery) return true
+  return [owner.ownerName, owner.ownerPhone, owner.ownerWhatsApp, ...owner.cabinNames]
+    .some((value) => normalize(value).includes(normalizedQuery))
 }
 
 export function OwnerContactSearch({ cabins }: { cabins: Cabin[] }) {
@@ -42,10 +49,7 @@ export function OwnerContactSearch({ cabins }: { cabins: Cabin[] }) {
   const normalizedQuery = normalize(query)
   const results = useMemo(() => {
     if (!normalizedQuery) return []
-    return owners.filter((owner) =>
-      [owner.ownerName, owner.ownerPhone, owner.ownerWhatsApp, ...owner.cabinNames]
-        .some((value) => normalize(value).includes(normalizedQuery)),
-    )
+    return owners.filter((owner) => matchesOwnerContact(owner, normalizedQuery))
   }, [normalizedQuery, owners])
 
   return (

@@ -1,23 +1,8 @@
 import { describe, expect, it } from "vitest"
+import { matchesOwnerContact, type OwnerContact } from "@/components/panel/owner-contact-search"
 
-function normalize(value: string) {
-  return value.trim().toLocaleLowerCase("es-MX")
-}
-
-type OwnerContact = {
-  ownerName: string
-  ownerPhone: string
-  ownerWhatsApp: string
-  cabinNames: string[]
-}
-
-function matchesOwnerContact(owner: OwnerContact, query: string) {
-  const normalizedQuery = normalize(query)
-  return [owner.ownerName, owner.ownerPhone, owner.ownerWhatsApp, ...owner.cabinNames]
-    .some((value) => normalize(value).includes(normalizedQuery))
-}
-
-const owner = {
+const owner: OwnerContact = {
+  ownerId: "owner-1",
   ownerName: "María González",
   ownerPhone: "844 111 2233",
   ownerWhatsApp: "528441112233",
@@ -31,6 +16,10 @@ describe("owner contact search", () => {
 
   it("matches by owner name", () => {
     expect(matchesOwnerContact(owner, "maría")).toBe(true)
+  })
+
+  it("matches by phone", () => {
+    expect(matchesOwnerContact(owner, "111 2233")).toBe(true)
   })
 
   it("does not match unrelated text", () => {

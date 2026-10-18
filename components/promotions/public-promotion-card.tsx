@@ -14,7 +14,7 @@ export function PublicPromotionCard({ promotion, preview = false }: { promotion:
           fill
           unoptimized={promotion.imageUrl.startsWith("data:")}
           sizes="(max-width: 768px) 100vw, 640px"
-          className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+          className="object-contain"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-forest-dark/85 via-forest-dark/20 to-transparent" aria-hidden />
         <div className="absolute inset-x-0 bottom-0 p-5 text-white sm:p-6">

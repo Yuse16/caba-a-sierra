@@ -19,6 +19,13 @@ const formControlClass =
 const dateControlClass =
   "h-11 w-full appearance-auto rounded-lg border border-border bg-background pl-9 pr-2 text-sm text-foreground outline-none [color-scheme:light] focus:border-ring focus:ring-2 focus:ring-ring/20 sm:h-10"
 
+function formatCabinTime(value: string) {
+  const [hours, minutes] = value.split(":").map(Number)
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return value
+  return new Intl.DateTimeFormat("es-MX", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "UTC" })
+    .format(new Date(Date.UTC(2000, 0, 1, hours, minutes)))
+}
+
 export function CabinDetailsModal({
   cabin,
   bookingDefaults,
@@ -233,6 +240,16 @@ export function CabinDetailsModal({
               <div className="flex flex-col items-center gap-1"><Users className="size-4 text-primary" aria-hidden /><b>{cabin.minGuests}-{cabin.maxGuests}</b><span className="text-xs text-muted-foreground">Huéspedes</span></div>
               <div className="flex flex-col items-center gap-1"><Bed className="size-4 text-primary" aria-hidden /><b>{cabin.bedrooms}</b><span className="text-xs text-muted-foreground">Habitaciones</span></div>
               <div className="flex flex-col items-center gap-1"><Bath className="size-4 text-primary" aria-hidden /><b>{cabin.bathrooms}</b><span className="text-xs text-muted-foreground">Baños</span></div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 rounded-xl border border-border bg-secondary/50 p-3 text-sm">
+              <div className="flex items-center gap-2">
+                <CalendarDays className="size-4 shrink-0 text-primary" aria-hidden />
+                <div><span className="text-xs text-muted-foreground">Entrada</span><p className="font-semibold text-foreground">{formatCabinTime(cabin.checkInTime)}</p></div>
+              </div>
+              <div className="flex items-center gap-2">
+                <CalendarDays className="size-4 shrink-0 text-primary" aria-hidden />
+                <div><span className="text-xs text-muted-foreground">Salida</span><p className="font-semibold text-foreground">{formatCabinTime(cabin.checkOutTime)}</p></div>
+              </div>
             </div>
             <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3">
               <p className="flex items-center gap-2 text-sm text-foreground"><MapPin className="size-4 text-primary" aria-hidden />Zona: <b>{cabin.zone || cabin.location}</b></p>

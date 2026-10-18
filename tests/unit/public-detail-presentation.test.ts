@@ -68,5 +68,9 @@ describe("public promotion image presentation", () => {
 
     expect(html).toContain("object-contain")
     expect(html).not.toContain("object-cover")
+    expect(html).toContain('data-promotion-media="true"')
+    expect(html).toContain('data-promotion-content="true"')
+    expect(html.indexOf('data-promotion-media="true"')).toBeLessThan(html.indexOf('data-promotion-content="true"'))
+    expect(html).not.toContain("bg-gradient-to-t")
   })
 })

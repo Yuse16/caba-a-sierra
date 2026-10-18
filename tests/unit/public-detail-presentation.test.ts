@@ -76,16 +76,18 @@ describe("public promotion image presentation", () => {
     expect(html).not.toContain("bg-gradient-to-t")
   })
 
-  it("keeps a premium DUPEZ-green Sierra backdrop behind contained promotion artwork", () => {
+  it("uses a bold DUPEZ-green petroglyph mountain-and-fauna backdrop", () => {
     const source = readFileSync(join(process.cwd(), "components/promotions/public-promotion-card.tsx"), "utf8")
 
-    expect(source).toContain('data-promotion-landscape="premium"')
+    expect(source).toContain('data-promotion-landscape="petroglyph"')
     expect(source).toContain('aria-hidden="true"')
-    expect(source).toContain('opacity-[0.16]')
+    expect(source).toContain('opacity-[0.28]')
     expect(source).toContain('stroke="#315f46"')
-    expect(source).toContain('strokeWidth="1.8"')
-    expect(source).toContain('data-topographic-lines="true"')
+    expect(source).toContain('strokeWidth="8"')
+    expect(source).toContain('data-petroglyph-mountains="true"')
+    expect(source).toContain('data-petroglyph-fauna="true"')
+    expect(source).not.toContain('data-topographic-lines="true"')
     expect(source).toContain('object-contain z-10')
-    expect(source.indexOf('data-promotion-landscape="premium"')).toBeLessThan(source.indexOf('<Image'))
+    expect(source.indexOf('data-promotion-landscape="petroglyph"')).toBeLessThan(source.indexOf('<Image'))
   })
 })

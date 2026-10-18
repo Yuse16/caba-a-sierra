@@ -12,38 +12,44 @@ export function PublicPromotionCard({ promotion, preview = false }: { promotion:
         className="relative aspect-[16/9] overflow-hidden rounded-2xl border border-forest-dark/10 bg-[#f4f0e7] shadow-[0_12px_36px_rgba(31,60,43,0.1)]"
       >
         <div
-          data-promotion-landscape="premium"
+          data-promotion-landscape="petroglyph"
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-0 opacity-[0.16]"
+          className="pointer-events-none absolute inset-0 z-0 opacity-[0.28]"
         >
           <svg viewBox="0 0 900 506" className="h-full w-full" fill="none" xmlns="http://www.w3.org/2000/svg">
             <g
-              data-topographic-lines="true"
+              data-petroglyph-mountains="true"
               stroke="#315f46"
-              strokeWidth="1.8"
+              strokeWidth="8"
               strokeLinecap="round"
               strokeLinejoin="round"
-              opacity="0.72"
             >
-              <path d="M-40 106C78 54 176 56 267 100C352 141 420 137 500 102C595 61 693 66 940 130" />
-              <path d="M-55 137C59 91 164 91 257 129C350 168 423 164 514 128C612 90 728 96 953 158" />
-              <path d="M-66 170C47 131 159 128 250 160C352 197 435 196 527 163C628 127 744 130 965 191" />
-              <path d="M-76 204C43 171 153 167 246 194C346 224 442 228 542 198C648 166 768 166 978 224" />
-              <path d="M-92 239C34 214 151 208 248 231C356 257 452 261 555 235C672 206 794 206 994 258" />
-              <path d="M-96 281C20 260 138 256 245 274C357 293 464 300 575 280C690 259 816 256 998 300" />
+              <path d="M-25 360L92 256L162 314L278 194L370 300L454 226L552 318L665 205L754 292L842 232L930 315" />
+              <path d="M-20 404C92 372 185 383 278 356C372 328 455 335 548 366C644 398 742 365 930 350" />
+              <path d="M72 274L92 256L111 274M256 217L278 194L299 218M642 229L665 205L688 231M822 254L842 232L862 254" />
             </g>
 
-            <g stroke="#315f46" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M0 365C78 331 135 318 198 321C246 323 285 301 324 267C365 231 405 199 449 207C490 214 524 260 557 281C600 309 640 296 680 258C720 221 760 206 799 224C834 241 865 278 900 294" />
-              <path d="M0 404C93 377 177 365 264 372C348 378 431 362 515 340C607 315 697 318 900 359" opacity="0.78" />
-              <path d="M0 443C122 418 240 416 346 428C476 443 592 430 704 406C777 391 840 390 900 400" opacity="0.55" />
-              <path d="M86 418L109 359L132 418M96 393L109 366L123 393M103 378L109 365L116 378M109 359V438" />
-              <path d="M153 434L175 376L198 434M164 408L175 382L187 408M169 394L175 381L182 394M175 376V449" />
-              <path d="M720 423L743 363L767 423M731 397L743 370L756 397M737 383L743 369L750 383M743 363V442" />
-              <path d="M794 439L815 383L837 439M805 414L815 389L827 414M810 400L815 388L821 400M815 383V452" />
-              <path d="M244 421C254 406 269 397 286 397C303 397 319 406 329 420C334 427 336 437 333 446M246 421C242 428 241 438 244 447M263 444L261 463M314 442L318 461M254 406C247 398 242 389 242 380M252 405C245 393 240 382 238 371M242 380L232 374M242 380L250 371M238 371L229 367M238 371L245 361M329 420C339 418 349 421 356 427" />
-              <path d="M356 427C350 430 346 436 345 443" />
-              <path d="M400 171C420 156 440 154 460 169M452 171C470 157 489 157 507 171" opacity="0.8" />
+            <g
+              data-petroglyph-fauna="true"
+              stroke="#315f46"
+              strokeWidth="8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M116 396C132 374 162 369 187 382C207 392 217 411 210 430C202 451 174 460 148 450C125 441 109 420 116 396Z" />
+              <path d="M137 447L132 475M190 447L195 475M116 399L97 390M206 399L225 386" />
+              <path d="M145 377L132 353M158 373L156 344M171 377L185 351M132 353L117 347M132 353L126 336M156 344L146 331M156 344L166 329M185 351L199 345M185 351L191 333" />
+
+              <path d="M690 403C707 381 744 378 767 394C785 407 791 431 779 448C766 467 730 468 706 452C685 439 678 418 690 403Z" />
+              <path d="M704 451L700 474M761 449L766 474M686 406L673 395M779 404L795 392" />
+              <circle cx="781" cy="394" r="16" />
+              <path d="M775 379L769 364M790 382L802 369" />
+
+              <path d="M420 118C439 95 468 95 486 117M486 117C505 95 534 95 551 118" />
+              <path d="M486 117L486 143" />
+
+              <path d="M318 436C328 424 344 419 360 423C375 427 386 438 389 452M318 436L306 448M389 452L402 443" />
+              <path d="M334 428L331 408M365 428L370 408" />
             </g>
           </svg>
         </div>

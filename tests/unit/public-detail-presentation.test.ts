@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import React from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
@@ -72,5 +74,16 @@ describe("public promotion image presentation", () => {
     expect(html).toContain('data-promotion-content="true"')
     expect(html.indexOf('data-promotion-media="true"')).toBeLessThan(html.indexOf('data-promotion-content="true"'))
     expect(html).not.toContain("bg-gradient-to-t")
+  })
+
+  it("keeps a subtle Sierra line-art backdrop behind contained promotion artwork", () => {
+    const source = readFileSync(join(process.cwd(), "components/promotions/public-promotion-card.tsx"), "utf8")
+
+    expect(source).toContain('data-promotion-landscape="true"')
+    expect(source).toContain('aria-hidden="true"')
+    expect(source).toContain('opacity-[0.12]')
+    expect(source).toContain('stroke="currentColor"')
+    expect(source).toContain('object-contain z-10')
+    expect(source.indexOf('data-promotion-landscape="true"')).toBeLessThan(source.indexOf('<Image'))
   })
 })

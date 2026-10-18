@@ -68,26 +68,26 @@ describe("public promotion image presentation", () => {
       preview: true,
     }))
 
-    expect(html).toContain("object-contain")
-    expect(html).not.toContain("object-cover")
+    expect(html).toContain('data-promotion-artwork="true"')
+    expect(html).toContain("object-contain z-10")
     expect(html).toContain('data-promotion-media="true"')
     expect(html).toContain('data-promotion-content="true"')
     expect(html.indexOf('data-promotion-media="true"')).toBeLessThan(html.indexOf('data-promotion-content="true"'))
     expect(html).not.toContain("bg-gradient-to-t")
   })
 
-  it("uses a bold DUPEZ-green petroglyph mountain-and-fauna backdrop", () => {
+  it("uses the client reference artwork as a DUPEZ-green secondary backdrop", () => {
     const source = readFileSync(join(process.cwd(), "components/promotions/public-promotion-card.tsx"), "utf8")
 
-    expect(source).toContain('data-promotion-landscape="petroglyph"')
-    expect(source).toContain('aria-hidden="true"')
-    expect(source).toContain('opacity-[0.28]')
-    expect(source).toContain('stroke="#315f46"')
-    expect(source).toContain('strokeWidth="8"')
-    expect(source).toContain('data-petroglyph-mountains="true"')
-    expect(source).toContain('data-petroglyph-fauna="true"')
-    expect(source).not.toContain('data-topographic-lines="true"')
+    expect(source).toContain('data-promotion-landscape="reference"')
+    expect(source).toContain('/promotions/dupez-reference-bg.jpg')
+    expect(source).toContain('bg-[#315f46]')
+    expect(source).toContain('mix-blend-screen')
+    expect(source).toContain('opacity-[0.44]')
+    expect(source).not.toContain('data-petroglyph-mountains="true"')
+    expect(source).not.toContain('<svg')
+    expect(source).toContain('data-promotion-artwork="true"')
     expect(source).toContain('object-contain z-10')
-    expect(source.indexOf('data-promotion-landscape="petroglyph"')).toBeLessThan(source.indexOf('<Image'))
+    expect(source.indexOf('data-promotion-landscape="reference"')).toBeLessThan(source.indexOf('data-promotion-artwork="true"'))
   })
 })

@@ -37,6 +37,9 @@ export function CabinCard({
   const suppressImageClickUntil = useRef(0)
   const activeImage = gallery[Math.min(activeIndex, gallery.length - 1)] ?? gallery[0]
   const moveGallery = (direction: -1 | 1) => setActiveIndex((current) => (current + direction + gallery.length) % gallery.length)
+  const amenityPreviewLimit = 5
+  const visibleAmenities = cabin.amenities.slice(0, amenityPreviewLimit)
+  const hiddenAmenityCount = Math.max(0, cabin.amenities.length - visibleAmenities.length)
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-forest-dark/10 bg-card shadow-[0_8px_30px_rgba(31,60,43,0.07)] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(31,60,43,0.12)]">
@@ -144,8 +147,8 @@ export function CabinCard({
           <span><span className="text-muted-foreground">Salida</span><br /><b>{formatCabinTime(cabin.checkOutTime)}</b></span>
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
-          {cabin.amenities.map((a) => (
+        <div className="flex flex-wrap gap-1.5" data-cabin-amenities-summary="true">
+          {visibleAmenities.map((a) => (
             <span
               key={a}
               className="rounded-md bg-secondary px-2 py-0.5 text-[11px] font-medium text-secondary-foreground"
@@ -153,6 +156,11 @@ export function CabinCard({
               {a}
             </span>
           ))}
+          {hiddenAmenityCount > 0 && (
+            <span className="rounded-md border border-forest-dark/10 bg-background px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+              +{hiddenAmenityCount} {hiddenAmenityCount === 1 ? "amenidad" : "amenidades"}
+            </span>
+          )}
         </div>
 
         <div className="mt-auto flex items-end justify-between gap-2 pt-2">

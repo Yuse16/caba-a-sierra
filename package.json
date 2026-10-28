@@ -16,7 +16,8 @@
     "test:e2e:staging": "node --env-file=.env.staging.local scripts/run-staging-e2e.mjs",
     "test:rls": "supabase test db",
     "test:security-bundle": "node scripts/check-client-bundles.mjs",
-    "media:cleanup": "node --env-file=.env.local scripts/cleanup-stale-media.mjs"
+    "media:cleanup": "node --env-file=.env.local scripts/cleanup-stale-media.mjs",
+    "build:probe": "node -e \"console.log(\"probe build ok\")\""
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

@@ -17,7 +17,7 @@
     "test:rls": "supabase test db",
     "test:security-bundle": "node scripts/check-client-bundles.mjs",
     "media:cleanup": "node --env-file=.env.local scripts/cleanup-stale-media.mjs",
-    "build:probe": "node -e \"console.log(\"probe build ok\")\""
+    "build:probe": "node -e \"console.log('probe build ok')\""
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

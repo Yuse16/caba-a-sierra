@@ -65,6 +65,7 @@ function contentSecurityPolicy() {
 }
 
 const nextConfig = {
+  output: "standalone",
   poweredByHeader: false,
   serverExternalPackages: ["sharp"],
   experimental: {

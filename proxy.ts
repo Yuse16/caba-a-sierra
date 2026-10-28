@@ -1,9 +1,14 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { updateSupabaseSession } from "@/lib/supabase/proxy"
+import { canonicalWwwRedirect } from "@/lib/routing/canonical-host"
 
 export function proxy(request: NextRequest) {
   const host = request.headers.get("host") ?? ""
+  const canonicalUrl = canonicalWwwRedirect(host, request.nextUrl.pathname, request.nextUrl.search)
+  if (canonicalUrl) {
+    return NextResponse.redirect(canonicalUrl, 308)
+  }
   if (host.startsWith("panel.") && request.nextUrl.pathname === "/") {
     const panelUrl = new URL("/panel", `https://${host}`)
     return NextResponse.redirect(panelUrl)

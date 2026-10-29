@@ -28,6 +28,7 @@ describe("configuración ausente: /panel bloqueado con error=configuration", () 
     expect(isPanelRoute("/")).toBe(false)
     expect(isPanelRoute("/login")).toBe(false)
     expect(isPanelRoute("/panelista")).toBe(false)
+    expect(isPanelRoute("/panel/manifest.webmanifest")).toBe(false)
   })
 
   it("redirige cualquier ruta privada a /login?error=configuration", () => {

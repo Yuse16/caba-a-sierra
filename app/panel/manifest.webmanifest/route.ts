@@ -6,7 +6,7 @@ export function GET() {
     name: "Panel DUPEZ — Administración",
     short_name: "Panel DUPEZ",
     description: "Panel de administración para gestionar cabañas, reservaciones y clientes.",
-    start_url: "/",
+    start_url: "/panel",
     scope: "/",
     display: "standalone",
     background_color: "#f5f1e7",

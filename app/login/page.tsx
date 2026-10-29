@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
     robots: { index: false, follow: false },
     ...(isPanel
       ? {
-          manifest: "/manifest.webmanifest",
+          manifest: "/panel/manifest.webmanifest",
           appleWebApp: { capable: true, statusBarStyle: "default", title: "Panel DUPEZ" },
           icons: { icon: "/panel-icon-192.png", apple: "/panel-icon-512.png" },
           applicationName: "Panel DUPEZ",

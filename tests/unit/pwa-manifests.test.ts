@@ -15,6 +15,7 @@ describe("PWA manifests", () => {
   it("la PWA del panel arranca en /panel y conserva login dentro del scope", async () => {
     const response = getPanelManifest()
     const manifest = await response.json()
+    expect(response.headers.get("content-type")).toContain("application/manifest+json")
     expect(manifest.id).toBe("dupez-panel")
     expect(manifest.start_url).toBe("/panel")
     expect(manifest.scope).toBe("/")

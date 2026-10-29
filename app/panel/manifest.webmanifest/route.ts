@@ -30,5 +30,10 @@ export function GET() {
         purpose: "maskable",
       },
     ],
+  }, {
+    headers: {
+      "Content-Type": "application/manifest+json",
+      "Cache-Control": "public, max-age=0, must-revalidate",
+    },
   })
 }

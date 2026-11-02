@@ -1,12 +1,13 @@
 import "server-only"
 
+import { unstable_cache } from "next/cache"
 import type { PublicCabin } from "@/lib/public-cabins"
 import type { PublicPromotion } from "@/lib/public-promotions"
 import { hasSupabaseConfig } from "@/lib/supabase/config"
 import { createSupabasePublicClient } from "@/lib/supabase/public.server"
 import { parsePublicCabinGallery } from "@/lib/public-cabin-gallery"
 
-export async function getPublicCabins(): Promise<PublicCabin[]> {
+async function loadPublicCabins(): Promise<PublicCabin[]> {
   if (!hasSupabaseConfig()) {
     return []
   }
@@ -47,7 +48,7 @@ export async function getPublicCabins(): Promise<PublicCabin[]> {
   })
 }
 
-export async function getPublicPromotions(): Promise<PublicPromotion[]> {
+async function loadPublicPromotions(): Promise<PublicPromotion[]> {
   if (!hasSupabaseConfig()) {
     return []
   }
@@ -66,3 +67,13 @@ export async function getPublicPromotions(): Promise<PublicPromotion[]> {
     ? [{ id: row.id, name: row.name, imageUrl: row.image_url, imageAlt: row.image_alt_text ?? "", shortDescription: row.short_description ?? "", ctaLabel: row.cta_label ?? "", href: row.href ?? "" } satisfies PublicPromotion]
     : [])
 }
+
+export const getPublicCabins = unstable_cache(loadPublicCabins, ["public-cabins"], {
+  revalidate: 300,
+  tags: ["public-cabins"],
+})
+
+export const getPublicPromotions = unstable_cache(loadPublicPromotions, ["public-promotions"], {
+  revalidate: 300,
+  tags: ["public-promotions"],
+})

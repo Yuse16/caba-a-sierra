@@ -39,7 +39,6 @@ export function PublicHeader({
       <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-3 px-4 sm:px-6 lg:gap-5 lg:px-8">
         <a
           href="#inicio"
-          aria-label={`${businessName}, ir al inicio`}
           className={`flex min-w-0 items-center gap-3 rounded-lg ${focusClasses}`}
         >
           <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-sm">

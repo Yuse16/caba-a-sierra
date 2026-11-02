@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
 import { createAdminPromotionRepository } from "@/lib/admin-promotions/repository.server"
 import { getEffectivePromotionStatus } from "@/lib/admin-promotions/service"
 import type { AdminPromotion, AdminPromotionInput, AdminPromotionStatus } from "@/lib/admin-promotions/types"
@@ -26,6 +26,7 @@ function publicMessage(error: unknown, fallback: string) {
 function refreshPromotionPages() {
   revalidatePath("/")
   revalidatePath("/panel/promociones")
+  revalidateTag("public-promotions", "max")
 }
 
 export async function loadAdminPromotionsAction(): Promise<PromotionsActionResult> {

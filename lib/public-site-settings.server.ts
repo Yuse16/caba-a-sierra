@@ -1,10 +1,11 @@
 import "server-only"
 
+import { unstable_cache } from "next/cache"
 import { hasSupabaseConfig } from "@/lib/supabase/config"
 import { createSupabasePublicClient } from "@/lib/supabase/public.server"
 import { defaultPublicSiteSettings, officeMapsValid, type PublicSiteSettings } from "@/lib/public-site-settings"
 
-export async function getPublicSiteSettings() {
+async function loadPublicSiteSettings() {
   if (!hasSupabaseConfig()) return defaultPublicSiteSettings
 
   const supabase = createSupabasePublicClient()
@@ -48,3 +49,8 @@ export async function getPublicSiteSettings() {
     timezone: typeof row.timezone === "string" && row.timezone.trim() ? row.timezone : defaultPublicSiteSettings.timezone,
   } satisfies PublicSiteSettings
 }
+
+export const getPublicSiteSettings = unstable_cache(loadPublicSiteSettings, ["public-site-config"], {
+  revalidate: 300,
+  tags: ["public-site-config"],
+})

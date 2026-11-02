@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
 import { createAdminCabinRepository } from "@/lib/admin-cabins/repository.server"
 import { getMissingPublicationFields, type AdminCabin, type AdminCabinInput, type AdminCabinStatus } from "@/lib/admin-cabins/types"
 import { requirePermission, type PanelSession } from "@/lib/auth/session"
@@ -31,6 +31,7 @@ function safeMutationMessage(error: unknown, fallback: string) {
 function refreshCabinPages() {
   revalidatePath("/")
   revalidatePath("/panel/cabanas")
+  revalidateTag("public-cabins", "max")
 }
 
 export async function loadAdminCabinsAction(): Promise<CabinsActionResult> {

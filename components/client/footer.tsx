@@ -23,7 +23,6 @@ export function Footer({ settings }: { settings: PublicSiteSettings }) {
           <div>
             <a
               href="#inicio"
-              aria-label={`${settings.businessName}, volver al inicio`}
               className="inline-flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-[#14261b]"
             >
               <span className="inline-flex size-11 items-center justify-center rounded-xl bg-white/10 text-[#f4d58b]">

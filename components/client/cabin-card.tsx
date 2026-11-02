@@ -10,26 +10,53 @@ import {
   publicCabinStatusLabel,
   publicCabinStatusTone,
   type PublicCabin,
+  type PublicCabinImage,
 } from "@/lib/public-cabins"
+import type { PublicCabinSummary } from "@/lib/public-cabin-summary"
 
 export function CabinCard({
   cabin,
   isFavorite,
   onToggleFavorite,
   onViewDetails,
+  onLoadDetail,
 }: {
-  cabin: PublicCabin
+  cabin: PublicCabinSummary
   isFavorite: boolean
   onToggleFavorite: (id: string) => void
-  onViewDetails: (cabin: PublicCabin) => void
+  onViewDetails: (id: string) => void
+  onLoadDetail: (id: string) => Promise<PublicCabin | null>
 }) {
-  const gallery = cabin.images.length ? cabin.images : [{ id: `${cabin.id}-cover`, url: cabin.image, altText: `Foto de ${cabin.name}`, position: 1, isCover: true }]
-  const coverIndex = Math.max(0, gallery.findIndex((image) => image.isCover))
-  const [activeIndex, setActiveIndex] = useState(coverIndex)
+  const coverImage: PublicCabinImage = { id: `${cabin.id}-cover`, url: cabin.image, altText: `Foto de ${cabin.name}`, position: 1, isCover: true }
+  const [gallery, setGallery] = useState<PublicCabinImage[]>([coverImage])
+  const [galleryLoaded, setGalleryLoaded] = useState(cabin.imageCount <= 1)
+  const [loadingGallery, setLoadingGallery] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(0)
   const touchStartX = useRef<number | null>(null)
   const suppressImageClickUntil = useRef(0)
-  const activeImage = gallery[Math.min(activeIndex, gallery.length - 1)] ?? gallery[0]
-  const moveGallery = (direction: -1 | 1) => setActiveIndex((current) => (current + direction + gallery.length) % gallery.length)
+  const activeImage = gallery[Math.min(activeIndex, gallery.length - 1)] ?? coverImage
+  const displayedImageCount = galleryLoaded ? gallery.length : cabin.imageCount
+
+  const loadGallery = async () => {
+    if (galleryLoaded) return gallery
+    setLoadingGallery(true)
+    try {
+      const detail = await onLoadDetail(cabin.id)
+      if (!detail) return gallery
+      const nextGallery = detail.images.length ? detail.images : [coverImage]
+      setGallery(nextGallery)
+      setGalleryLoaded(true)
+      return nextGallery
+    } finally {
+      setLoadingGallery(false)
+    }
+  }
+
+  const moveGallery = async (direction: -1 | 1) => {
+    const targetGallery = await loadGallery()
+    if (targetGallery.length < 2) return
+    setActiveIndex((current) => (current + direction + targetGallery.length) % targetGallery.length)
+  }
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-forest-dark/10 bg-card shadow-[0_8px_30px_rgba(31,60,43,0.07)] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(31,60,43,0.12)]">
@@ -37,12 +64,12 @@ export function CabinCard({
         className="relative aspect-[4/3] w-full overflow-hidden"
         onTouchStart={(event) => { touchStartX.current = event.changedTouches[0]?.clientX ?? null }}
         onTouchEnd={(event) => {
-          if (touchStartX.current === null || gallery.length < 2) return
+          if (touchStartX.current === null || displayedImageCount < 2) return
           const distance = (event.changedTouches[0]?.clientX ?? touchStartX.current) - touchStartX.current
           touchStartX.current = null
           if (Math.abs(distance) >= 40) {
             suppressImageClickUntil.current = Date.now() + 500
-            moveGallery(distance > 0 ? -1 : 1)
+            void moveGallery(distance > 0 ? -1 : 1)
           }
         }}
       >
@@ -50,7 +77,7 @@ export function CabinCard({
           type="button"
           onClick={() => {
             if (Date.now() < suppressImageClickUntil.current) return
-            onViewDetails(cabin)
+            onViewDetails(cabin.id)
           }}
           aria-label={`Ver detalles de ${cabin.name}`}
           className="absolute inset-0 z-0 cursor-zoom-in rounded-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gold"
@@ -64,10 +91,10 @@ export function CabinCard({
             className="object-cover"
           />
         </button>
-        {gallery.length > 1 && <>
-          <button type="button" onClick={(event) => { event.stopPropagation(); moveGallery(-1) }} aria-label={`Fotografía anterior de ${cabin.name}`} className="absolute left-3 top-1/2 z-10 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/95 text-foreground shadow-md transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"><ChevronLeft className="size-5" aria-hidden /></button>
-          <button type="button" onClick={(event) => { event.stopPropagation(); moveGallery(1) }} aria-label={`Fotografía siguiente de ${cabin.name}`} className="absolute right-3 top-1/2 z-10 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/95 text-foreground shadow-md transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"><ChevronRight className="size-5" aria-hidden /></button>
-          <span className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/65 px-2.5 py-1 text-xs font-semibold text-white" aria-live="polite">{activeIndex + 1} / {gallery.length}</span>
+        {displayedImageCount > 1 && <>
+          <button type="button" disabled={loadingGallery} onClick={(event) => { event.stopPropagation(); void moveGallery(-1) }} aria-label={`Fotografía anterior de ${cabin.name}`} className="absolute left-3 top-1/2 z-10 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/95 text-foreground shadow-md transition hover:bg-background disabled:cursor-wait disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"><ChevronLeft className="size-5" aria-hidden /></button>
+          <button type="button" disabled={loadingGallery} onClick={(event) => { event.stopPropagation(); void moveGallery(1) }} aria-label={`Fotografía siguiente de ${cabin.name}`} className="absolute right-3 top-1/2 z-10 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/95 text-foreground shadow-md transition hover:bg-background disabled:cursor-wait disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"><ChevronRight className="size-5" aria-hidden /></button>
+          <span className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/65 px-2.5 py-1 text-xs font-semibold text-white" aria-live="polite">{activeIndex + 1} / {displayedImageCount}</span>
         </>}
         {/* status / badge top-left */}
         <div className="absolute left-3 right-16 top-3 z-10 flex flex-wrap items-start gap-2">
@@ -168,14 +195,14 @@ export function CabinCard({
         <div className="mt-1 grid gap-2 sm:grid-cols-2">
           <button
             type="button"
-            onClick={() => onViewDetails(cabin)}
+            onClick={() => onViewDetails(cabin.id)}
             className="min-h-11 rounded-xl bg-primary px-3 py-2 text-sm font-bold text-white transition-colors hover:bg-forest-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
           >
             Consultar disponibilidad
           </button>
           <button
             type="button"
-            onClick={() => onViewDetails(cabin)}
+            onClick={() => onViewDetails(cabin.id)}
             className="min-h-11 rounded-xl border border-border bg-background px-3 py-2 text-sm font-bold text-foreground transition-colors hover:border-primary hover:bg-secondary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
           >
             Ver detalles

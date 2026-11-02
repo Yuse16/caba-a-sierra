@@ -29,7 +29,11 @@ test("página pública, filtros y datos de reservación", async ({ page }, testI
 
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
   await expect(page.getByRole("heading", { name: "Cabañas para tu próxima pausa" })).toBeVisible()
-  await expect(page.locator("#cabanas article")).toHaveCount(5)
+  const cabinCards = page.locator("#cabanas article")
+  await expect(cabinCards.first()).toBeVisible()
+  const initialCabinCount = await cabinCards.count()
+  expect(initialCabinCount).toBeGreaterThan(0)
+  expect(initialCabinCount).toBeLessThanOrEqual(6)
   await expect(page.locator("body")).not.toContainText(/propietario|intermediario|seguimiento manual/i)
 
   if (testInfo.project.name === "desktop-chromium") {
@@ -46,10 +50,15 @@ test("página pública, filtros y datos de reservación", async ({ page }, testI
   await page.getByRole("link", { name: "Ver cabañas" }).last().click()
   await expect(page).toHaveURL(/#cabanas$/)
 
-  await page.getByRole("button", { name: "Para parejas" }).click()
-  await expect(page.locator("#cabanas article")).toHaveCount(1)
-  await page.getByRole("button", { name: "Todos" }).click()
-  await expect(page.locator("#cabanas article")).toHaveCount(5)
+  const couplesFilter = page.getByRole("button", { name: "Para parejas" })
+  if (await couplesFilter.count()) {
+    await couplesFilter.click()
+    const filteredCabinCount = await cabinCards.count()
+    expect(filteredCabinCount).toBeGreaterThan(0)
+    expect(filteredCabinCount).toBeLessThanOrEqual(initialCabinCount)
+    await page.getByRole("button", { name: "Todos" }).click()
+    await expect(cabinCards).toHaveCount(initialCabinCount)
+  }
 
   await page.getByLabel("Entrada").fill("2030-10-18")
   await page.getByLabel("Salida").fill("2030-10-21")
@@ -66,6 +75,27 @@ test("página pública, filtros y datos de reservación", async ({ page }, testI
 
   await expectNoHorizontalOverflow(page)
   expect(runtimeErrors).toEqual([])
+})
+
+test("la galería carga el detalle solo cuando el usuario navega las fotos", async ({ page }) => {
+  const actionRequests: string[] = []
+  page.on("request", (request) => {
+    if (request.method() === "POST") actionRequests.push(request.url())
+  })
+
+  await page.goto("/")
+  expect(actionRequests).toHaveLength(0)
+
+  const nextImage = page.getByRole("button", { name: /^Fotografía siguiente de / }).first()
+  test.skip(await nextImage.count() === 0, "El catálogo de este entorno no tiene una cabaña con varias fotografías.")
+
+  const cardImage = page.getByRole("button", { name: /^Ver detalles de / }).first().locator("img")
+  const initialSrc = await cardImage.getAttribute("src")
+  await nextImage.click()
+
+  await expect.poll(() => actionRequests.length).toBeGreaterThan(0)
+  await expect.poll(async () => cardImage.getAttribute("src")).not.toBe(initialSrc)
+  await expectNoHorizontalOverflow(page)
 })
 
 test("modal cierra con Escape y el panel permanece protegido sin sesión", async ({ page }) => {

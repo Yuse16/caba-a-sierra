@@ -24,6 +24,8 @@ import {
   UsersRound,
 } from "lucide-react"
 import type { PublicCabin } from "@/lib/public-cabins"
+import type { PublicCabinSummary } from "@/lib/public-cabin-summary"
+import { getPublicCabinDetailAction } from "@/app/actions/public-cabin-details"
 import type { PublicSiteSettings } from "@/lib/public-site-settings"
 import {
   buildSearchOptions,
@@ -127,7 +129,7 @@ export function ClientPage({
   settings,
   initialSearch,
 }: {
-  cabins: PublicCabin[]
+  cabins: PublicCabinSummary[]
   promotions: PublicPromotion[]
   settings: PublicSiteSettings
   initialSearch: ClientSearchState
@@ -141,11 +143,13 @@ export function ClientPage({
   const [favoritesOnly, setFavoritesOnly] = useState(false)
   const [showAll, setShowAll] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
+  const detailCacheRef = useRef(new Map<string, PublicCabin>())
+  const pendingDetailRef = useRef(new Map<string, Promise<PublicCabin | null>>())
 
   const cabinOptions = useMemo(() => buildSearchOptions(cabins), [cabins])
 
   const availableCategories = useMemo(() => {
-    const seen = new Set<PublicCabin["categories"][number]>()
+    const seen = new Set<PublicCabinSummary["categories"][number]>()
     for (const cabin of cabins) for (const c of cabin.categories) seen.add(c)
     return [...seen]
   }, [cabins])
@@ -153,6 +157,39 @@ export function ClientPage({
   const showNotice = (message: string) => {
     setNotice(message)
     window.setTimeout(() => setNotice(null), 3000)
+  }
+
+  const loadCabinDetail = async (id: string): Promise<PublicCabin | null> => {
+    const cached = detailCacheRef.current.get(id)
+    if (cached) return cached
+
+    const pending = pendingDetailRef.current.get(id)
+    if (pending) return pending
+
+    const request = getPublicCabinDetailAction(id)
+      .then((result) => {
+        if (!result.ok) {
+          showNotice(result.message)
+          return null
+        }
+        detailCacheRef.current.set(id, result.data)
+        return result.data
+      })
+      .catch(() => {
+        showNotice("No pudimos cargar los detalles de la cabaña.")
+        return null
+      })
+      .finally(() => {
+        pendingDetailRef.current.delete(id)
+      })
+
+    pendingDetailRef.current.set(id, request)
+    return request
+  }
+
+  const openCabinDetails = async (id: string) => {
+    const detail = await loadCabinDetail(id)
+    if (detail) setSelected(detail)
   }
 
   const updateSearch = (next: Partial<ClientSearchState>) => {
@@ -186,7 +223,7 @@ export function ClientPage({
 
     if (category !== "todos") {
       list = list.filter((cabin) =>
-        cabin.categories.includes(category as PublicCabin["categories"][number]),
+        cabin.categories.includes(category as PublicCabinSummary["categories"][number]),
       )
     }
 
@@ -441,7 +478,8 @@ export function ClientPage({
                     cabin={cabin}
                     isFavorite={favorites.has(cabin.id)}
                     onToggleFavorite={toggleFavorite}
-                    onViewDetails={setSelected}
+                    onViewDetails={(id) => { void openCabinDetails(id) }}
+                    onLoadDetail={loadCabinDetail}
                   />
                 ))}
               </div>
@@ -561,7 +599,7 @@ export function ClientPage({
                     <span className="inline-flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
                       {step.icon}
                     </span>
-                    <span className="font-serif text-3xl font-semibold text-gold-foreground/45">{step.number}</span>
+                    <span className="font-serif text-3xl font-semibold text-gold-foreground/60">{step.number}</span>
                   </div>
                   <h3 className="mt-5 text-lg font-bold text-forest-dark">{step.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{step.description}</p>

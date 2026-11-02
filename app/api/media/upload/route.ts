@@ -2,17 +2,13 @@ import { NextResponse } from "next/server"
 import { requirePermission } from "@/lib/auth/session"
 import { uploadCabinAsset } from "@/lib/media/media-storage.server"
 import { MAX_MEDIA_BYTES } from "@/lib/media/image-validation"
+import { assertSameOrigin } from "@/lib/http/same-origin"
 
 export const runtime = "nodejs"
 
 const MAX_MULTIPART_BYTES = MAX_MEDIA_BYTES + 512 * 1024
 const MAX_CONCURRENT_UPLOADS = 2
 let activeUploads = 0
-
-function assertSameOrigin(request: Request) {
-  const origin = request.headers.get("origin")
-  if (!origin || origin !== new URL(request.url).origin) throw new Error("La solicitud de carga no tiene un origen válido.")
-}
 
 export async function POST(request: Request) {
   let acquiredSlot = false

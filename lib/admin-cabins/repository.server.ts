@@ -4,6 +4,7 @@ import { demoAdminCabins } from "./demo-data"
 import type { AdminCabinRepository } from "./repository"
 import type { AdminCabin, AdminCabinImage, AdminCabinInput, AdminCabinStatus } from "./types"
 import { hasSupabaseConfig } from "@/lib/supabase/config"
+import { collectInBatches } from "@/lib/supabase/query-batching"
 import type { Tables } from "@/lib/supabase/database.types"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { createDevelopmentJsonStore } from "@/lib/development-json-store.server"
@@ -126,18 +127,21 @@ class SupabaseAdminCabinRepository implements AdminCabinRepository {
 
     const assetIds = [...new Set((imagesResult.data ?? []).map((image) => image.asset_id))]
     const serviceIds = [...new Set((joinsResult.data ?? []).map((join) => join.service_id))]
-    const [assetsResult, servicesResult, ownersResult, contactsResult] = await Promise.all([
-      assetIds.length ? supabase.from("media_assets").select("*").in("id", assetIds).is("deleted_at", null) : Promise.resolve({ data: [], error: null }),
+    const assets = await collectInBatches(assetIds, async (batch) => {
+      const { data, error } = await supabase.from("media_assets").select("*").in("id", [...batch]).is("deleted_at", null)
+      assertNoError(error, "No se pudieron cargar los assets")
+      return data ?? []
+    })
+    const [servicesResult, ownersResult, contactsResult] = await Promise.all([
       serviceIds.length ? supabase.from("services").select("id, name").in("id", serviceIds) : Promise.resolve({ data: [], error: null }),
       ownerIds.length ? supabase.from("owners").select("id,name,preferred_contact,notes,contact_hours").in("id", ownerIds).is("deleted_at", null) : Promise.resolve({ data: [], error: null }),
       ownerIds.length ? supabase.from("owner_contacts").select("owner_id,contact_type,display_value").in("owner_id", ownerIds).is("deleted_at", null) : Promise.resolve({ data: [], error: null }),
     ])
-    assertNoError(assetsResult.error, "No se pudieron cargar los assets")
     assertNoError(servicesResult.error, "No se pudieron cargar los servicios")
     assertNoError(ownersResult.error, "No se pudieron cargar los propietarios")
     assertNoError(contactsResult.error, "No se pudieron cargar los contactos de propietarios")
 
-    const assetById = new Map((assetsResult.data ?? []).map((asset) => [asset.id, asset]))
+    const assetById = new Map(assets.map((asset) => [asset.id, asset]))
     const serviceById = new Map((servicesResult.data ?? []).map((service) => [service.id, service.name]))
     const ownerById = new Map((ownersResult.data ?? []).map((owner) => [owner.id, owner]))
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") ?? ""

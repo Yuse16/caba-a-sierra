@@ -155,10 +155,11 @@ function PromotionForm({ promotion, created = false }: { promotion?: AdminPromot
 export function NewPromotionForm() { return <PromotionForm /> }
 
 export function EditPromotionForm({ id, created = false }: { id: string; created?: boolean }) {
+  const router = useRouter()
   const { ready, error, reload, findPromotion } = useAdminPromotions()
   const promotion = findPromotion(id)
   if (!ready) return <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6"><p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground" role="status">Preparando la promoción…</p></main>
   if (error) return <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6"><section className="rounded-2xl border border-destructive/30 bg-destructive/10 p-6 text-center" role="alert"><p className="text-sm text-destructive">{error}</p><button type="button" onClick={() => void reload()} className="mt-5 min-h-12 rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground">Reintentar</button></section></main>
-  if (!promotion) return <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6"><section className="rounded-2xl border border-border bg-card p-6 text-center"><h1 className="text-xl font-semibold text-foreground">No encontramos esta promoción</h1><p className="mt-2 text-sm text-muted-foreground">Puede que el enlace sea antiguo o que la promoción ya no exista.</p><button type="button" onClick={() => window.location.assign("/panel/promociones")} className="mt-5 min-h-12 rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground">Volver a promociones</button></section></main>
+  if (!promotion) return <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6"><section className="rounded-2xl border border-border bg-card p-6 text-center"><h1 className="text-xl font-semibold text-foreground">No encontramos esta promoción</h1><p className="mt-2 text-sm text-muted-foreground">Puede que el enlace sea antiguo o que la promoción ya no exista.</p><button type="button" onClick={() => router.push("/panel/promociones")} className="mt-5 min-h-12 rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground">Volver a promociones</button></section></main>
   return <PromotionForm key={promotion.id} promotion={promotion} created={created} />
 }

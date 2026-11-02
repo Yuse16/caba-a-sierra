@@ -32,11 +32,50 @@ for (const file of await files(root)) {
 
 const manifestPath = fileURLToPath(new URL("../.next/server/app/page_client-reference-manifest.js", import.meta.url))
 const manifestSource = await readFile(manifestPath, "utf8")
-const assignment = 'globalThis.__RSC_MANIFEST["/page"] = '
-const start = manifestSource.indexOf(assignment)
-if (start === -1) throw new Error("No se encontró el manifiesto cliente de la página pública.")
-const publicManifest = JSON.parse(manifestSource.slice(start + assignment.length, manifestSource.lastIndexOf(";")))
-const publicChunks = new Set(publicManifest.entryJSFiles["[project]/app/page"] ?? [])
+
+function parseRouteManifest(source, route) {
+  const assignmentPattern = new RegExp(`globalThis\\.__RSC_MANIFEST\\[${JSON.stringify(route)}\\]\\s*=\\s*`, "g")
+  const matches = [...source.matchAll(assignmentPattern)]
+  const match = matches.at(-1)
+  if (match?.index == null) throw new Error(`No se encontró el manifiesto cliente de ${route}.`)
+
+  const objectStart = source.indexOf("{", match.index + match[0].length)
+  if (objectStart === -1) throw new Error(`El manifiesto cliente de ${route} no contiene un objeto JSON.`)
+
+  let depth = 0
+  let inString = false
+  let escaped = false
+  for (let index = objectStart; index < source.length; index += 1) {
+    const char = source[index]
+    if (inString) {
+      if (escaped) escaped = false
+      else if (char === "\\") escaped = true
+      else if (char === '"') inString = false
+      continue
+    }
+    if (char === '"') inString = true
+    else if (char === "{") depth += 1
+    else if (char === "}") {
+      depth -= 1
+      if (depth === 0) return JSON.parse(source.slice(objectStart, index + 1))
+    }
+  }
+  throw new Error(`El manifiesto cliente de ${route} está incompleto.`)
+}
+
+function publicClientChunks(manifest) {
+  const chunks = new Set(manifest.entryJSFiles?.["[project]/app/page"] ?? [])
+  for (const clientModule of Object.values(manifest.clientModules ?? {})) {
+    for (const chunk of clientModule?.chunks ?? []) {
+      if (typeof chunk === "string" && chunk.endsWith(".js")) chunks.add(chunk)
+    }
+  }
+  if (chunks.size === 0) throw new Error("El manifiesto público no contiene chunks JavaScript verificables.")
+  return chunks
+}
+
+const publicManifest = parseRouteManifest(manifestSource, "/page")
+const publicChunks = publicClientChunks(publicManifest)
 
 for (const relativePath of publicChunks) {
   const file = join(fileURLToPath(new URL("../.next/", import.meta.url)), relativePath)

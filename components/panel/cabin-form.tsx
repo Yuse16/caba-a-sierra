@@ -382,6 +382,7 @@ export function NewCabinForm() {
 }
 
 export function EditCabinForm({ id, created = false }: { id: string; created?: boolean }) {
+  const router = useRouter()
   const { ready, error, reload, findCabin } = useAdminCabins()
   const cabin = findCabin(id)
 
@@ -399,7 +400,7 @@ export function EditCabinForm({ id, created = false }: { id: string; created?: b
         <section className="rounded-2xl border border-border bg-card p-6 text-center">
           <h1 className="text-xl font-semibold text-foreground">No encontramos esta cabaña</h1>
           <p className="mt-2 text-sm text-muted-foreground">Puede que el enlace sea antiguo o que la información ya no esté disponible.</p>
-          <button type="button" onClick={() => window.location.assign("/panel/cabanas")} className="mt-5 min-h-12 rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground">Volver a cabañas</button>
+          <button type="button" onClick={() => router.push("/panel/cabanas")} className="mt-5 min-h-12 rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground">Volver a cabañas</button>
         </section>
       </main>
     )

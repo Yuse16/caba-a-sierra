@@ -1,10 +1,12 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function PanelLogoutButton({ className }: { className?: string }) {
+  const router = useRouter()
   const [busy, setBusy] = useState(false)
 
   async function handleLogout() {
@@ -15,7 +17,8 @@ export function PanelLogoutButton({ className }: { className?: string }) {
     } catch {
       // ignore
     }
-    window.location.href = "/login"
+    router.replace("/login")
+    router.refresh()
   }
 
   return (

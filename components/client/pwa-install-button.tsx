@@ -57,17 +57,20 @@ export function PwaInstallButton({
       setInstalled(true)
     }
 
-    refreshInstalledState()
-    const ua = window.navigator.userAgent
-    setIsAndroid(/Android/i.test(ua))
-    setIsIOS(/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && window.navigator.maxTouchPoints > 1))
-    if (window.__dupezInstallPrompt) setInstallPrompt(window.__dupezInstallPrompt)
+    const frame = window.requestAnimationFrame(() => {
+      refreshInstalledState()
+      const ua = window.navigator.userAgent
+      setIsAndroid(/Android/i.test(ua))
+      setIsIOS(/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && window.navigator.maxTouchPoints > 1))
+      if (window.__dupezInstallPrompt) setInstallPrompt(window.__dupezInstallPrompt)
+    })
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
     window.addEventListener("appinstalled", handleInstalled)
     window.addEventListener("dupez-pwa-prompt-consumed", handlePromptConsumed)
     displayMode.addEventListener?.("change", refreshInstalledState)
 
     return () => {
+      window.cancelAnimationFrame(frame)
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt)
       window.removeEventListener("appinstalled", handleInstalled)
       window.removeEventListener("dupez-pwa-prompt-consumed", handlePromptConsumed)

@@ -37,22 +37,21 @@
   },
   "devDependencies": {
     "@playwright/test": "1.62.0",
-    "@serwist/turbopack": "^9.5.12",
+    "@serwist/turbopack": "^9.5.13",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitest/coverage-v8": "4.1.12",
+    "@vitest/coverage-v8": "5.0.5",
     "esbuild": "^0.28.2",
-    "eslint": "^9.39.0",
-    "eslint-config-next": "16.3.5",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "16.4.3",
     "playwright": "1.62.0",
-    "postcss": "^8.5.24",
-    "serwist": "^9.5.12",
-    "shadcn": "^4.16.0",
+    "postcss": "8.5.32",
+    "serwist": "^9.5.13",
     "supabase": "2.109.1",
     "tailwindcss": "^4.3.3",
     "typescript": "5.7.3",
-    "vitest": "4.1.12"
+    "vitest": "5.0.5"
   }
 }

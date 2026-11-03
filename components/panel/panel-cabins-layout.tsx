@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { Home, Mountain, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PanelLogoutButton } from "@/components/auth/panel-logout-button"
-import { PanelDesktopMenuButton, PanelMobileBackLink, PanelSubpageFrame } from "./panel-navigation"
+import { PanelDesktopMenuButton, PanelMobileBackLink, PanelMobileMenuButton, PanelSubpageFrame } from "./panel-navigation"
 
 export function PanelCabinsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -17,6 +17,7 @@ export function PanelCabinsLayout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex min-h-16 max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-6">
           <PanelMobileBackLink />
+          <PanelMobileMenuButton />
           <PanelDesktopMenuButton />
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="hidden size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:inline-flex">

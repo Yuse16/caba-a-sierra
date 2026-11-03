@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { createElement } from "react"
 import {
   PanelDesktopMenuButton,
+  PanelMobileMenuButton,
   PanelMobileBackLink,
   PanelNavigationProvider,
   PanelSubpageFrame,
@@ -18,11 +19,15 @@ describe("controles de navegación del panel", () => {
       createElement(PanelNavigationProvider, null,
         createElement(PanelSubpageFrame, null,
           createElement(PanelMobileBackLink),
+          createElement(PanelMobileMenuButton),
           createElement(PanelDesktopMenuButton),
         ),
       ),
     )
 
+    expect(html).toContain('aria-label="Abrir menú del panel"')
+    expect(html).toContain('aria-controls="panel-mobile-drawer"')
+    expect(html).toContain('lg:hidden')
     expect(html).toContain('aria-label="Volver atrás"')
     expect(html).toContain('href="/panel"')
     expect(html).toContain('aria-label="Ocultar menú lateral"')

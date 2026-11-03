@@ -224,7 +224,7 @@ export function AdminPanel({
 
       {/* Drawer (mobile) */}
       {drawerOpen && (
-        <div className="fixed inset-0 z-[60] lg:hidden">
+        <div id="panel-mobile-drawer" className="fixed inset-0 z-[60] lg:hidden">
           <button
             className="absolute inset-0 bg-foreground/40"
             aria-label="Cerrar menú"
@@ -245,15 +245,18 @@ export function AdminPanel({
 
       {/* Main */}
       <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
+        <div className="sticky top-0 z-40 -mx-4 -mt-6 border-b border-border bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <AdminHeader
           title={visibleActive === "dashboard" ? "Dashboard" : (sectionMeta[visibleActive]?.title ?? "Dashboard")}
           subtitle={visibleActive === "dashboard" ? "Resumen general de tu negocio" : "Panel administrativo"}
           dateLabel={initialData.currentDateLabel}
           showUser={!isPro}
           onMenu={() => setDrawerOpen(true)}
+          menuOpen={drawerOpen}
           onDate={() => handleSelect("calendario")}
           onProfile={() => handleSelect("perfil")}
         />
+        </div>
 
         <div className="mt-6">
           {visibleActive === "dashboard" ? (

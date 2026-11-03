@@ -1,8 +1,8 @@
 "use client"
 
-import { Calendar, ChevronDown, Menu } from "lucide-react"
+import { Calendar, ChevronDown } from "lucide-react"
 import { PanelLogoutButton } from "@/components/auth/panel-logout-button"
-import { PanelDesktopMenuButton, PanelMobileBackLink } from "@/components/panel/panel-navigation"
+import { PanelDesktopMenuButton, PanelMobileBackLink, PanelMobileMenuButton } from "@/components/panel/panel-navigation"
 import { usePanelSession } from "@/components/auth/panel-session-provider"
 
 export function AdminHeader({
@@ -11,6 +11,7 @@ export function AdminHeader({
   dateLabel,
   showUser,
   onMenu,
+  menuOpen,
   onDate,
   onProfile,
 }: {
@@ -19,6 +20,7 @@ export function AdminHeader({
   dateLabel: string
   showUser?: boolean
   onMenu?: () => void
+  menuOpen?: boolean
   onDate?: () => void
   onProfile?: () => void
 }) {
@@ -29,13 +31,7 @@ export function AdminHeader({
     <div className="flex flex-wrap items-center justify-between gap-4">
       <div className="flex items-center gap-3">
         <PanelMobileBackLink />
-        <button
-          onClick={onMenu}
-          className="inline-flex size-11 items-center justify-center rounded-lg border border-border bg-background text-foreground lg:hidden"
-          aria-label="Abrir menú"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+        <PanelMobileMenuButton onClick={onMenu} expanded={menuOpen} />
         <PanelDesktopMenuButton />
         <div>
           <h1 className="font-serif text-2xl font-bold text-foreground md:text-3xl">{title}</h1>

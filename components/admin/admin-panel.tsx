@@ -16,6 +16,7 @@ import type { Cabin, CabinStatus, ClientRequest, RequestStatus, ReservationStatu
 import type { AdminPanelInitialData } from "@/lib/admin-panel-data"
 import { formatCurrency as currency } from "@/lib/admin-presentational"
 import { AdminSidebar } from "./admin-sidebar"
+import { usePanelNavigation } from "@/components/panel/panel-navigation"
 import { AdminHeader } from "./admin-header"
 import { ProfileSection } from "./profile-section"
 import { CabinsTable } from "./cabins-table"
@@ -104,6 +105,7 @@ export function AdminPanel({
   onEditCabin?: (cabin: Cabin) => void
 }) {
   const isPro = version === "pro"
+  const { collapsed } = usePanelNavigation()
   const { owners } = initialData
   const [active, setActive] = useState<SectionKey>("dashboard")
   const [cabins, setCabins] = useState<Cabin[]>(initialData.cabins)
@@ -216,7 +218,7 @@ export function AdminPanel({
     <div className="flex min-h-screen bg-background">
       {notice && <div className="fixed bottom-4 left-1/2 z-[80] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl bg-forest-dark px-4 py-3 text-center text-sm font-medium text-primary-foreground shadow-xl" role="status">{notice}</div>}
       {/* Sidebar (desktop) */}
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r border-sidebar-border lg:block">
+      <aside id="panel-desktop-sidebar" aria-label="Menú lateral del panel" className={`sticky top-0 hidden h-screen w-64 shrink-0 border-r border-sidebar-border ${collapsed ? "lg:hidden" : "lg:block"}`}>
         <AdminSidebar version={version} active={visibleActive} badges={navBadges} onSelect={handleSelect} />
       </aside>
 

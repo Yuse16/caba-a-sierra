@@ -5,20 +5,24 @@ import { usePathname } from "next/navigation"
 import { Home, Mountain, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PanelLogoutButton } from "@/components/auth/panel-logout-button"
+import { PanelDesktopMenuButton, PanelMobileBackLink, PanelSubpageFrame } from "./panel-navigation"
 
 export function PanelCabinsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const editing = pathname === "/panel/cabanas/nueva" || /^\/panel\/cabanas\/[^/]+$/.test(pathname)
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <PanelSubpageFrame>
+      <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur pt-[env(safe-area-inset-top)]">
-        <div className="mx-auto flex min-h-16 max-w-7xl items-center gap-3 px-4 sm:px-6">
+        <div className="mx-auto flex min-h-16 max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-6">
+          <PanelMobileBackLink />
+          <PanelDesktopMenuButton />
           <div className="flex min-w-0 items-center gap-2.5">
-            <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <span className="hidden size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:inline-flex">
               <Mountain className="size-5" aria-hidden />
             </span>
-            <div className={cn("min-w-0 leading-tight", !editing && "hidden min-[360px]:block")}>
+            <div className={cn("hidden min-w-0 leading-tight sm:block", editing && "sm:hidden lg:block")}>
               <p className="truncate text-sm font-semibold text-foreground">DUPEZ</p>
               <p className="text-xs text-muted-foreground">Panel privado</p>
             </div>
@@ -36,13 +40,14 @@ export function PanelCabinsLayout({ children }: { children: React.ReactNode }) {
               </Link>
               <Link
                 href="/panel/cabanas/nueva"
+                aria-label="Nueva cabaña"
                 className={cn(
                   "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90",
                   pathname === "/panel/cabanas/nueva" && "pointer-events-none opacity-70",
                 )}
               >
                 <Plus className="size-4" aria-hidden />
-                Nueva cabaña
+                <span className="hidden sm:inline">Nueva cabaña</span>
               </Link>
             </nav>
           )}
@@ -50,6 +55,7 @@ export function PanelCabinsLayout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       {children}
-    </div>
+      </div>
+    </PanelSubpageFrame>
   )
 }

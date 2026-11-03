@@ -5,6 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { Archive, Bed, Edit3, Eye, MapPin, RefreshCw, RotateCcw, Users, X } from "lucide-react"
 import { formatCurrency as currency } from "@/lib/admin-presentational"
+import { filterAdminCabins } from "@/lib/admin-cabins/search"
 import type { AdminCabin } from "@/lib/admin-cabins/types"
 import { useAdminCabins } from "./cabins-provider"
 import { usePanelSession } from "@/components/auth/panel-session-provider"
@@ -55,7 +56,11 @@ export function CabinsList() {
   const [changingId, setChangingId] = useState<string | null>(null)
   const [pendingArchive, setPendingArchive] = useState<AdminCabin | null>(null)
   const [showArchived, setShowArchived] = useState(false)
-  const visibleCabins = cabins.filter((cabin) => showArchived ? Boolean(cabin.archivedAt) : !cabin.archivedAt)
+  const [searchTerm, setSearchTerm] = useState("")
+  const visibleCabins = filterAdminCabins(
+    cabins.filter((cabin) => showArchived ? Boolean(cabin.archivedAt) : !cabin.archivedAt),
+    searchTerm,
+  )
 
   const changeStatus = async (cabin: AdminCabin) => {
     setChangingId(cabin.id)
@@ -99,7 +104,29 @@ export function CabinsList() {
         </div>
       </div>
 
-      <div className="mt-6 flex flex-wrap gap-2 text-sm">
+      <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <label className="min-w-0 flex-1">
+          <span className="sr-only">Buscar cabañas por nombre, propietario, zona o teléfono</span>
+          <input
+            type="search"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Buscar cabaña, propietario, ubicación o teléfono"
+            aria-label="Buscar cabañas en el panel"
+            className="min-h-12 w-full rounded-xl border border-border bg-card px-4 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
+          />
+        </label>
+        {searchTerm.trim() && (
+          <button type="button" onClick={() => setSearchTerm("")} className="min-h-11 rounded-lg border border-border px-4 text-sm font-medium hover:bg-muted">
+            Limpiar búsqueda
+          </button>
+        )}
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground" role="status">
+        {visibleCabins.length} {visibleCabins.length === 1 ? "cabaña encontrada" : "cabañas encontradas"}
+      </p>
+
+      <div className="mt-4 flex flex-wrap gap-2 text-sm">
         <button type="button" aria-pressed={!showArchived} onClick={() => setShowArchived(false)} className={`rounded-full px-3 py-1.5 ${!showArchived ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>{cabins.filter((cabin) => !cabin.archivedAt).length} activas</button>
         <button type="button" aria-pressed={showArchived} onClick={() => setShowArchived(true)} className={`rounded-full px-3 py-1.5 ${showArchived ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>{cabins.filter((cabin) => cabin.archivedAt).length} archivadas</button>
         <span className="rounded-full bg-success/12 px-3 py-1.5 text-success">{cabins.filter((cabin) => !cabin.archivedAt && cabin.status === "published").length} publicadas</span>
@@ -108,7 +135,7 @@ export function CabinsList() {
       <div className="mt-5 space-y-4">
         {!ready && <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground" role="status">Cargando cabañas…</div>}
         {ready && error && <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-5" role="alert"><p className="text-sm text-destructive">{error}</p><button type="button" onClick={() => void reload()} className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground hover:bg-muted"><RefreshCw className="size-4" aria-hidden />Reintentar</button></div>}
-        {ready && !error && visibleCabins.length === 0 && <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center"><p className="font-semibold text-foreground">{showArchived ? "No hay cabañas archivadas" : "Todavía no hay cabañas"}</p><p className="mt-1 text-sm text-muted-foreground">{showArchived ? "Las cabañas archivadas aparecerán aquí y podrán restaurarse." : "Crea la primera cabaña para comenzar."}</p></div>}
+        {ready && !error && visibleCabins.length === 0 && <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center"><p className="font-semibold text-foreground">{searchTerm.trim() ? "No hay coincidencias" : showArchived ? "No hay cabañas archivadas" : "Todavía no hay cabañas"}</p><p className="mt-1 text-sm text-muted-foreground">{searchTerm.trim() ? "Prueba otro nombre, propietario, zona o teléfono." : showArchived ? "Las cabañas archivadas aparecerán aquí y podrán restaurarse." : "Crea la primera cabaña para comenzar."}</p></div>}
         {ready && !error && visibleCabins.map((cabin, index) => {
           const cover = coverFor(cabin)
           const published = cabin.status === "published"

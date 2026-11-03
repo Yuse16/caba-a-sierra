@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { CabinsProvider } from "@/components/panel/cabins-provider"
+import { PanelNavigationProvider } from "@/components/panel/panel-navigation"
 import { PromotionsProvider } from "@/components/panel/promotions-provider"
 import { PanelSessionProvider } from "@/components/auth/panel-session-provider"
 import { requirePanelSession } from "@/lib/auth/session"
@@ -24,5 +25,5 @@ export function generateMetadata(): Metadata {
 
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
   const session = await requirePanelSession()
-  return <PanelSessionProvider session={session}><CabinsProvider><PromotionsProvider>{children}</PromotionsProvider></CabinsProvider></PanelSessionProvider>
+  return <PanelSessionProvider session={session}><PanelNavigationProvider><CabinsProvider><PromotionsProvider>{children}</PromotionsProvider></CabinsProvider></PanelNavigationProvider></PanelSessionProvider>
 }

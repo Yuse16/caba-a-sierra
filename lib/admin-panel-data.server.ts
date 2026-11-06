@@ -54,13 +54,13 @@ export async function getAdminPanelData(session: PanelSession): Promise<AdminPan
     const cabinById = new Map(safeCabins.map((cabin) => [cabin.id, cabin]))
     const ownerById = new Map(ownerRows.map((owner) => [owner.id, owner]))
     const primaryAssignmentByCabin = new Map(assignmentRows.map((assignment) => [assignment.cabin_id, assignment]))
-    const contactValue = (ownerId: string, type: "phone" | "whatsapp") => contactRows.find((contact) => contact.owner_id === ownerId && contact.contact_type === type)?.display_value ?? ""
+    const contactValue = (ownerId: string, type: "phone" | "whatsapp" | "email") => contactRows.find((contact) => contact.owner_id === ownerId && contact.contact_type === type)?.display_value ?? ""
     const preferredContact = (value: "whatsapp" | "phone" | "message" | "email"): PreferredContactMethod => value === "phone" ? "Llamada" : value === "whatsapp" ? "WhatsApp" : "Mensaje"
     const latestOwnerNote = (ownerId: string) => (notesResult.data ?? []).find((note) => note.owner_id === ownerId)
     const ownerNotes = (ownerId: string, notes: string) => [notes, latestOwnerNote(ownerId)?.body].filter(Boolean).join("\n")
 
     const ownersData: Owner[] = ownerRows.map((owner) => ({
-      id: owner.id, name: owner.name, phone: contactValue(owner.id, "phone"), whatsapp: contactValue(owner.id, "whatsapp"),
+      id: owner.id, name: owner.name, phone: contactValue(owner.id, "phone"), whatsapp: contactValue(owner.id, "whatsapp"), email: contactValue(owner.id, "email"),
       notes: ownerNotes(owner.id, owner.notes), agreedCommission: assignmentRows.find((assignment) => assignment.owner_id === owner.id)?.agreed_commission ?? 0,
       lastContact: formatAdminDate(latestOwnerNote(owner.id)?.created_at || owner.updated_at), preferredContactMethod: preferredContact(owner.preferred_contact),
     }))

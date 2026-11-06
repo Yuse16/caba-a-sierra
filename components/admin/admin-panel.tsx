@@ -18,6 +18,7 @@ import { formatCurrency as currency } from "@/lib/admin-presentational"
 import { AdminSidebar } from "./admin-sidebar"
 import { usePanelNavigation } from "@/components/panel/panel-navigation"
 import { AdminHeader } from "./admin-header"
+import { DashboardOwnerSearch } from "./dashboard-owner-search"
 import { ProfileSection } from "./profile-section"
 import { CabinsTable } from "./cabins-table"
 import { OccupancyCalendar } from "./occupancy-calendar"
@@ -257,6 +258,12 @@ export function AdminPanel({
           onProfile={() => handleSelect("perfil")}
         />
         </div>
+
+        {visibleActive === "dashboard" && (
+          <div className="mt-5">
+            <DashboardOwnerSearch owners={owners} cabins={cabins} />
+          </div>
+        )}
 
         <div className="mt-6">
           {visibleActive === "dashboard" ? (

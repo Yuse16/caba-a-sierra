@@ -28,6 +28,7 @@ export type Owner = {
   name: string
   phone: string
   whatsapp: string
+  email?: string
   notes: string
   agreedCommission: number
   lastContact: string
